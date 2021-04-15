@@ -1,0 +1,1 @@
+This repository store my private study note about programming, I will update it once a week.
