@@ -501,6 +501,85 @@ Awesome Ver.
 
 
 
+# Day22
+
+![Xnip2021-04-16_18-37-39](Algorithem/Xnip2021-04-16_18-37-39.jpg)
+
+
+
+First method:
+
+![Xnip2021-04-16_18-39-04](Algorithem/Xnip2021-04-16_18-39-04.jpg)
+
+
+
+
+
+Second method:
+
+![Xnip2021-04-16_18-39-23](Algorithem/Xnip2021-04-16_18-39-23.jpg)
+
+
+
+
+
+Third method:
+
+![Xnip2021-04-16_18-39-38](Algorithem/Xnip2021-04-16_18-39-38.jpg)
+
+****
+
+
+
+
+
+
+
+# Day23
+
+![Xnip2021-04-17_12-29-26](Algorithem/Xnip2021-04-17_12-29-26.jpg)
+
+
+
+
+
+![Xnip2021-04-17_12-45-25](Algorithem/Xnip2021-04-17_12-45-25.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+# Day24
+
+![Xnip2021-04-18_13-48-10](Algorithem/Xnip2021-04-18_13-48-10.jpg)
+
+
+
+
+
+![Xnip2021-04-18_16-25-10](Algorithem/Xnip2021-04-18_16-25-10.jpg)
+
+****
+
+
+
+
+
+# Day25
+
+Day20优化
+
+
+
+![Xnip2021-04-19_12-29-14](Algorithem/Xnip2021-04-19_12-29-14.jpg)
+
+****
 
 
 
@@ -512,18 +591,13 @@ Awesome Ver.
 
 
 
+# Day26
+
+![Xnip2021-04-20_11-19-32](Algorithem/Xnip2021-04-20_11-19-32.jpg)
 
 
 
-
-
-
-
-
-
-
-
-
+![Xnip2021-04-20_12-24-35](Algorithem/Xnip2021-04-20_12-24-35.jpg)
 
 
 
