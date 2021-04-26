@@ -666,6 +666,40 @@ exam:
 
 2.FIXME(标记人，标记时间，预计处理时间)
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 13.OOP
+
+OOP: Object Oriented Programming
+
+POP: Procedure Oriented Programming
+
+
+
+- 明确目标(需要做什么)
+- 不关心过程(不关心实现的途径和方式)
+- 大众化(大家都能用，不需要单独设计)
+
+
+
+
+
+
+
+
+
 
 
 
