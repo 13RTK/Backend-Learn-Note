@@ -379,6 +379,20 @@ Github:https://github.com/13RTK/Alex-Demo/tree/master
 
 ![Xnip2021-05-07_17-25-26](Algorithem/Xnip2021-05-07_17-25-26.jpg)
 
+
+
+![Xnip2021-05-07_16-56-04](Algorithem/Xnip2021-05-07_16-56-04.jpg)
+
+
+
+![Xnip2021-05-07_16-56-13](Algorithem/Xnip2021-05-07_16-56-13.jpg)
+
+![Xnip2021-05-07_16-56-18](Algorithem/Xnip2021-05-07_16-56-18.jpg)
+
+
+
+![Xnip2021-05-07_16-56-25](Algorithem/Xnip2021-05-07_16-56-25.jpg)
+
 ****
 
 
