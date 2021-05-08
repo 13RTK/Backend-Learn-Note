@@ -1356,6 +1356,22 @@ exam:
 
 
 
+### 4. ArithmeticException
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

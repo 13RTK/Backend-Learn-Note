@@ -134,6 +134,37 @@ exam:
 
 - 注意使用后需要关闭操作对象和连接(**按照栈的顺序**)
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 3.规范
+
+- 在输出后，需要另写一个finally {}将所有的close()包裹起来
+- 返回的ResultSet对象也需要关闭，可以使用try catch，**也可以直接抛出异常**
+- URL, USER, PASSWORD, DRIVER(com.mysql.jdbc.drive)等字段要设置为static final
+- connection, statement, resultSet等对象也需要**在main之外提前创建**
+
+
+
+exam:
+
+![Xnip2021-04-26_15-08-46](Java adv/Xnip2021-04-26_15-08-46.jpg)
+
+
+
 
 
 
