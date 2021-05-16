@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="desktop-game-engine">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/Java/CodeGym/CodeGymTasks/8.Games/lib/desktop-game-engine.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -172,3 +172,103 @@ exam:
 
 
 
+
+# 4.通用模式
+
+
+
+
+
+
+
+**通过工具类的方式**
+
+## 1. 阶段一
+
+- 在"src"同级目录下创建一个名为"db.properties"的数据文件，将"driver", "user", "password", "url"字段预先写入
+
+![Xnip2021-05-11_14-55-15](JDBC/Xnip2021-05-11_14-55-15.jpg)
+
+
+
+
+
+
+
+- 使用静态代码块读取并加载资源文件中的字段
+
+新方法:
+
+1. static InputStream getSystemResourceAsStream(String name): (属于java.lang包下)读取一个字符串对象，加载其相应的文件，并返回一个输入流对象
+2. public synchronized void load(InputStream inStream) throws IOException: (属于java.util包下)接收一个输入流对象，以map键值对的形式加载其中的信息到调用对象中
+3. public String getProperty(String key): (属于java.util包下)接收一个字符串作为"键"，返回对应的"值"
+
+
+
+![Xnip2021-05-11_14-57-20](JDBC/Xnip2021-05-11_14-57-20.jpg)
+
+
+
+
+
+
+
+- 添加创建connection和statement对象的方法
+
+![Xnip2021-05-11_15-07-08](JDBC/Xnip2021-05-11_15-07-08.jpg)
+
+
+
+
+
+
+
+- 编写CRUD方法
+
+  **注：**除了查询需要"executeQuery()"方法，其余都使用"executeUpdate()"方法
+
+
+
+相关方法:
+
+1. ResultSet executeQuery(String sql) throws SQLException :(ResultSet接口中的一个抽象方法)接收一个字符串作为SQL语句，将结果返回到一个ResultSet对象中
+2. int executeUpdate(String sql) throws SQLException: (同上)同样将参数字符串作为SQL语句，结果为更新后影响的行数。
+
+
+
+
+
+![Xnip2021-05-11_15-07-59](JDBC/Xnip2021-05-11_15-07-59.jpg)
+
+![Xnip2021-05-11_15-08-20](JDBC/Xnip2021-05-11_15-08-20.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 2. 阶段二
+
+- 在阶段一的基础上，舍弃Statement对象，使用PreparedStatement对象
+- 放弃原有拼接字符串的方式，在sql字符串对象中**将用户输入的数据用?代替**
+- 修改后的好处: preparedStatement对象**可以预先加载SQL语句，防止SQL注入**；用"?"代替后，SQL语句字符串可以写得简洁
+
+
+
+相关方法:
+
+void setType(int parameterIndex, Type x) throws SQLException: (PreparedStatement接口下的一个方法，属于java.sql包下)**设置对应的?处的值，含有所有的基本数据类型**
+
+
+
+![Xnip2021-05-11_15-19-38](JDBC/Xnip2021-05-11_15-19-38.jpg)
+
+
+
+
+

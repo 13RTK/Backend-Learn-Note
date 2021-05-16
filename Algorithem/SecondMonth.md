@@ -405,6 +405,121 @@ Github:https://github.com/13RTK/Alex-Demo/tree/master
 
 
 
+# Day44
+
+![Xnip2021-05-08_13-17-08](Algorithem/Xnip2021-05-08_13-17-08.jpg)
+
+
+
+![Xnip2021-05-08_13-15-51](Algorithem/Xnip2021-05-08_13-15-51.jpg)
+
+
+
+
+
+
+
+
+
+
+
+![Xnip2021-05-08_13-17-41](Algorithem/Xnip2021-05-08_13-17-41.jpg)
+
+
+
+![Xnip2021-05-08_13-23-23](Algorithem/Xnip2021-05-08_13-23-23.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day45
+
+
+
+## First
+
+![Xnip2021-05-09_14-25-47](Algorithem/Xnip2021-05-09_14-25-47.jpg)
+
+
+
+![Xnip2021-05-09_14-34-47](Algorithem/Xnip2021-05-09_14-34-47.jpg)
+
+
+
+
+
+## Second
+
+![Xnip2021-05-09_15-39-54](Algorithem/Xnip2021-05-09_15-39-54.jpg)
+
+
+
+
+
+![Xnip2021-05-09_15-39-38](Algorithem/Xnip2021-05-09_15-39-38.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day46
+
+![Xnip2021-05-10_14-57-06](Algorithem/Xnip2021-05-10_14-57-06.jpg)
+
+
+
+![Xnip2021-05-10_14-57-30](Algorithem/Xnip2021-05-10_14-57-30.jpg)
+
+
+
+![Xnip2021-05-10_15-15-47](Algorithem/Xnip2021-05-10_15-15-47.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day47
+
+![Xnip2021-05-11_12-33-48](Algorithem/Xnip2021-05-11_12-33-48.jpg)
+
+
+
+
+
+![Xnip2021-05-11_11-23-24](Algorithem/Xnip2021-05-11_11-23-24.jpg)
+
+
+
+
+
+![Xnip2021-05-11_13-06-54](Algorithem/Xnip2021-05-11_13-06-54.jpg)
+
+****
 
 
 
@@ -418,6 +533,152 @@ Github:https://github.com/13RTK/Alex-Demo/tree/master
 
 
 
+# Day48
+
+![Xnip2021-05-12_13-28-03](Algorithem/Xnip2021-05-12_13-28-03.jpg)
 
 
 
+
+
+![Xnip2021-05-12_13-28-37](Algorithem/Xnip2021-05-12_13-28-37.jpg)
+
+
+
+
+
+![Xnip2021-05-12_13-29-10](Algorithem/Xnip2021-05-12_13-29-10.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day49
+
+
+
+## First
+
+![Xnip2021-05-13_09-28-44](Algorithem/Xnip2021-05-13_09-28-44.jpg)
+
+
+
+
+
+![Xnip2021-05-13_09-40-20](Algorithem/Xnip2021-05-13_09-40-20.jpg)
+
+
+
+
+
+## Second
+
+![Xnip2021-05-13_09-28-59](Algorithem/Xnip2021-05-13_09-28-59.jpg)
+
+
+
+
+
+![Xnip2021-05-13_09-40-40](Algorithem/Xnip2021-05-13_09-40-40.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+# Day50
+
+
+
+## CRUD For Linked List
+
+![Xnip2021-05-14_17-38-48](Algorithem/Xnip2021-05-14_17-38-48.jpg)
+
+
+
+![Xnip2021-05-14_17-40-23](Algorithem/Xnip2021-05-14_17-40-23.jpg)
+
+
+
+
+
+![Xnip2021-05-14_17-41-34](Algorithem/Xnip2021-05-14_17-41-34.jpg)
+
+
+
+![Xnip2021-05-14_17-43-17](Algorithem/Xnip2021-05-14_17-43-17.jpg)
+
+
+
+![Xnip2021-05-14_17-44-31](Algorithem/Xnip2021-05-14_17-44-31.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day51
+
+
+
+## Static Linked List
+
+![Xnip2021-05-15_22-17-00](Algorithem/Xnip2021-05-15_22-17-00.jpg)
+
+
+
+
+
+![Xnip2021-05-15_22-17-32](Algorithem/Xnip2021-05-15_22-17-32.jpg)
+
+****
+
+
+
+
+
+
+
+# Day52
+
+![Xnip2021-05-16_16-28-11](Algorithem/Xnip2021-05-16_16-28-11.jpg)
+
+
+
+
+
+![Xnip2021-05-16_16-28-30](Algorithem/Xnip2021-05-16_16-28-30.jpg)
+
+
+
+
+
+![EC56C26D-AB9A-40AB-855D-7882C6F5C3F4](Algorithem/EC56C26D-AB9A-40AB-855D-7882C6F5C3F4.png)
+
+
+
+![23CE38C8-6131-46DF-99D3-285FF7DA2135](Algorithem/23CE38C8-6131-46DF-99D3-285FF7DA2135.png)
+
+
+
+![686B7693-035F-47D8-AD5D-8BC06D2EE3F5](Algorithem/686B7693-035F-47D8-AD5D-8BC06D2EE3F5.png)
