@@ -216,7 +216,7 @@ varchar(lenght) ：字符串
 
 SQL语句：
 
-```sql
+```mysql
 create table if not exists table_name(
 parameter_1 int auto_increment primary key comment 'The comments',
 parameter_2 varchar(length) not null comment '',
@@ -227,7 +227,7 @@ parameter_3 varchar(length) default 'something value' comment '',
 
 **相关讲解**
 
-```sql
+```mysql
 auto_imcrement: 自增
 primary key：主键(唯一的)
 comment ''：注释
@@ -1354,7 +1354,7 @@ foreign key (set_column) references target_tabel(column) on delete set null on u
 
 
 
-## 1) select
+## 1) SELECT
 
 
 
@@ -1392,7 +1392,7 @@ exam:
 
 
 
-## 2) from
+## 2) FROM
 
 指明查询的来源(字段/表/库)
 
@@ -1430,7 +1430,7 @@ exam:
 
 
 
-## 4) where
+## 4) WHERE
 
 指定查询时的条件
 
@@ -1449,6 +1449,494 @@ where指定字段条件(条件之间可以使用and, or, not 等逻辑符号)
 
 
 
+
+## 5) IN
+
+
+
+用于指定where中的查询条件
+
+
+
+格式:
+
+```mysql
+select (content) from table_name where column_name in(column_content);
+```
+
+
+
+可以加上not取反:
+
+```mysql
+select (content) from table_name where column_name not in(column_content);
+```
+
+
+
+exam:
+
+![Xnip2021-05-17_15-28-43](MySQL Note.assets/Xnip2021-05-17_15-28-43.jpg)
+
+
+
+![Xnip2021-05-17_15-34-17](MySQL Note.assets/Xnip2021-05-17_15-34-17.jpg)
+
+
+
+
+
+
+
+
+
+## 6) between...and
+
+
+
+通过between...and，可以在where后指定范围
+
+
+
+格式:
+
+```mysql
+select (content) from table_name where column_name between (start) and (end);
+```
+
+**注意：**与大于小于不同，between...and**包含开始和结束位置**
+
+
+
+可以通过not取反
+
+```mysql
+select(content) from table_name where column_name not between (start) and (end);
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-17_15-54-47](MySQL Note.assets/Xnip2021-05-17_15-54-47.jpg)
+
+
+
+![Xnip2021-05-17_15-55-16](MySQL Note.assets/Xnip2021-05-17_15-55-16.jpg)
+
+
+
+
+
+
+
+
+
+## 7) is null
+
+- 用于查找指定字段属性为null的行(实体)
+
+
+
+格式:
+
+```mysql
+select (content) from table_name where column_name is null;
+```
+
+
+
+通过not取反
+
+```mysql
+select (content) from table_name where column_name is not null;
+```
+
+**注意：是is not, 不是not is**
+
+
+
+![Xnip2021-05-17_20-44-25](MySQL Note.assets/Xnip2021-05-17_20-44-25.jpg)
+
+
+
+
+
+
+
+## 8) 聚合函数
+
+用于获取指定的内容(和，最大/小值，平均值，个数)
+
+- **注意：通过聚合函数查找的结果表名，需要写在聚合函数后面**
+
+exam:
+
+![Xnip2021-05-21_11-13-17](MySQL Note.assets/Xnip2021-05-21_11-13-17.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### sum:
+
+```mysql
+select sum(column_name) from table_name;
+```
+
+
+
+exam:
+
+![Xnip2021-05-17_21-03-35](MySQL Note.assets/Xnip2021-05-17_21-03-35.jpg)
+
+
+
+
+
+
+
+### max:
+
+```mysql
+select max(column_name) from table_name;
+```
+
+
+
+exam:
+
+![Xnip2021-05-17_21-05-30](MySQL Note.assets/Xnip2021-05-17_21-05-30.jpg)
+
+
+
+
+
+
+
+
+
+### min:
+
+```mysql
+select min(column_name) from table_name;
+```
+
+
+
+exam:
+
+![Xnip2021-05-17_21-07-22](MySQL Note.assets/Xnip2021-05-17_21-07-22.jpg)
+
+
+
+
+
+
+
+
+
+### avg:
+
+```mysql
+select avg(column_name) from table_name;
+```
+
+
+
+exam:
+
+![Xnip2021-05-17_21-08-30](MySQL Note.assets/Xnip2021-05-17_21-08-30.jpg)
+
+
+
+
+
+
+
+
+
+### count:
+
+```mysql
+select count(column_name) from table_name;
+```
+
+**注：只有count会跳过null**
+
+exam:
+
+![Xnip2021-05-17_21-09-59](MySQL Note.assets/Xnip2021-05-17_21-09-59.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 9) 模糊查询
+
+- 用于查询大致匹配的数据(同姓等等)
+
+
+
+格式
+
+```mysql
+select (content) from table_name where (column_name) like (vague)
+```
+
+
+
+
+
+
+
+exam:
+
+![Xnip2021-05-19_10-11-59](MySQL Note.assets/Xnip2021-05-19_10-11-59.jpg)
+
+**注意："%"用于代表多个字符，不限字符数**
+
+
+
+![Xnip2021-05-19_10-16-26](MySQL Note.assets/Xnip2021-05-19_10-16-26.jpg)
+
+**注："_"只能用于代表一个字符**
+
+
+
+
+
+
+
+
+
+## 10) 排序查询
+
+- 根据指定的字段，按照升序或降序排列
+
+
+
+格式
+
+```mysql
+select (content) from table_name order by (column_name) asc/desc
+```
+
+**注意：asc为升序，desc为降序，未指定则默认升序**
+
+- asc: ascending
+- desc: descending
+
+
+
+exam:
+
+![Xnip2021-05-19_10-25-00](MySQL Note.assets/Xnip2021-05-19_10-25-00.jpg)
+
+
+
+![Xnip2021-05-19_10-25-54](MySQL Note.assets/Xnip2021-05-19_10-25-54.jpg)
+
+
+
+![Xnip2021-05-19_10-26-21](MySQL Note.assets/Xnip2021-05-19_10-26-21.jpg)
+
+
+
+
+
+
+
+## 11) 分组查询
+
+- 将聚合函数查询出的数据**通过字段进行分组**
+
+
+
+格式
+
+```mysql
+select func(column_name) as 'result column_name', group_column as 'result column_name' from table_name group by group_column;
+```
+
+**格式：select 聚合函数，分组字段 from 表名 group by 分组字段**
+
+
+
+
+
+exam:
+
+![Xnip2021-05-19_10-47-41](MySQL Note.assets/Xnip2021-05-19_10-47-41.jpg)
+
+**末尾可以添加排序**
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 12) 聚合分组搜索
+
+- 使用group_concat将需要的字段聚合起来(显示在一行中)，需结合goup by
+
+
+
+
+
+格式
+
+```mysql
+select group_concat(column_name), (group_by_column_name) from table_name group by column;
+```
+
+
+
+exam:
+
+![Xnip2021-05-20_21-17-52](MySQL Note.assets/Xnip2021-05-20_21-17-52.jpg)
+
+
+
+
+
+
+
+
+
+## 13) HAVING
+
+- 用于在查询后的结果表上，进一步进行查询(使用结果表的字段名)
+
+
+
+
+
+格式:
+
+```mysql
+SELECT (content) FROM table_name WHERE (column_name) (condition) HAVING (column_name) (condition);
+```
+
+
+
+
+
+
+
+exam:
+
+![Xnip2021-05-23_13-59-20](MySQL Note.assets/Xnip2021-05-23_13-59-20.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 14) LIMIT
+
+- 用于限制查询结果的**起始位置和结果长度**
+
+
+
+格式：
+
+```mysql
+SELECT (content) FROM table_name LIMIT start_index, data_length;
+```
+
+- 如果"LIMIT"后写一个数字，则**默认从0开始**，**将输入的数字作为结果的长度**
+- 查询的结果**起始位置与数组的规则相同**
+
+
+
+exam:
+
+![Xnip2021-05-23_14-10-52](MySQL Note.assets/Xnip2021-05-23_14-10-52.jpg)
+
+- 从索引0处开始，查询两条数据
+
+
+
+
+
+![Xnip2021-05-23_14-12-16](MySQL Note.assets/Xnip2021-05-23_14-12-16.jpg)
+
+- 默认从索引0处开始，查询一条数据
+
+
+
+
+
+
+
+
+
+
+
+## 15) DISTINCT
+
+- 去除重复的结果，**相同结果只显示一次**
+
+
+
+格式:
+
+```mysql
+SELECT DISTINCT (content) FROM table_name;
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-23_14-20-53](MySQL Note.assets/Xnip2021-05-23_14-20-53.jpg)
+
+
+
+
+
+结合用法:
+
+![Xnip2021-05-23_14-22-38](MySQL Note.assets/Xnip2021-05-23_14-22-38.jpg)
 
 
 
