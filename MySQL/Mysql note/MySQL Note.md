@@ -1,5 +1,9 @@
 
 
+
+
+
+
 # 一、MySQL基础操作(数据库操作)
 
 
@@ -1461,7 +1465,7 @@ where指定字段条件(条件之间可以使用and, or, not 等逻辑符号)
 格式:
 
 ```mysql
-select (content) from table_name where column_name in(column_content);
+SELECT (content) FROM table_name WHERE column_name IN (column_content);
 ```
 
 
@@ -1469,7 +1473,7 @@ select (content) from table_name where column_name in(column_content);
 可以加上not取反:
 
 ```mysql
-select (content) from table_name where column_name not in(column_content);
+SELECT (content) FROM table_name WHERE column_name NOT IN (column_content);
 ```
 
 
@@ -1501,7 +1505,7 @@ exam:
 格式:
 
 ```mysql
-select (content) from table_name where column_name between (start) and (end);
+SELECT (content) FROM table_name WHERE column_name BETWEEN (start) AND (end);
 ```
 
 **注意：**与大于小于不同，between...and**包含开始和结束位置**
@@ -1511,7 +1515,7 @@ select (content) from table_name where column_name between (start) and (end);
 可以通过not取反
 
 ```mysql
-select(content) from table_name where column_name not between (start) and (end);
+SELECT (content) FROM table_name WHERE column_name NOT BETWEEN (start) AND (end);
 ```
 
 
@@ -1543,7 +1547,7 @@ exam:
 格式:
 
 ```mysql
-select (content) from table_name where column_name is null;
+SELECT (content) FROM table_name WHERE column_name IS null;
 ```
 
 
@@ -1551,7 +1555,7 @@ select (content) from table_name where column_name is null;
 通过not取反
 
 ```mysql
-select (content) from table_name where column_name is not null;
+SELECT (content) FROM table_name WHERE column_name IS NOT null;
 ```
 
 **注意：是is not, 不是not is**
@@ -1591,7 +1595,7 @@ exam:
 ### sum:
 
 ```mysql
-select sum(column_name) from table_name;
+SELECT SUM(column_name) FROM table_name;
 ```
 
 
@@ -1609,7 +1613,7 @@ exam:
 ### max:
 
 ```mysql
-select max(column_name) from table_name;
+SELECT MAX(column_name) FROM table_name;
 ```
 
 
@@ -1629,7 +1633,7 @@ exam:
 ### min:
 
 ```mysql
-select min(column_name) from table_name;
+SELECT MIN(column_name) FROM table_name;
 ```
 
 
@@ -1649,7 +1653,7 @@ exam:
 ### avg:
 
 ```mysql
-select avg(column_name) from table_name;
+SELECT AVG(column_name) FROM table_name;
 ```
 
 
@@ -1669,7 +1673,7 @@ exam:
 ### count:
 
 ```mysql
-select count(column_name) from table_name;
+SELECT COUNT(column_name) FROM table_name;
 ```
 
 **注：只有count会跳过null**
@@ -1701,7 +1705,7 @@ exam:
 格式
 
 ```mysql
-select (content) from table_name where (column_name) like (vague)
+SELECT (content) FROM table_name WHERE (column_name) LIKE (vague)
 ```
 
 
@@ -1739,7 +1743,7 @@ exam:
 格式
 
 ```mysql
-select (content) from table_name order by (column_name) asc/desc
+SELECT (content) FROM table_name ORDER BY (column_name) ASC/DESC
 ```
 
 **注意：asc为升序，desc为降序，未指定则默认升序**
@@ -1776,7 +1780,7 @@ exam:
 格式
 
 ```mysql
-select func(column_name) as 'result column_name', group_column as 'result column_name' from table_name group by group_column;
+SELECT func(column_name) AS 'result column_name', group_column AS 'result column_name' FROM table_name GROUP BY group_column;
 ```
 
 **格式：select 聚合函数，分组字段 from 表名 group by 分组字段**
@@ -1814,7 +1818,7 @@ exam:
 格式
 
 ```mysql
-select group_concat(column_name), (group_by_column_name) from table_name group by column;
+SELECT GROUP_CONCAT(column_name), (group_by_column_name) FROM table_name GROUP BY column;
 ```
 
 
@@ -1881,7 +1885,7 @@ exam:
 SELECT (content) FROM table_name LIMIT start_index, data_length;
 ```
 
-- 如果"LIMIT"后写一个数字，则**默认从0开始**，**将输入的数字作为结果的长度**
+- 如果"LIMIT"后只写一个数字，则**默认从0开始**，**将输入的数字作为结果的长度**
 - 查询的结果**起始位置与数组的规则相同**
 
 
@@ -1937,6 +1941,861 @@ exam:
 结合用法:
 
 ![Xnip2021-05-23_14-22-38](MySQL Note.assets/Xnip2021-05-23_14-22-38.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 16) OFFSET
+
+- 用于跳过开头的数据
+
+
+
+格式:
+
+```mysql
+SELECT (content) FROM table_name (condition) OFFSET (num_of_skipDate);
+```
+
+
+
+
+
+
+
+exam:
+
+![Xnip2021-05-30_16-19-14](MySQL Note.assets/Xnip2021-05-30_16-19-14.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# 十、多表查询
+
+
+
+
+
+## 1) Union 联合查询
+
+- 连接两个SELECT语句，将多个查询结果**组合到一个表中**
+
+
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (table_name) WHERE (column_name) (condition) UNION (ALL/DISTINCT) SELECT...
+```
+
+**后接"ALL"则将所有数据列出(无论是否重复)**
+
+
+
+exam:
+
+![Xnip2021-05-26_09-46-09](MySQL Note.assets/Xnip2021-05-26_09-46-09.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) INNER JOHN 內连接
+
+- 用于与其他的表关联起来，添加查询条件
+
+
+
+- 格式
+
+```mysql
+SELECT (colunmn_name), (column_name) FROM (table_name) INNER JOIN (another_table_name) ON (condition)
+```
+
+**注：內连接的条件为两个表中字段的关系，通常为同一字段，使用格式: table_name.column(用"."表示调用表中的字段)**
+
+- 如果多个表中有同名字段，则需要在字段前加上表名
+
+
+
+exam:
+
+![Xnip2021-05-26_10-18-19](MySQL Note.assets/Xnip2021-05-26_10-18-19.jpg)
+
+
+
+
+
+多表的情况(再加一句INNER JOIN 即可):
+
+![Xnip2021-05-26_10-27-28](MySQL Note.assets/Xnip2021-05-26_10-27-28.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) LEFT JOIN 左连接
+
+- 以左边的表为基准进行查询
+
+
+
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (left_table_name) LEFT JOIN (right_table_name) ON (condition);
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-28_10-11-30](MySQL Note.assets/Xnip2021-05-28_10-11-30.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4) RIGTH JOIN 右连接
+
+- 以右表为基准，进行查询
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (left_table_name) RIGTH JOHN (right_table_name) ON (condition);
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-28_10-19-00](MySQL Note.assets/Xnip2021-05-28_10-19-00.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5) CROSS JOIN 交叉连接
+
+**使用较少**
+
+- 会返回两表中指定字段的**笛卡尔积**(即所有字段之间的排列结果)
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (table_name) CROSS JOIN (table_name) option:condition;
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-28_10-26-38](MySQL Note.assets/Xnip2021-05-28_10-26-38.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6) NATURAL JOIN
+
+**DBA的内容**
+
+
+
+- 自然连接，当两个表中有**公共字段(即字段名相同)**时，会自动进行获取(默认为內连接)
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (table_name) NATURAL JOIN (another_table_name);
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-28_10-41-02](MySQL Note.assets/Xnip2021-05-28_10-41-02.jpg)
+
+
+
+
+
+自然右连接/左连接:
+
+- 同右连接和左连接相同，以左/右表为基准进行的查询
+
+
+
+
+
+**注意：当两表中没有公共字段时，会返回两表的笛卡尔积**
+
+exam:
+
+![Xnip2021-05-28_10-46-45](MySQL Note.assets/Xnip2021-05-28_10-46-45.jpg)
+
+
+
+
+
+
+
+
+
+## 7) USING
+
+- 当两张表中有两个以上的公共字段(甚至结构相同)时，使用USING指定基准字段
+
+**注：此时如果使用自然连接，则会返回null！**
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (table_name) INNER JOIN (another_table) USING(public_column);
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-28_10-57-58](MySQL Note.assets/Xnip2021-05-28_10-57-58.jpg)
+
+
+
+
+
+![Xnip2021-05-28_10-59-51](MySQL Note.assets/Xnip2021-05-28_10-59-51.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 8) 规范
+
+- 最好使用INNER JOIN (table) ON的形式
+- 在ON后指定查询的字段条件，**有利于其他不了解表结构的人了解查询基准，增加可读性**
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# 十一、子查询
+
+
+
+
+
+
+
+## 1. IN/NOT IN
+
+- 通过对一张表进行查询后的结果(**结果必须只有一个字段**)，可以作为WHERE语句中的条件，再进行查询
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (table_name) WHERE base_column (NOT) IN (sub_query_result);
+```
+
+**如果查询出的结果只有一条，则可以将IN换为=，但不推荐，IN更通用**
+
+
+
+
+
+exam:
+
+![Xnip2021-05-28_11-14-04](MySQL Note.assets/Xnip2021-05-28_11-14-04.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. EXISTS/NOT EXISTS
+
+- 用于WHERE中，**指定子查询不存在/存在的情况**
+
+
+
+
+
+- 格式
+
+```mysql
+SELECT (content) FROM (table_name) WHERE (NOT) EXISTS (sub_query_result);
+```
+
+
+
+
+
+
+
+exam:
+
+![Xnip2021-05-28_11-24-15](MySQL Note.assets/Xnip2021-05-28_11-24-15.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# 十二、视图(view)
+
+- 视图的作用:
+
+用于显示指定的信息(屏蔽掉敏感信息)
+
+
+
+## 1. 视图的创建/使用
+
+
+
+- 格式
+
+```mysql
+CREATE VIEW (view_name) AS SELECT (content) FROM (table_name/Query Statement) (option: condition);
+```
+
+
+
+
+
+
+
+exam:
+
+![Xnip2021-05-30_09-58-06](MySQL Note.assets/Xnip2021-05-30_09-58-06.jpg)
+
+
+
+
+
+![Xnip2021-05-30_09-58-18](MySQL Note.assets/Xnip2021-05-30_09-58-18.jpg)
+
+
+
+
+
+
+
+![Xnip2021-05-30_09-59-00](MySQL Note.assets/Xnip2021-05-30_09-59-00.jpg)
+
+
+
+**在终端中的使用：**
+
+
+
+显示视图:
+
+ ![Xnip2021-05-30_10-02-42](MySQL Note.assets/Xnip2021-05-30_10-02-42.jpg)
+
+
+
+
+
+显示创建视图的信息:
+
+![Xnip2021-05-30_10-03-53](MySQL Note.assets/Xnip2021-05-30_10-03-53.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 修改/删除视图
+
+
+
+### 修改
+
+```mysql
+ALTER VIEW (view_name) AS (new_content);
+```
+
+
+
+exam:
+
+![Xnip2021-05-30_10-08-41](MySQL Note.assets/Xnip2021-05-30_10-08-41.jpg)
+
+
+
+
+
+
+
+
+
+### 删除
+
+```mysql
+DROP VIEW IF EXISTS (view_name);
+```
+
+
+
+![Xnip2021-05-30_10-10-30](MySQL Note.assets/Xnip2021-05-30_10-10-30.jpg)
+
+
+
+
+
+
+
+
+
+## 3. 视图算法
+
+- 如果将子查询放入视图中，需要指定视图算法才能使子查询有效
+- 共有三种算法选项:
+
+1. UNDEFINDED(未定义)
+2. MERGE(融合)
+3. TEMPTABLE(临时)
+
+
+
+- 格式
+
+```mysql
+CREATE ALGORITHM=[options] VIEW (view_name) AS (view_content/query statement);
+```
+
+
+
+
+
+exam:
+
+![Xnip2021-05-30_10-20-52](MySQL Note.assets/Xnip2021-05-30_10-20-52.jpg)
+
+
+
+Navicat: 选中视图右击，选择高级即可修改视图算法
+
+![Xnip2021-05-30_10-21-35](MySQL Note.assets/Xnip2021-05-30_10-21-35.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十三、事务(transaction)
+
+**注意：只有在创建数据库时，指定引擎为innodb后，才能使用事务**
+
+
+
+- 将所有的数据都确认后再更新，而不会一条一条地更新
+- 事务要么多条一起更新，要么直接回滚
+- 处于事务中的语句，**只有在提交后才能生效**（网购时双方都确认后才会更新账户数据）
+
+
+
+
+
+
+
+## 1. 事务的简单使用
+
+
+
+- 开启事务
+
+```mysql
+start transaction;
+```
+
+
+
+exam:
+
+![Xnip2021-05-30_10-58-55](MySQL Note.assets/Xnip2021-05-30_10-58-55.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+- 结束事务/提交
+
+```mysql
+commit;
+```
+
+
+
+exam:
+
+![Xnip2021-05-30_11-00-07](MySQL Note.assets/Xnip2021-05-30_11-00-07.jpg)
+
+
+
+
+
+
+
+
+
+
+
+- 回滚事务/取消事务
+
+```mysql
+rollback;
+```
+
+
+
+exam:
+
+![Xnip2021-05-30_11-02-25](MySQL Note.assets/Xnip2021-05-30_11-02-25.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 回滚到指定回滚点
+
+- 类似恢复虚拟机快照，或者Git版本回滚
+- 需要手动设置回滚点
+
+
+
+
+
+### 设置回滚点
+
+```mysql
+SAVEPOINT (point_name);
+```
+
+
+
+
+
+
+
+### 回滚到指定回滚点
+
+```mysql
+ROLLBACK TO (point_name);
+```
+
+
+
+
+
+
+
+![Xnip2021-05-30_11-23-33](MySQL Note.assets/Xnip2021-05-30_11-23-33.jpg)
+
+
+
+![Xnip2021-05-30_11-24-34](MySQL Note.assets/Xnip2021-05-30_11-24-34.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 3. ACID
+
+- A: Atomicity             原子性：事务是一个不能再分隔的单元，事务中的操作要么都发生，要么都不发生
+- C: Consistency        一致性：事务前后数据完整性保持一致
+- I:   Isolation              独立性：事务之间相互隔离
+- D: Durabiliy              持久性：确认后不能修改
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十四、索引
+
+- 用于加快查询速度
+- 会拖累增，删，改的速度，还会占用一定的空间
+- 数据量小较时，不应该使用
+
+
+
+
+
+## 1. 创建索引
+
+- 普通索引
+
+```mysql
+CREATE INDEX index_name ON table_name(column);
+```
+
+![Xnip2021-06-02_16-43-21](MySQL Note.assets/Xnip2021-06-02_16-43-21.jpg)
+
+
+
+
+
+- 唯一键
+
+```mysql
+CREATE unique index_name ON table_name(column);
+```
+
+![Xnip2021-06-02_16-47-41](MySQL Note.assets/Xnip2021-06-02_16-47-41.jpg)
+
+
+
+
+
+
+
+
+
+- 主键索引
+
+```mysql
+CREATE primary key index_name ON table_name(column);
+```
+
+
+
+
+
+
+
+
+
+
+
+## 2. 删除索引
+
+
+
+```mysql
+DROP INDEX index_name ON table;
+```
+
+
+
+![Xnip2021-06-02_18-23-29](MySQL Note.assets/Xnip2021-06-02_18-23-29.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

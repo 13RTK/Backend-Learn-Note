@@ -895,6 +895,10 @@ Simulate A Stack
 
 
 
+Tag:
+
+Array, Binary Search, Divide Conquer(分治)
+
 ![Xnip2021-05-23_10-33-04](Algorithem/Xnip2021-05-23_10-33-04.jpg)
 
 
@@ -923,13 +927,19 @@ Other Idea:
 
 
 
+# Day60
+
+
+
+Tag: String
+
+![Xnip2021-05-24_10-25-54](Algorithem/Xnip2021-05-24_10-25-54.jpg)
 
 
 
 
 
-
-
+![Xnip2021-05-24_10-40-28](Algorithem/Xnip2021-05-24_10-40-28.jpg)
 
 
 

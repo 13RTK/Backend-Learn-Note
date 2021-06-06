@@ -1,6 +1,53 @@
-# 1.Java Collections Framework
+# Java Collections Framework
 
 java集合框架: 继承自Collection(一个接口)
+
+
+
+
+
+
+
+
+
+# Collection
+
+属于java.util包下，是Iterable接口的子接口
+
+
+
+规范的抽象方法:
+
+- boolean add(E e);
+- boolean addAll(Collection<? extends E> c);
+- void clear();
+- boolean contains(Object o);
+- boolean containsAll(Collection<?> c);
+- boolean equals(Object o);
+- int hashCode();
+- boolean isEmpty();
+- Iterator<E> iterator();
+- boolean remove(Object o);
+- boolean removeAll(Collection<?> c);
+- boolean retainAll(Collection<?> c);
+- int size();
+- Object[] toArray();
+- <T> T[] toArray(T[] a);
+
+
+
+- default Stream<E> parallelStream()	
+- default boolean removeIf(Predicate<? super E> filter)
+- default Spliterator<E> spliterator()
+- default Stream<E> stream()
+
+
+
+
+
+
+
+
 
 
 
@@ -14,7 +61,7 @@ Collection包含三种集合
 
 
 
-Collection的三个继承接口：
+Collection的三个子接口：
 
 - List
 - Queue
@@ -23,24 +70,6 @@ Collection的三个继承接口：
 
 
 ![Xnip2021-04-14_15-26-43](Java adv/Xnip2021-04-14_15-26-43.jpg)
-
-
-
-
-
-
-
-
-
-
-
-
-
-maps下有一个Map类
-
-![Xnip2021-04-14_15-27-50](Java adv/Xnip2021-04-14_15-27-50.jpg)
-
-
 
 
 
@@ -749,6 +778,370 @@ fori, for each, iterator三者性能差不多
 - 对于链式存储结构:
 
 for each, iterator性能更好
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) Set
+
+属于java.util包下，是Collection的继承接口，本身也属于接口
+
+
+
+其下的实现类:
+
+1. HashSet
+2. LinkedHashSet
+
+
+
+子接口:
+
+1. SortedSet: 实现类(TreeSet)
+
+
+
+
+
+Set接口规范的抽象方法:
+
+- boolean add(E e);
+- boolean addAll(Collection<? extends E> c);
+- void clear();
+- boolean contains(Object o);
+- boolean containsAll(Collection<?> c);
+- boolean equals(Object o);
+- int hashCode();	
+- boolean isEmpty();	
+- Iterator<E> iterator();
+- boolean remove(Object o);
+- boolean removeAll(Collection<?> c);	
+- boolean retainAll(Collection<?> c);	
+- int size();	
+- Object[] toArray();	
+- <T> T[] toArray(T[] a);
+
+
+
+​	默认方法:
+
+- default Spliterator<E> spliterator();
+
+
+
+
+
+
+
+
+
+### 1.HashSet
+
+- 用于创建和处理哈希集合，属于java.util包下
+- 每个元素有想对应的Hash值，集合中的元素不会重复，**添加和输入都没有顺序**
+
+
+
+
+
+
+
+相关方法:
+
+
+
+构造方法:
+
+- HashSet(): 创建一个空的集合对象，该对象的初始容量为16，加载系数为0.75	
+- HashSet(int initialCapacity): 创建一个空的集合对象，并指定初始容量，加载系数默认为0.75
+- HashSet(int initialCapacity, float loadFactor): 创建一个空的集合对象，指定初始容量和加载系数
+- HashSet(Collection<? extends E> c): 以一个Collection对象为参数，创建一个集合对象
+
+
+
+
+
+实例方法:
+
+
+
+#### 增加
+
+- boolean add(E e): 将**与泛型类型相同**的对象/值添加到集合中
+
+
+
+#### 删除
+
+- boolean remove(Object o): 移除指定的元素，**返回移除结果**
+- void clear(): 清空集合
+
+#### 查询
+
+- boolean contains(Object o): 在列表中**查找指定元素**，**返回查找结果**
+
+![Xnip2021-05-24_15-28-04](Java adv/Xnip2021-05-24_15-28-04.jpg)
+
+
+
+
+
+
+
+
+
+
+
+#### 其他
+
+- Object clone(): 克隆并返回一个**Object对象**
+- boolean isEmpty(): 判断该集合**是否为空**
+- Iterator<E> iterator(): 返回一个该集合的**迭代器**(用于遍历集合)
+- int size(): 返回该集合的长度
+
+![Xnip2021-05-24_15-32-09](Java adv/Xnip2021-05-24_15-32-09.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2.LinkedHashSet
+
+- 属于java.util包下，用于创建和处理有序的集合(继承自HashSet)
+- 相比HashSet，其输入输出都有顺序
+
+
+
+
+
+方法:
+
+- 同HashSet
+
+
+
+
+
+
+
+exam:
+
+![Xnip2021-05-30_18-34-57](Java adv/Xnip2021-05-30_18-34-57.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Map
+
+- 属于java.util包下，创建和操作映射，是一个接口
+
+
+
+
+![Xnip2021-04-14_15-27-50](Java adv/Xnip2021-04-14_15-27-50.jpg)
+
+
+
+
+
+
+
+规范的抽象方法:
+
+- void  clear();
+- boolean containsKey(Object key)
+- boolean containsValue(Object value)	
+- static <K,V> Map.Entry <K,V> entry(K k, V v);	
+- Set<Map.Entry<K,V>>	entrySet()	
+- boolean equals(Object o)	
+- V get(Object key)	
+- int hashCode()
+- boolean isEmpty()	
+- Set<K> keySet()	
+- V put(K key, V value)
+- void putAll(Map<? extends K,? extends V> m)
+- V remove(Object key)	
+- int size()	
+- Collection<V> values()
+
+
+
+
+
+
+
+
+
+## 1) HashMap
+
+- 属于java.util包下，是Map的一个实现类
+- 用于创建和操作哈希映射表
+
+
+
+
+
+相关方法:
+
+
+
+构造方法
+
+- HashMap(): 创建一个空的哈希映射对象，默认容量为16，默认加载参数为0.75
+- HashMap(int initialCapacity): 创建一个**指定初始容量大小**的哈希映射集合对象。
+- HashMap(int initialCapacity, float loadFactory): 指定初始容量大小和加载参数
+- HashMap(Map<? extends K, ? extends V> m): 接收一个Map对象，以此创建一个新的HashMap映射对象
+
+
+
+
+
+实例方法
+
+
+
+
+
+### 增加
+
+- V put(K key, V value): 向映射添加键值对
+- void putAll(Map<? extends K, ? extends V> m): 将一个映射添加到哈希映射对象中
+
+
+
+exam:
+
+![Xnip2021-06-02_20-39-36](Java adv/Xnip2021-06-02_20-39-36.jpg)
+
+
+
+
+
+
+
+
+
+### 删除
+
+- V remove(Object key): 根据键，**删除对应的键值对**，并返回删除的结果
+- boolean remove(Object key, Object value): 输出指定的键值对，返回删除的结果
+- void clear(): 清空映射对象
+
+
+
+exam:
+
+![Xnip2021-06-02_20-43-08](Java adv/Xnip2021-06-02_20-43-08.jpg)
+
+
+
+
+
+
+
+
+
+### 修改
+
+- V replace(K key, V value): 修改对应键位置上的键值
+- boolean replace(K key, V oldValue, V newValue): 将对应键位置上的值，修改为新的值
+
+
+
+exam:
+
+![Xnip2021-06-02_20-59-32](Java adv/Xnip2021-06-02_20-59-32.jpg)
+
+
+
+
+
+
+
+
+
+### 查询
+
+- boolean containsKey(Object key): 查询指定的键
+- boolean containsValue(Object value): 查询指定的值
+- V get(object key): 获取对应键的值
+- Set<K> keySet(): 获取所有的键，返回一个集合
+- int size(): 获取大小
+- Collection<V> values(): 获取所有的值，返回一个集合
+
+
+
+exam:
+
+![Xnip2021-06-02_21-09-13](Java adv/Xnip2021-06-02_21-09-13.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 其他
+
+- Object clone(): 获取一个对象的克隆
+- boolean isEmpty(): 判断对象是否为空
+- Set<Map.Entry<K, V>> entrySet(): 返回一个Set集合，用于获取迭代器遍历
+
+
+
+exam:
+
+![Xnip2021-06-02_21-21-17](Java adv/Xnip2021-06-02_21-21-17.jpg)
+
+
+
+
+
+
+
+
 
 
 
