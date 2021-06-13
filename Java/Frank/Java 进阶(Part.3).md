@@ -1043,6 +1043,10 @@ exam:
 - V put(K key, V value): 向映射添加键值对
 - void putAll(Map<? extends K, ? extends V> m): 将一个映射添加到哈希映射对象中
 
+**注意：通过重复添加的方式可以覆盖某个key对应的值，但不推荐这么做**
+
+
+
 
 
 exam:
@@ -1105,6 +1109,12 @@ exam:
 - int size(): 获取大小
 - Collection<V> values(): 获取所有的值，返回一个集合
 
+**注意：如果指定的key不存在，则返回null**
+
+
+
+
+
 
 
 exam:
@@ -1136,6 +1146,61 @@ exam:
 ![Xnip2021-06-02_21-21-17](Java adv/Xnip2021-06-02_21-21-17.jpg)
 
 
+
+
+
+
+
+
+
+
+
+## 2) Set->Iterator
+
+
+
+- 通过entrySet方法获取一个Set集合，该集合的泛型为:Map<Entry<K, V>>
+
+
+
+```java
+Set<Map.Entry<K, V>> entrySet = hashMap.entrySet();
+```
+
+
+
+
+
+
+
+- 再通过该集合获取迭代器
+
+```java
+Iterator iterator = entrySet.Iterator();
+```
+
+
+
+![Xnip2021-06-10_14-49-40](Java adv/Xnip2021-06-10_14-49-40.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) LinkedHashMap
+
+- 基本同HashMap一致
+- 与HashMap的不同:输出时有顺序
 
 
 

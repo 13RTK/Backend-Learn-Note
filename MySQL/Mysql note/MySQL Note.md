@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 # 一、MySQL基础操作(数据库操作)
 
 
@@ -1774,6 +1778,7 @@ exam:
 ## 11) 分组查询
 
 - 将聚合函数查询出的数据**通过字段进行分组**
+- **注意：**使用GROUP BY 时必须包含所有的查询字段
 
 
 
@@ -2384,6 +2389,10 @@ exam:
 
 # 十二、视图(view)
 
+**了解**
+
+
+
 - 视图的作用:
 
 用于显示指定的信息(屏蔽掉敏感信息)
@@ -2715,6 +2724,10 @@ ROLLBACK TO (point_name);
 
 # 十四、索引
 
+**了解**
+
+
+
 - 用于加快查询速度
 - 会拖累增，删，改的速度，还会占用一定的空间
 - 数据量小较时，不应该使用
@@ -2780,6 +2793,437 @@ DROP INDEX index_name ON table;
 
 
 ![Xnip2021-06-02_18-23-29](MySQL Note.assets/Xnip2021-06-02_18-23-29.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十五、存储过程
+
+**了解**
+
+
+
+
+
+## 1) delimiter
+
+- 可以将原本的语句结束标志从";"改成其他符号(一般用//)
+
+
+
+```mysql
+delimiter //
+```
+
+
+
+exam:
+
+![Xnip2021-06-10_15-06-06](MySQL Note.assets/Xnip2021-06-10_15-06-06.jpg)
+
+可用同样的方法修改回来
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) procedure
+
+- 存储过程的关键字，可用于操作存储过程
+- 中间可以使用事务
+
+
+
+创建存储过程
+
+完整流程:
+
+```mysql
+delimiter //
+create procedure proc_name()
+begin
+start transaction
+SQL1;
+SQL2:
+...
+commit
+end //
+
+delimiter ;
+```
+
+
+
+exam:
+
+![D997FADB-01A3-4F3C-ABE5-5AE89A0CCF4E](MySQL Note.assets/D997FADB-01A3-4F3C-ABE5-5AE89A0CCF4E.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+使用存储过程:
+
+```mysql
+call proc_name();
+```
+
+
+
+exam:
+
+![93666A23-4164-4F57-AF6B-89DD5AC849FF](MySQL Note.assets/93666A23-4164-4F57-AF6B-89DD5AC849FF.png)
+
+
+
+
+
+
+
+
+
+
+
+查看已经创建的存储过程:
+
+```mysql
+show create procedure pro_name;
+```
+
+
+
+exam:
+
+![24D6ABC6-0459-4EA2-8F15-A95F1AB1ECAC](MySQL Note.assets/24D6ABC6-0459-4EA2-8F15-A95F1AB1ECAC.png)
+
+
+
+
+
+
+
+删除存储过程:
+
+```mysql
+drop procedure pro_name
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十六、函数
+
+**了解**
+
+
+
+## 1) number
+
+
+
+### rand(): 随机数
+
+可用生成随机数，随机排序等等
+
+
+
+exam:
+
+![Xnip2021-06-10_15-51-28](MySQL Note.assets/Xnip2021-06-10_15-51-28.jpg)
+
+
+
+![Xnip2021-06-10_15-51-57](MySQL Note.assets/Xnip2021-06-10_15-51-57.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### ceil(向上取整)
+
+
+
+exam:
+
+![Xnip2021-06-10_15-53-57](MySQL Note.assets/Xnip2021-06-10_15-53-57.jpg)
+
+
+
+
+
+
+
+
+
+### round(四舍五入)
+
+
+
+exam:
+
+![Xnip2021-06-10_15-54-48](MySQL Note.assets/Xnip2021-06-10_15-54-48.jpg)
+
+
+
+
+
+
+
+
+
+### floor(向下取整)
+
+
+
+exam:
+
+![Xnip2021-06-10_15-56-28](MySQL Note.assets/Xnip2021-06-10_15-56-28.jpg)
+
+
+
+
+
+
+
+### truncate(截断数位)
+
+exam:
+
+![Xnip2021-06-10_15-58-52](MySQL Note.assets/Xnip2021-06-10_15-58-52.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) string
+
+
+
+
+
+### ucase
+
+- 将字符串转换为大写
+
+  
+
+exam:
+
+![Xnip2021-06-10_16-04-59](MySQL Note.assets/Xnip2021-06-10_16-04-59.jpg)
+
+
+
+
+
+
+
+### lcase
+
+- 将字符串转换为小写
+
+![Xnip2021-06-10_16-05-19](MySQL Note.assets/Xnip2021-06-10_16-05-19.jpg)
+
+
+
+
+
+
+
+
+
+### left
+
+- 从左边截取字符串
+
+![Xnip2021-06-10_16-05-53](MySQL Note.assets/Xnip2021-06-10_16-05-53.jpg)
+
+
+
+
+
+
+
+
+
+### right
+
+- 从右边截取字符串
+
+![Xnip2021-06-10_16-06-37](MySQL Note.assets/Xnip2021-06-10_16-06-37.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### substring
+
+- 获取一个子字符串
+
+![Xnip2021-06-10_16-08-16](MySQL Note.assets/Xnip2021-06-10_16-08-16.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### concat
+
+- 拼接字符串
+
+![Xnip2021-06-10_16-10-13](MySQL Note.assets/Xnip2021-06-10_16-10-13.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 3) others
+
+
+
+### now()
+
+![Xnip2021-06-10_16-16-00](MySQL Note.assets/Xnip2021-06-10_16-16-00.jpg)
+
+
+
+
+
+
+
+
+
+
+
+### unix_timestamp()
+
+
+
+获取Unix时间戳
+
+![Xnip2021-06-10_16-16-57](MySQL Note.assets/Xnip2021-06-10_16-16-57.jpg)
+
+
+
+
+
+
+
+
+
+### 输出时间
+
+格式化输出![Xnip2021-06-10_16-24-16](MySQL Note.assets/Xnip2021-06-10_16-24-16.jpg)
+
+
+
+
+
+
+
+
+
+
+
+### 加密
+
+
+
+sha:
+
+![Xnip2021-06-10_16-25-04](MySQL Note.assets/Xnip2021-06-10_16-25-04.jpg)
+
+
+
+
+
+MD5:
+
+![Xnip2021-06-10_16-25-41](MySQL Note.assets/Xnip2021-06-10_16-25-41.jpg)
+
+****
+
+
+
+
 
 
 
