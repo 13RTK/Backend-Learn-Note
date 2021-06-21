@@ -572,6 +572,7 @@ DateFormat format = new SimpleDateFormat();
 
 - SimpleDateFormat(): 构造一个对象，**并设置为默认时间格式**
 - SimpleDateFormat(String pattern): 以指定格式构造一个对象
+- SimpleDateFormat(String pattern, Locale locale): 以指定格式构造一个对象，**并指定地区**
 - format(Date date, StringBuilder toAppendTo, FieldPosition pos): 接受一个Date对象，**以其存储的格式输出时间**，返回一个StringBuffer对象
 - parse(String text, ParsePosition pos): 接受一个字符串，并**以其格式返回给一个Date对象**           // 重写了DateFormat的抽象方法
 
@@ -1406,6 +1407,7 @@ try {
 
 - "catch"中的语句可以不写，但会导致没有报错信息，开发时必须写上
 - catch中必须有一个Exception对象
+- 如果try中出现异常，那么该语句**之后的部分便不再执行**，会直接跳转到catch块中
 
 
 

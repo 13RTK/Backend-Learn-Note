@@ -32,9 +32,23 @@ exam:
 
 
 
+# 2.REPLACE(column, oldVal, newVal)
+
+SQL Practice Day 29
 
 
 
+将指定字段中的制定数据，进行修改，**可用于更新字段**
+
+![Xnip2021-06-17_12-50-02](MySQL Note.assets/Xnip2021-06-17_12-50-02.jpg)
+
+
+
+
+
+eg:
+
+![Xnip2021-06-17_12-52-57](MySQL Note.assets/Xnip2021-06-17_12-52-57.jpg)
 
 
 

@@ -220,6 +220,16 @@ varchar(lenght) ：字符串
 
 
 
+
+
+
+
+
+
+
+
+
+
 #### 2)进阶方法
 
 SQL语句：
@@ -243,6 +253,20 @@ not null：不能为空(强制填写)
 default ''：不主动填写后自动填充的默认值，不写defaul语句则会默认为null
 engine=innodb：MySQL的默认引擎
 ```
+
+
+
+**将已存在表的字段添加到新创建的表中**
+
+```mysql
+create table if not exists table_name select column1, column2... from exists_table_name
+```
+
+
+
+
+
+
 
 
 
@@ -431,6 +455,24 @@ SQL语句
 ```sql
 insert into table_name values(value_1, value_2, ...),(value_a, value_b, ...);
 ```
+
+
+
+
+
+**跳过已经存在的数据**
+
+```mysql
+INSERT IGNORE INTO table_name values(...), (...) ...;
+```
+
+
+
+
+
+
+
+
 
 
 
