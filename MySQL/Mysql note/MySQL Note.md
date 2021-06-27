@@ -574,15 +574,19 @@ truncate table table_name;
 
 SQL语句
 
-```sql
+```mysql
 update table_name set edited_1, edited_2 where column_condition;
 ```
+
+- 注意更新多条字段时，字段间用","而不是AND
+
+
 
 **例子**
 
 SQL语句
 
-```sql
+```mysql
 update table_name set name='xxx' where id=x or id=y;
 ```
 
