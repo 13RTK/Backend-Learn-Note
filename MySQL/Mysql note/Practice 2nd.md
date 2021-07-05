@@ -638,6 +638,214 @@ ORDER BY
 	cnt DESC;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day41
+
+## Tag: GROUP_CONCAT
+
+
+
+![Xnip2021-06-29_09-53-34](MySQL Note.assets/Xnip2021-06-29_09-53-34.jpg)
+
+
+
+![Xnip2021-06-29_10-03-14](MySQL Note.assets/Xnip2021-06-29_10-03-14.jpg)
+
+
+
+题意:
+
+给你一张部门职员表，请你查询出每个部门对应的所有职员，每个职员用","分隔
+
+
+
+
+
+
+
+思路:
+
+- 按照部门分类，自然想到用GROUP BY
+- 要求用","分隔，难道用CONCAT()?
+- 其实直接使用GROUP_CONCAT()即可，SQL如下:
+
+```mysql
+SELECT
+	dept_no,
+	GROUP_CONCAT(emp_no) AS "employee"
+FROM
+	dept_emp
+GROUP BY dept_no;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day42
+
+## Tag: Sub Query, AVG, GROUP BY
+
+
+
+![Xnip2021-06-30_10-04-54](MySQL Note.assets/Xnip2021-06-30_10-04-54.jpg)
+
+
+
+![Xnip2021-06-30_10-04-31](MySQL Note.assets/Xnip2021-06-30_10-04-31.jpg)
+
+
+
+题意:
+
+给你一张成绩表，请查询出每个科目中大于该科目平均值的所有数据
+
+
+
+
+
+
+
+
+
+思路:
+
+- 首先需要获取每个科目的平均值，求平均值自然想到使用AVG()函数，而按照科目划分自然想到GROUP BY，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	job,
+	AVG(score) AS "avg"
+FROM
+	grade
+GROUP BY job;
+```
+
+
+
+
+
+- 之后再将源表与其进行连接查询，限定job和score字段条件即可，最后再使用ORDER BY排序(默认为升序，可以用ASC标明)，SQL如下
+
+SQL2
+
+```mysql
+SELECT
+	t1.*
+FROM
+	grade
+INNER JOIN (SQL2) AS t2 ON t1.job = t2.job
+AND t1.score > t2.avg
+ORDER BY id ASC;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day43
+
+## Tag: RIGHT(String Func)
+
+
+
+![Xnip2021-07-01_20-55-52](MySQL Note.assets/Xnip2021-07-01_20-55-52.jpg)
+
+
+
+![Xnip2021-07-01_21-06-26](MySQL Note.assets/Xnip2021-07-01_21-06-26.jpg)
+
+
+
+题意:
+
+给你一张职员信息表，请你查询出其中的"first_name"，并按照该字段的最后两个字符进行排序
+
+
+
+
+
+
+
+思路:
+
+- 前半部分很容易就能实现，SQL如下
+
+```mysql
+SELECT
+	first_name
+FROM
+	employees;
+```
+
+
+
+
+
+- 那么剩下的排序要求呢？
+- 我们知道排序需要使用ORDER BY，但这里进行排序的对象不是一个直接的字段，而是对一个字段处理后的结果
+- 在这道题目中，我们需要截取字符串的后两个字符
+- 这里需要使用一个新的函数"RIGHT()"，我们可以使用它从字符串字段的右边开始截取任意长度的字符
+- 该函数的格式如下:
+
+```mysql
+RIGHT(column_name, length);
+```
+
+
+
+- 所以我们的排序条件应该写为:
+
+```mysql
+ORDER BY RIGHT(first_name, 2);
+```
+
+
+
+
+
+- 所以我们的SQL语句应该写为:
+
+```mysql
+SELECT
+	first_name
+FROM
+	employees
+ORDER BY RIGHT(first_name, 2);
+```
+
+****
 
 
 
@@ -653,6 +861,235 @@ ORDER BY
 
 
 
+# Day44
+
+## Tag: Manual Count, Func
+
+
+
+![Xnip2021-07-02_10-36-09](MySQL Note.assets/Xnip2021-07-02_10-36-09.jpg)
+
+
+
+![Xnip2021-07-02_10-52-34](MySQL Note.assets/Xnip2021-07-02_10-52-34.jpg)
+
+
+
+![Xnip2021-07-02_11-17-23](MySQL Note.assets/Xnip2021-07-02_11-17-23.jpg)
+
+
+
+题意:
+
+给你一张工资表，请查询出除去最高和最低工资后，当前工资的平均值
+
+
+
+
+
+
+
+思路:
+
+- 提取最高和最低工资很简单，使用聚合函数即可，再使用WHERE限定日期以确认数据为当前的工资，为了方便作为子查询条件，我们可以使用UNION将两者连接为一列，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	MAX(salary)
+FROM
+	salaries
+ WHERE to_date = '9999-01-01'
+UNION
+SELECT
+	MIN(salary)
+FROM
+	salaries
+WHERE to_date = '9999-01-01'
+```
+
+
+
+
+
+- 将其作为子查询语句，再使用AVG()函数即可，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	AVG(salary) AS "avg(salary)"
+FROM
+	salaries
+WHERE salary IN (SQL1)
+AND to_date = '9999-01-01';
+```
+
+- 这样写虽然能解决问题，但我们光是to_date限定语句就重复写了三次，不够优雅，我们换一种更好的
+
+
+
+
+
+
+
+- 在查询中，使用SUM()函数求和，再将其减去最值后，除以有效数据的数量即可，最后再限定日期，SQL如下
+
+```mysql
+SELECT
+	(SUM(salary) - MAX(salary) - MIN(salary)) / (COUNT(salary) - 2) AS "avg(salary)"
+FROM
+	salaries
+WHERE to_date = '9999-01-01';
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day45
+
+## Tag: LIMIT, OFFSET
+
+
+
+![Xnip2021-07-03_21-30-13](MySQL Note.assets/Xnip2021-07-03_21-30-13.jpg)
+
+
+
+![Xnip2021-07-03_21-36-37](MySQL Note.assets/Xnip2021-07-03_21-36-37.jpg)
+
+
+
+![Xnip2021-07-03_21-30-55](MySQL Note.assets/Xnip2021-07-03_21-30-55.jpg)
+
+
+
+题意:
+
+给你一张员工信息表，要求你使用分页查询且每页只有5条数据，请查出第二页的数据
+
+
+
+
+
+
+
+思路:
+
+- 所谓的分页查询，其实就是限制查询的数据数量，自然想到使用LIMIT进行限定，而题目要求从第二页开始，那么就是从第6条数据开始，SQL如下(这里不再解释LIMIT的语法了)
+
+```mysql
+SELECT
+	*
+FROM
+	employees
+LIMIT 5, 5;
+```
+
+
+
+
+
+
+
+拓展:
+
+- 在《MySQL必知必会》一书第29页中，明确提到：LIMIT 5, 5这样的写法会使人混淆两个参数，所以推荐使用OFFSET代替这种写法，SQL如下
+
+```mysql
+SELECT
+	*
+FROM
+	employees
+LIMIT 5 OFFSET 5;
+```
+
+- 该写法仅限MySQL 5或更新的版本
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day46
+
+## Tag: EXISTS, Sub Query
+
+
+
+![Xnip2021-07-04_10-46-33](MySQL Note.assets/Xnip2021-07-04_10-46-33.jpg)
+
+
+
+![Xnip2021-07-04_10-43-20](MySQL Note.assets/Xnip2021-07-04_10-43-20.jpg)
+
+
+
+题意:
+
+给你一张员工基础信息表和一张对应部门信息表，请你使用exists查询出其中没有分配部门的员工的信息
+
+
+
+
+
+
+
+思路:
+
+- 很明显，我们可以查询出已分配部门的员工的emp_no，SQL如下
+
+SQL
+
+```mysql
+SELECT
+	t2.emp_no
+FROM
+	dept_emp AS t1,
+	employees AS t2
+WHERE t2.emp_no = t1.emp_no;
+```
+
+
+
+
+
+- 再将其作为子查询语句，使用NOT EXISTS排除掉即可，这里可以做一些小改动以精简SQL，SQL如下
+
+SQL
+
+```mysql
+SELECT
+	*
+FROM
+	employees AS t1
+WHERE NOT EXISTS (
+	SELECT
+  	emp_no
+	FROM
+	  dept_emp AS t2
+	WHERE t1.emp_no = t2.emp_no
+);
+```
 
 
 
