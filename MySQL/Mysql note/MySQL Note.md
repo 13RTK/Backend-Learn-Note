@@ -1169,7 +1169,7 @@ foreign key (set_column) references target_table(column)
 SQL语句
 
 ```sql
-alter table table_name add foreign key (set_column) reference target_table(column);
+alter table table_name add foreign key (set_column) references target_table(column);
 ```
 
 

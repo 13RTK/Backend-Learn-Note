@@ -208,6 +208,18 @@ exam:
 
 **java API 中提供了相关的工具，不需要我们自己创建缓冲区**
 
+
+
+
+
+
+
+例如ByteArrayOutputStream
+
+
+
+![Xnip2021-07-06_14-49-07](Java adv/Xnip2021-07-06_14-49-07.jpg)
+
 ****
 
 

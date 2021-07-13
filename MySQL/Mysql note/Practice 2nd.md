@@ -1091,5 +1091,777 @@ WHERE NOT EXISTS (
 );
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+# Day47
+
+## Tag: Multiple Field IN
+
+
+
+![Xnip2021-07-05_16-11-04](MySQL Note.assets/Xnip2021-07-05_16-11-04.jpg)
+
+
+
+![Xnip2021-07-05_16-11-55](MySQL Note.assets/Xnip2021-07-05_16-11-55.jpg)
+
+
+
+
+
+题意:
+
+给你三张表，包含的信息分别为登陆信息，用户名，客户端类型。请你根据这些数据查询出每个用户的在最后一次登录时使用的设备(客户端类型)和登录时间，并按照用户名升序排列
+
+
+
+
+
+
+
+思路:
+
+- 首先我们需要获取最后一次登录的记录，由于我们需要按照用户查询出数据，自然想到使用GROUP BY进行分组，而最后一次登录自然就是日期值最大，可以使用聚合函数MAX()，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	user_id,
+	MAX(date) AS date
+FROM
+	login
+GROUP BY user_id;
+```
+
+
+
+
+
+
+
+- 暂且不管上述的结果，我们再获取其他数据，题目要求我们查询出用户名和客户端，而这两个字段在没有关联字段的不同的两张表中，而与这两张表都有关联的只有login表中的user_id和client_id字段，所以我们需要将三张表连接起来，SQL如下(以下表的别名顺序并不规范，请注意)
+
+SQL2
+
+```mysql
+SELECT
+	t1.name AS u_n,
+	t2.name AS c_n,
+	t3.date
+FROM login AS t3
+INNER JOIN user AS t1 ON t3.user_id = t1.id
+INNER JOIN client AS t2 ON t3.client_id = t2.id
+```
+
+- 此时我们已经获取了每个用户对应的用户名，登录的客户端，登录日期
+
+
+
+- 最后再结果之前的日期条件进行限定，并对用户名排序即可，SQL如下
+
+SQL3
+
+```mysql
+SQL2
+WHERE (t3.user_id, t3.date) IN (
+SQL1)
+ORDER BY u_n;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day48
+
+## Tag: CASE WHEN
+
+
+
+![Xnip2021-07-06_09-52-55](MySQL Note.assets/Xnip2021-07-06_09-52-55.jpg)
+
+
+
+![Xnip2021-07-06_09-51-33](MySQL Note.assets/Xnip2021-07-06_09-51-33.jpg)
+
+
+
+![Xnip2021-07-06_10-32-03](MySQL Note.assets/Xnip2021-07-06_10-32-03.jpg)
+
+
+
+题意:
+
+给你三张表，分别保存了工资信息，员工信息，奖金情况
+
+请你根据这三张表对所有员工的信息进行汇总，并查询出其奖金类型和奖金的金额(如果奖金类型为1、2，则奖金为当前工资 * 0.1倍的奖金类型，其余类型为30%)
+
+
+
+
+
+思路:
+
+- 题目给出的三张表中只有一个公共字段，即emp_no，那么我们使用WHERE字句进行查询便可获取，但问题是奖金
+- 奖金是需要我们计算的，而且需要分情况，这里介绍一种新的写法
+- 如题解所示，我们使用CASE WHEN THEN END 的结构可以对奖金字段进行分情况讨论，其实用法和switch语句类似，SQL如下
+
+SQL
+
+```mysql
+SELECT
+	t1.emp_no,
+	t2.first_name,
+	t2.last_name,
+	t3.btype,
+	t1.salary,
+CASE
+
+		WHEN t3.btype <= 3 THEN
+		t1.salary * (0.1 * t3.btype) ELSE t1.salary * 0.3
+	END bonus
+FROM
+	salaries AS t1,
+	employees AS t2,
+	emp_bonus AS t3
+WHERE t1.emp_no = t2.emp_no
+AND t1.emp_no = t3.emp_no
+AND t1.to_date = '9999-01-01';
+
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day49
+
+## Tag: COUNT, DISTINCT
+
+
+
+![Xnip2021-07-07_14-37-53](MySQL Note.assets/Xnip2021-07-07_14-37-53.jpg)
+
+
+
+![Xnip2021-07-07_14-37-35](MySQL Note.assets/Xnip2021-07-07_14-37-35.jpg)
+
+
+
+题意:
+
+给你一张答题通过数目表，请你将其中的数据以答题数为准进行排序，并给出相应的排名(分数相同时排名相同，id按照升序排列)
+
+
+
+
+
+
+
+思路:
+
+- 首先考虑排序，对答题数目排序很简单，直接使用ORDER BY再加上DESC即可，但分数相同时对id进行升序排列该怎么写？
+- 这里其实就是排序顺序的问题，在使用ORDER BY的时候，我们可以指定多个字段作为条件，排序的基准则取决于字段的顺序，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	id,
+	number
+FROM
+	passing_number
+ORDER BY number DESC, id ASC;
+```
+
+- 具体解释可以参照《MySQL必知必会》第39, 40页的内容
+
+## 
+
+
+
+
+
+- 最后就是排名了，计算排名其实有套路:
+- 对所有大于等于该成绩的数据进行计数，然后去重(题目要求可以重复排名)，此时的数据就是排名，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	COUNT(DISTINCT t2.number)
+FROM
+	passing_number AS t2
+WHERE t1.number <= t2.number;
+```
+
+
+
+
+
+
+
+- 综合后结果如下:
+
+```mysql
+SELECT
+	t1.id,
+	t1.number
+	SQL2
+FROM
+	passing_number AS t1
+ORDER BY t1.number DESC, t1.id ASC;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day50
+
+## Tag: Sub Query In WHERE
+
+
+
+![Xnip2021-07-08_17-08-14](MySQL Note.assets/Xnip2021-07-08_17-08-14.jpg)
+
+
+
+![Xnip2021-07-08_17-08-00](MySQL Note.assets/Xnip2021-07-08_17-08-00.jpg)
+
+
+
+
+
+题意:
+
+给你一张雇员信息表，请你筛选出所有按照名字升序排列后，次序为奇数的名字
+
+
+
+
+
+思路:
+
+- 很凑巧，昨天的题目就是排序题，不过今天这道题不需要考虑重复，所以我们还是老套路
+- 先将我们所需的信息查找出来，按照昨天的思路，将该表查询两次，计算大于等于first_name字段的数据量即为该名字的排名(按照字母次序)，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	COUNT(t1.first_name)
+FROM
+	employees t2
+WHERE t1.first_name >= t2.first_name;
+```
+
+
+
+
+
+- 最后将其作为WHERE子句的查询字段，判断奇偶即可
+
+```mysql
+SELECT
+	t1.first_name
+FROm
+	employee AS t1
+WHERE (SQL1) % 2 != 0;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day51
+
+## Tag: HAVING, GROUP BY, COUNT
+
+
+
+![Xnip2021-07-09_15-15-24](MySQL Note.assets/Xnip2021-07-09_15-15-24.jpg)
+
+
+
+![Xnip2021-07-09_15-15-05](MySQL Note.assets/Xnip2021-07-09_15-15-05.jpg)
+
+
+
+题意:
+
+给你一张订单信息，请查出在2025-10-15及之后的，产品为Java或C++或Python且订单完成数大于等于2的所以用户的id，并按照升序的方式排序
+
+
+
+
+
+
+
+
+
+思路:
+
+- 题目要求的一堆条件都可以用WHERE子句再结合AND来实现，但问题是获取完成的订单数大于2
+- 计数明显会用到COUNT()，因为要求为查找对应的用户id，所以为使用到GROUP BY，指定分组字段为user_id
+- 但如果按照常规的方式查询，我们会得到含有两个字段的数据，想获得结果还得再套一个SELECT，明显不够优雅
+- 这里我们可以使用HAVING，并将COUNT()作为HAVING的限定条件，这样就可以保证一次SELECT解决问题了
+- 最后再加上ORDER BY排序即可，SQL如下
+
+```mysql
+SELECT
+	user_id
+FROM
+	order_info
+WHERE date >= '2025-10-15'
+AND product_name IN ('Java', 'Python', 'C++')
+AND status = 'completed'
+GROUP BY user_id HAVING (COUNT(status)) >= 2
+ORDER BY user_id ASC;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day52
+
+## Tag: HAVING, Sub Query, GROUP BY,  COUNT
+
+
+
+![Xnip2021-07-10_10-11-38](MySQL Note.assets/Xnip2021-07-10_10-11-38.jpg)
+
+
+
+![Xnip2021-07-10_10-11-20](MySQL Note.assets/Xnip2021-07-10_10-11-20.jpg)
+
+
+
+题意:
+
+同昨天的题目一样，给你一张订单表，请你查出对应的数据，不过昨天是查询对应的用户id，今天需要你查询出所有符合条件的数据(user_id可重复)
+
+
+
+
+
+
+
+
+
+思路:
+
+- 由于我们需要的是所有的数据，所以不能再使用像昨天一样GROUP BY分组查询的方式，我们只能将每个条件都一一对应
+- 按照题目的要求，我们需要对数据进行限定，其中只有user_id是进行比较复杂的筛选的
+- 很凑巧的是，昨天的题目就是查询对应的user_id，所以我们可以直接将昨天的语句作为子查询条件，对uer_id进行限定即可，昨天的SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	user_id
+FROM
+	order_info
+WHERE date >= '2025-10-15'
+AND product_name IN ('Java', 'Python', 'C++')
+AND status = 'completed'
+GROUP BY user_id HAVING (COUNT(status)) >= 2
+ORDER BY user_id ASC;
+```
+
+
+
+
+
+
+
+
+
+- 将其作为子查询条件，对user_id进行限定，其他字段条件使用AND连接即可，注意我们只需要将ORDER BY写一次即可，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+    *
+FROM
+    order_info
+WHERE user_id IN (
+SQL2
+)
+AND date >= '2025-10-15'
+AND product_name IN ('Java', 'C++', 'Python')
+AND status = 'completed'
+ORDER BY id ASC;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day53
+
+## Tag: COUNT, HAVING, GROUP BY
+
+
+
+![Xnip2021-07-11_06-47-56](MySQL Note.assets/Xnip2021-07-11_06-47-56.jpg)
+
+
+
+![Xnip2021-07-11_06-49-19](MySQL Note.assets/Xnip2021-07-11_06-49-19.jpg)
+
+
+
+题意:
+
+给你一张订单信息表，请你查询出满足下列条件的用户id、满足该条件的第一条订单的时间、完成的订单总数，最后按照用户id升序排列
+
+条件：日期在2025-10-15之后，状态为已完成，产品为java或C++或Python，总订单数大于等于2
+
+
+
+
+
+
+
+
+
+
+
+思路:
+
+- 参照SQL Day51的做法，我们只需要添加两个字段即可
+- 要求中的第一条订单的时间其实就是去最小的日期值，使用MIN()即可，而订单数在我们之前查询user_id的时候就出现在的HAVING的限定字段里，所以只需要提前即可，SQL如下
+
+```mysql
+SELECT 
+    user_id,
+    MIN(date) AS 'first_buy_date',
+    COUNT(status) AS 'cnt'
+FROM
+    order_info
+WHERE date >= '2025-10-15'
+AND status = 'completed'
+AND product_name IN ('C++', 'Java', 'Python') 
+GROUP BY user_id HAVING cnt >= 2
+ORDER BY user_id;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day54
+
+## Tag: WITH...AS
+
+
+
+![Xnip2021-07-12_16-21-10](MySQL Note.assets/Xnip2021-07-12_16-21-10.jpg)
+
+
+
+![Xnip2021-07-12_16-21-32](MySQL Note.assets/Xnip2021-07-12_16-21-32.jpg)
+
+
+
+
+
+题意:
+
+基于昨天的题目，请你再多查出用户第二次购买的时间
+
+
+
+
+
+
+
+
+
+
+
+思路:
+
+- 第二次购买时间也就是第二最小值，我们可以通过排序并结合LIMIT的方式获取第二位
+- 为了防止重复，这里引入新的写法: WITH...AS，通过这种方式，我们可以将重复的条件查询出来备用，SQL如下
+
+SQL1:
+
+```mysql
+WITH temp AS (
+SELECT
+	*
+FROM
+	order_info
+WHERE date >= '2025-10-15'
+AND status = 'completed'
+AND product_name IN ('Java', 'Python', 'C++')
+)
+```
+
+- 我的MySQL版本并不支持这种写法(MySQL 5.7,10)，但牛客的测试环境可以(MySQL8.0)
+
+
+
+
+
+
+
+
+
+
+- 之后，我们再从这张临时表中获取我们想要的字段即可，SQL如下
+
+SQL:
+
+```mysql
+SQL1
+
+SELECT
+	user_id,
+	MIN(date) AS 'first_buy_date',
+	(
+	SELECT
+		date
+	FROM 
+		temp
+	WHERE t1.user_id = user_id
+	ORDER BY date
+	LIMIT 1 OFFSET 1) AS 'second_buy_date',
+	COUNT(status) AS 'cnt'
+FROM
+	temp AS t1
+GROUP BY user_id HAVING (COUNT(status)) >= 2
+ORDER BY user_id ASC;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day55
+
+## Tag: LEFT JOIN, Sub Query
+
+
+
+![Xnip2021-07-13_09-01-06](MySQL Note.assets/Xnip2021-07-13_09-01-06.jpg)
+
+
+
+![Xnip2021-07-13_09-01-25](MySQL Note.assets/Xnip2021-07-13_09-01-25.jpg)
+
+
+
+
+
+
+
+![Xnip2021-07-13_09-02-38](MySQL Note.assets/Xnip2021-07-13_09-02-38.jpg)
+
+
+
+题意:
+
+给你两张表，一张订单信息表，一张客户端表，请你查询出符合条件的订单id，拼单情况，以及对应的客户端
+
+
+
+
+
+
+
+思路:
+
+- 题目要求如果是拼单，则客户端显示为null，而订单表中的is_group_buy字段为yes的数据对应的client_id为0，正好不在client表中，所以我们可以使用LEFT JOIN的方式来处理客户端字段
+- 这里比较麻烦的是id，因为对id的限制条件是基于之前题目中的user_id字段的，所以我们需要先查询出user_id，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id
+FROM
+	order_info
+WHERE date >= '2025-10-15'
+AND prodect_name IN ('Java', 'C++', 'Python')
+AND status = 'completed'
+GROUP BY user_id HAVING COUNT(status) >= 2;
+```
+
+
+
+
+
+- 之后再通过它对user_id进行限制，查询出对应的id，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	*
+FROM
+	order_info
+WHERE user_id IN (
+  SQL1
+)
+AND prodect_name IN ('Java', 'C++', 'Python')
+AND status = 'completed'
+AND date >= '2025-10-15'
+```
+
+
+
+
+
+
+
+- 到了这一步就有两种做法了，第一种，我们可以使用WITH AS将其作为临时表，再与client表进行左连接即可，SQL如下
+
+
+SQL:
+
+```mysql
+WITH temp AS (
+SQL2
+)
+
+SELECT
+	t1.id,
+	t1.is_group_buy,
+	t2.name AS 'client_name'
+FROM
+	temp AS t1
+LEFT JOIN client AS t2 ON t1.client_id = t2.id;
+ORDER BY id ASC;
+```
+
+
+
+
+
+
+
+
+
+- 第二种，我们也可以将其直接作为一张表进行查询，SQL如下
+
+SQL:
+
+```mysql
+SELECT
+	t1.id,
+	t1.is_group_buy,
+	t2.name AS 'client_name'
+FROM
+	SQL2 AS t1
+LEFT JOIN client AS t2 ON t1.client_id = t2.id;
+ORDER BY id ASC;
+```
 
