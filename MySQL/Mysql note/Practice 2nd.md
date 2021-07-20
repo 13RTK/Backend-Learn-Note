@@ -1865,3 +1865,395 @@ LEFT JOIN client AS t2 ON t1.client_id = t2.id;
 ORDER BY id ASC;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day56
+
+## Tag: Sub Query, IN, GROUP BY, ORDER BY
+
+
+
+
+
+
+
+
+
+![Xnip2021-07-14_13-19-21](MySQL Note.assets/Xnip2021-07-14_13-19-21.jpg)
+
+
+
+![Xnip2021-07-14_13-19-03](MySQL Note.assets/Xnip2021-07-14_13-19-03.jpg)
+
+题意:
+
+给你一张订单表，和一张客户端表，请你查询出对应条件的客户端类型及其对应的订单数量，如果该订单为拼团订单，则客户端显示为GroupBuy
+
+
+
+
+
+
+
+思路:
+
+- 由于条件和前几天的相同，所以我们首先需要获取对应的user_id，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id
+FROM
+	order_info
+WHERE date >= '2025-10-15'
+AND product_name IN ('Java', 'Python', 'C++')
+AND status = 'completed'
+GROUP BY user_id HAVING COUNT(status) >= 2;
+```
+
+
+
+
+
+- 之后再根据订单表中的client_id字段，连接上客户端表中的name即可，SQL如下
+
+SQL:
+
+```mysql
+SELECT
+CASE 
+	WHEN t1.client_id = 0 THEN
+		'GroupBuy'
+	ELSE
+		t2.name
+END 'source',
+	COUNT(*) AS 'cnt'
+FROM
+	order_info AS t1
+LEFT JOIN client AS t2 ON t1.client_id = t2.id
+WHERE t1.user_id IN (
+SQL1
+)
+AND t1.date >= '2025-10-15'
+AND t1.product_name IN ('Java', 'Python', 'C++')
+AND t1.status = 'completed'
+GROUP BY t1.client_id
+ORDER BY source ASC;
+```
+
+- 这里判断是否拼团的方法在SQL Day48中介绍过了
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day57
+
+## Tag: DATE_FORMAT, Multiple Group, BETWEEN AND
+
+
+
+![Xnip2021-07-15_10-24-29](MySQL Note.assets/Xnip2021-07-15_10-24-29.jpg)
+
+
+
+![Xnip2021-07-15_10-24-05](MySQL Note.assets/Xnip2021-07-15_10-24-05.jpg)
+
+
+
+![Xnip2021-07-15_10-07-27](MySQL Note.assets/Xnip2021-07-15_10-07-27.jpg)
+
+
+
+
+
+题意:
+
+给你一张简历统计表请你查询出在2025年中，所有各个岗位的简历数量，并先按照月份再按照简历数降序排列
+
+
+
+
+
+思路:
+
+- 题目要求按照各个简历划分，那么就会用到GROUP BY，由于需要查询的非聚合函数字段有两个，所以GROUP BY 后必须包含着两个字段
+- 这里要求查询出年份和月份，但源数据包含日期，所以这里引入一个新的函数DATE_FORMAT()来格式化我们的日期，其语法如下:
+- DATE_FORMAT(date, format)，其中参数date为正确的日期值，而format为我们可以指定的输出格式，注意这里输出的时候必须作为字符加上引号
+- 最后一个字段需要计算各个岗位的简历数，也就是将num字段的数据加起来，所以会用到聚合函数SUM()
+- 在限定日期字段时，我们可以使用BETWEEN AND来限制日期的范围
+- 最后在排序时，我们需要按照题目给出的顺序在ORDER BY 后写上两个字段，并两个字段的后面都指定好DESC，最终SQL如下
+
+```mysql
+SELECT
+	job,
+	DATE_FORMAT( date, '%Y-%m' ) AS 'mon',
+	SUM( num ) AS 'cnt' 
+FROM
+	resume_info 
+WHERE date BETWEEN '2025-01-01' AND '2025-12-31' 
+GROUP BY job, mon 
+ORDER BY mon DESC, cnt DESC;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day58
+
+## Tag: DENSE_RANK(), DISTINCT
+
+
+
+![Xnip2021-07-16_11-32-29](MySQL Note.assets/Xnip2021-07-16_11-32-29.jpg)
+
+
+
+![Xnip2021-07-16_13-19-08](MySQL Note.assets/Xnip2021-07-16_13-19-08.jpg)
+
+
+
+![Xnip2021-07-16_13-26-44](MySQL Note.assets/Xnip2021-07-16_13-26-44.jpg)
+
+题意:
+
+给你一张分数表，请你按照从高到低的顺序查询出每个分数对应的排名，排名要连续
+
+
+
+
+
+
+
+思路:
+
+- 这里其实可以直接使用DENSE_RANK()函数(仅MySQL8.0之后的版本才支持)，其能将指定的分组或者全体字段进行排序，并能通过ORDER BY指定排序方式，SQL如下
+
+```mysql
+SELECT
+	Score,
+	DENSE_RANK() OVER (
+  	ORDER BY Score DESC
+  ) AS 'Rank'
+FROM
+	Scores;
+```
+
+- 注: 这里的别名Rank必须加上引号，因为Rank在MySQL里是关键字(MySQL默认不区分大小写)
+
+
+
+
+
+- 如果低于8.0的版本，则只有使用多表查询的方式，利用某条数据去重大于等于它本身的数据量即为排名的特点，我们可以这样写，SQL如下
+
+```mysql
+SELECT
+	t1.Score,
+	(
+  SELECT
+    COUNT(DISTINCT t2.Score)
+  FROM
+    Scores
+  WHERE t2.Score >= t1.Score
+  ) AS 'Rank'
+FROM
+	Scores AS t1
+ORDER BY t1.Score DESC;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day59
+
+## Tag: SUM() OVER, INNER JOIN
+
+
+
+![Xnip2021-07-17_09-09-49](MySQL Note.assets/Xnip2021-07-17_09-09-49.jpg)
+
+
+
+![Xnip2021-07-17_09-09-04](MySQL Note.assets/Xnip2021-07-17_09-09-04.jpg)
+
+
+
+![Xnip2021-07-17_09-22-11](MySQL Note.assets/Xnip2021-07-17_09-22-11.jpg)
+
+
+
+![Xnip2021-07-17_09-09-33](MySQL Note.assets/Xnip2021-07-17_09-09-33.jpg)
+
+题意:给你一张工资表，请你查询出每个员工当前的工资，并根据员工号将他们的工资进行叠加
+
+
+
+
+
+
+
+思路:
+
+- 这道题目其实和之前的排序题目差不多，只不过将排序换成了累加，所以对应的，COUNT()也要换成SUM()
+- 又因为题目中要求查询员工的当前工资，所以我们不需要使用DISTINCT去重，只需要限定to_date为'9999-01-01'即可
+- 会想一下排序题目我们是怎么解决的？将一张表进行自链接，计算表1的分数大于等于表2的分数的个数即为排名
+- 在这道题目中，我们可以将限定条件变为小于等于的员工号的数目，而计算部分变为计算salary值即可，SQL如下:
+
+```mysql
+SELECT
+	t1.emp_no,
+	t1.salary,
+	SUM(t2.salary) AS 'running_total'
+FROM
+	salaries AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no >= t2.emp_no
+WHERE t1.to_date = '9999-01-01'
+AND t2.to_date = '9999-01-01'
+GROUP BY t1.emp_no, t1.salary;
+```
+
+
+
+
+
+
+
+- 又或者用另一种思路更清晰的写法，SQL如下
+
+```mysql
+SELECT
+	t1.emp_no,
+	t1.salary,
+	(
+  SELECT
+    	SUM(t2.salary)
+  FROM
+    	salaries AS t2
+	WHERE t2.emp_no <= t1.emp_no
+  AND to_date = '9999-01-01'
+	) AS 'running_total'
+FROM
+	salaries AS t1
+WHERE to_date = '9999-01-01';
+```
+
+
+
+
+
+
+
+- 其实这里可以利用SUM()窗口函数的特性
+- 窗口函数的语法都差不多，所以这里不再详解，但对于SUM()有一个特点:
+- 如果在OVER()中指定ORDER BY字段，则能够按照对应的字段顺序进行累加，刚好符合题目的要求，SQL如下
+
+```mysql
+SELECT
+	emp_no,
+	salary
+	SUM(salary) OVER(
+  	ORDER BY emp_no
+  ) AS 'running_total'
+FROM
+	salaries
+WHERE to_date = '9999-01-01';
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day60
+
+## Tag: SUM, GROUP BY
+
+
+
+![Xnip2021-07-18_15-08-19](MySQL Note.assets/Xnip2021-07-18_15-08-19.jpg)
+
+
+
+![Xnip2021-07-18_15-07-50](MySQL Note.assets/Xnip2021-07-18_15-07-50.jpg)
+
+
+
+
+
+题意:
+
+给你一张部门表，请你将按照部门，将一年12个月的营业额都查询出来
+
+
+
+
+
+思路:
+
+- 按照部门分那就是指定GROUP BY字段为id，剩下的十二列则根据mon字段进行匹配即可
+- 因为这里用到了GROUP BY，为了避免将其余的字段都写到GROUP BY后，我们可以将剩下的字段组合为聚合函数
+- 该题目中我们要查询的是字段中的数值，所以我们会用到SUM()，SQL如图
+
+
+
+
+
+
+
+
+
