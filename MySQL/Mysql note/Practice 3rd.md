@@ -468,6 +468,384 @@ WHERE t2.rank <= 2
 ORDER BY t1.name ASC, t2.score DESC, t2.id ASC;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day5
+
+## Tag: FLOOR(), COUNT(), GROUP BY
+
+
+
+![Xnip2021-07-28_15-16-58](MySQL Note.assets/Xnip2021-07-28_15-16-58.jpg)
+
+
+
+![Xnip2021-07-28_15-16-32](MySQL Note.assets/Xnip2021-07-28_15-16-32.jpg)
+
+题意:
+
+给你一张成绩表，请你找出每个科目中的中位数所在的排名
+
+
+
+
+
+思路:
+
+- 首先中位数有两种情况: 如果总人数为偶数，那么中位数就有两个，相应的排名就有两个，为奇数则只有一个
+- 可以确定的是，如果将总数+1后再除以二的整数部分和+2后再除以二的整数部分一定都是中位数，所以我们需要使用COUNT()来计算总数，再使用FLOOR()来向下取整，SQL如下
+
+```mysql
+SELECT 
+	job,
+  FLOOR((COUNT(*) + 1) / 2) AS 'start',
+  FLOOR((COUNT(*) + 2) / 2) AS 'end'
+FROM
+	grade
+GROUP BY job ORDER BY job;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day6
+
+## Tag: WHERE
+
+![Xnip2021-07-29_15-05-54](MySQL Note.assets/Xnip2021-07-29_15-05-54.jpg)
+
+
+
+![Xnip2021-07-29_15-21-58](MySQL Note.assets/Xnip2021-07-29_15-21-58.jpg)
+
+题意:
+
+给你一张员工表employees，一张部门员工关系表dept_emp，一张部门经理关系表dept_manager，一张工资表salaries
+
+请你查询出其中所有非经理员工的所属单位，员工号和工资
+
+
+
+
+
+
+
+思路:
+
+- 首先，员工号和部门号的对应关系在dept_emp中，而经理的信息在dept_manager中，所有员工的部门号和员工号在dept_emp中
+- 所以我们用不到employees表，有用的只有三张表而已
+- 要排除经理，就需要指定员工号不等于经理表中的员工号，且要将经理与其部门对应，其需要指定经理表和员工表中的部门号相同
+- 为了保证工资对应，还必须指定工资表中的员工号与部门员工关系表中的员工号对应，所以一共有3个WHERE条件子句，SQL如下
+
+```mysql
+SELECT 
+    t1.dept_no,
+    t1.emp_no,
+    t3.salary
+FROM
+    dept_emp AS t1,
+    dept_manager AS t2,
+    salaries AS t3
+WHERE t1.emp_no != t2.emp_no 
+AND t3.emp_no = t1.emp_no;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day7
+
+## Tag: DISTINCT, GROUP BY
+
+
+
+![Xnip2021-07-30_14-07-11](MySQL Note.assets/Xnip2021-07-30_14-07-11.jpg)
+
+
+
+![Xnip2021-07-30_14-06-36](MySQL Note.assets/Xnip2021-07-30_14-06-36.jpg)
+
+题意:
+
+给你一张登陆记录表，请你通过该表计算出用户的留存率，结果保留3位小数，用户留存率为注册第二天还登录的用户数/注册使用的总用户数
+
+
+
+
+
+
+
+
+
+思路:
+
+- 首先查找注册的总用户数是最简单的，对user_id去重，再使用COUNT()计算即可，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	COUNT(DISTINCT user_id) AS 'sum'
+FROM
+	login;
+```
+
+
+
+- 而用户第二天登录则是相对于每个用户而言的，所以需要使用GROUY BY分组
+- 注册的第二天则为最小的时间值加一，可以使用DATE_ADD()，SQL如下
+
+SQL2
+
+```mysql
+SELECT
+	user_id,
+	DATE_ADD(MIN(date), INTERVAL 1 DAY) AS 'second'
+FROM
+		login
+GROUP BY user_id
+```
+
+
+
+
+
+- 最后只需要限定user_id和date的组合，即可通过COUNT()计算第二天还登录的用户数量了
+- 而保留三位小数则可以使用ROUND()函数，在第二参数的位置指定保留的数位即可，SQL如下:
+
+```mysql
+SELECT
+	ROUND(COUNT(user_id) / SQL1, 3) AS 'p'
+FROM
+	login
+WHERE (user_id, date) IN
+(	
+	SQL2
+	);
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day8
+
+## Tag: DENSE_RANK(), GROUP BY, ORDER BY
+
+
+
+![Xnip2021-07-31_21-47-43](MySQL Note.assets/Xnip2021-07-31_21-47-43.jpg)
+
+
+
+![Xnip2021-07-31_21-47-08](MySQL Note.assets/Xnip2021-07-31_21-47-08.jpg)
+
+题意:
+
+给你一张用户信息表和一张积分表，请你查出其中积分最高的用户信息和其对应的积分(相同分数也要查询出来)
+
+
+
+思路:
+
+- 由于需要获取最高的积分，所以我们需要先将积分按照用户分类相加，并将其作为临时表备用，SQL如下:
+
+SQL1:
+
+```mysql
+WITH temp AS (SELECT
+	t1.id,
+	t1.name,
+	SUM(t2.grade_num) AS 'sum'
+FROM
+	user AS t1
+INNER JOIN grade_info AS t2 ON t1.id = t2.user_id
+GROUP BY t1.id)
+```
+
+
+
+- 最后再通过MAX来获取最高分，之后用最高分来匹配用户即可，SQL如下
+
+```mysql
+SQL1
+
+SELECT
+	temp.id,
+	temp.name,
+	temp.sum AS 'grade_num'
+FROM
+	temp
+WHERE temp.sum IN (
+	SELECT
+		MAX(temp.sum)
+	FROM
+		temp
+	)
+ORDER BY temp.id;
+```
+
+
+
+
+
+- 当然也可以用DENSE RANK()来获取每个id对应的排名，最后匹配所有排名为1的即可
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day9
+
+## Tag: CASE WHEN, LEFT, MOD
+
+![Xnip2021-08-01_14-56-24](MySQL Note.assets/Xnip2021-08-01_14-56-24.jpg)
+
+
+
+![Xnip2021-08-01_14-56-38](MySQL Note.assets/Xnip2021-08-01_14-56-38.jpg)
+
+题意:
+
+给你一张员工表，其中有员工的id、姓名和工资信息，请你查询出每个员工的id和奖金，其中奖金要求如下:
+
+如果该员工的id为奇数，且他的名字不是"M"开头的，那么输出的奖金为原来的工资，否则为0
+
+
+
+
+
+思路:
+
+- 该题目的重点就在实现两个条件: id为奇数和名字的开头
+- 首先通过条件来限定字段就需要使用CASE WHEN THEN ELSE END这样的语法
+- 判断id为奇数则使用%取余后判断其是否等于1即可，或者使用更直观的MOD()函数
+- 判断名字开头，我们可以使用LEFT()函数取出第一个字符，或者使用SUBSTRING()也是一样的，SQL如下
+
+```mysql
+SELECT
+	employee_id,
+CASE
+		
+		WHEN MOD ( employee_id, 2 ) = 1 
+		AND LEFT ( NAME, 1 ) != 'M' THEN
+			salary ELSE 0 
+			END AS 'bonus' 
+FROM
+	Employees;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day10
+
+## Tag: LEFT JOIN, WHERE, IS NULL
+
+![Xnip2021-08-02_13-39-03](MySQL Note.assets/Xnip2021-08-02_13-39-03.jpg)
+
+
+
+![Xnip2021-08-02_13-46-47](MySQL Note.assets/Xnip2021-08-02_13-46-47.jpg)
+
+题意:
+
+给你一张员工信息表和一张奖金表，请你查询出其中所有奖金小于1000的员工的姓名与奖金(包含无奖金的员工)
+
+
+
+思路:
+
+- 由于Bonus表中没有所有员工的信息，所以没有奖金的员工需要输出NULL，也就是以员工为准，所以想到使用LEFT JOIN
+- 最后再筛选Bonus小于1000以及为NULL即可，SQL如下
+
+```mysql
+SELECT 
+    t1.name,
+    t2.bonus
+FROM
+    Employee AS t1
+LEFT JOIN Bonus AS t2 ON t1.empId = t2.empId 
+WHERE t2.bonus < 1000 OR t2.bonus IS NULL;
+```
+
+
+
+
+
+
+
+
+
 
 
 
