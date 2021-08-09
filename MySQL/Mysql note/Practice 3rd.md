@@ -838,6 +838,7 @@ LEFT JOIN Bonus AS t2 ON t1.empId = t2.empId
 WHERE t2.bonus < 1000 OR t2.bonus IS NULL;
 ```
 
+****
 
 
 
@@ -847,6 +848,431 @@ WHERE t2.bonus < 1000 OR t2.bonus IS NULL;
 
 
 
+# Day11
+
+## Tag: ABS, DISTINCT
+
+![Xnip2021-08-03_16-44-22](MySQL Note.assets/Xnip2021-08-03_16-44-22.jpg)
+
+
+
+![Xnip2021-08-03_16-43-57](MySQL Note.assets/Xnip2021-08-03_16-43-57.jpg)
+
+题意:
+
+给你一个影院座位状态表，请你查询出其中所有连续的空座位(连续2个及以上)
+
+
+
+思路:
+
+- 首先，判断空座位即判断free字段是否为1即可
+- 对于判断连座，则需要判断seat_id是否相差为1，这里要么多1要么少1，所以使用ABS计算差值的绝对值为1即可
+- 既然要相减，自然需要将这张表查询两次，而连接后会出现笛卡尔积，所以需要对结果进行去重处理，SQL如下
+
+```mysql
+SELECT
+	DISTINCT t1.seat_id
+FROM
+	cinema AS t1,
+	cinema AS t2
+WHERE t1.free = 1
+AND t2.free = 1
+AND ABS(t1.seat_id - t2.seat_id) = 1
+ORDER BY t1.seat_id;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day12
+
+## Tag: Sub Query, HAVING, GROUP BY
+
+![Xnip2021-08-04_15-32-28](MySQL Note.assets/Xnip2021-08-04_15-32-28.jpg)
+
+
+
+![Xnip2021-08-04_15-33-13](MySQL Note.assets/Xnip2021-08-04_15-33-13.jpg)
+
+题意:
+
+给你一张产品表和一张销售表，请你查询出销售业绩最好的员工的id(销售额相同的也要显示)
+
+
+
+思路:
+
+- 首先，在销售表中有每一单的销售总额，所以不需要我们手动计算每单的price了，直接通过SUM再分组即可求出每个销售员的总业绩，SQL如下:
+
+SQL1:
+
+```mysql
+SELECT
+	SUM(price) AS 'sum'
+FROM
+	Sales
+GROUP BY seller_id;
+```
+
+
+
+- 之后，我们只需要在这张表中查找最大值即可，SQL如下:
+
+SQL2:
+
+```mysql
+SELECT
+		MAX(sum) AS 'max'
+	FROM
+	(
+		SQL1
+	) AS t2
+```
+
+
+
+
+
+- 最后使用该最大值进行匹配即可，由于我匹配的是原表中不存在的字段，所以需要先分组计算后，再筛选，这里就不能使用WHERE而是要用HAVING了，SQL如下：
+
+```mysql
+SELECT
+	seller_id
+FROM
+	Sales
+GROUP BY seller_id
+HAVING SUM(price) = (
+	SQL2
+);
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day13
+
+## Tag: IFNULL, RIGHT JOIN, GROUP BY
+
+![Xnip2021-08-05_14-21-19](MySQL Note.assets/Xnip2021-08-05_14-21-19.jpg)
+
+
+
+![Xnip2021-08-05_14-32-06](MySQL Note.assets/Xnip2021-08-05_14-32-06.jpg)
+
+题意:
+
+给你一张用户表，一张骑行记录表，请你返回所有用户骑行的记录排行表，如果成绩相同则按照名字的字母顺序升序排列，没有成绩的用户记为0
+
+
+
+思路:
+
+- 按照用户计算累计的骑行距离很明显需要使用SUM和GROUP BY
+- 排序更是不必多说，不管排序要求有多少，处理好排序字段的顺序即可
+- 有点问题的是没有成绩的用户记0，在两表连接中，如果要以其中一张表为准则需要使用LEFT/RIGHT JOIN，但这样查找出来的数据为null，怎么将NULL转换为0呢？这里使用IFNULL(expr1, expr2)即可，SQL如下
+
+```mysql
+SELECT
+	t2.name,
+	IFNULL(SUM(t1.distance), 0) AS 'travelled_distance'
+FROM
+	Rides AS t1
+RIGHT JOIN Users AS t2 ON t1.user_id = t2.id
+GROUP BY t2.name
+ORDER BY travelled_distance DESC, t2.name;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day14
+
+## Tag: UNION, IS NULL
+
+![Xnip2021-08-06_11-11-50](MySQL Note.assets/Xnip2021-08-06_11-11-50.jpg)
+
+
+
+![Xnip2021-08-06_11-12-32](MySQL Note.assets/Xnip2021-08-06_11-12-32.jpg)
+
+题意:
+
+给你一张产品表，请你将其中的数据重构为商品id，商店，价格的形式
+
+
+
+
+
+思路:
+
+- 在要求中，商店名称在原表中是字段名，不是数据，所以需要我们手动构造
+- 因为一次最多只能查询出两条数据，所以我们需要使用UNION将多个查询结果合并在一起
+- 为了排除其中不存在的数据(某商店不出售)，需要在WHERE中使用IS NOT NULL来排除，SQL如下:
+
+```mysql
+SELECT 
+    product_id,
+    'store1' AS 'store',
+    store1 AS 'price'
+FROM
+    Products
+WHERE store1 IS NOT NULL
+UNION
+SELECT 
+    product_id,
+    'store2' AS 'store',
+    store2 AS 'price'
+FROM
+    Products
+WHERE store2 IS NOT NULL
+UNION
+SELECT 
+    product_id,
+    'store3' AS 'store',
+    store3 AS 'price'
+FROM
+    Products
+WHERE store3 IS NOT NULL
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day15
+
+## Tag: DISTINCT, GROUP BY, HAVING
+
+![Xnip2021-08-07_22-01-50](MySQL Note.assets/Xnip2021-08-07_22-01-50.jpg)
+
+
+
+![Xnip2021-08-07_22-01-21](MySQL Note.assets/Xnip2021-08-07_22-01-21.jpg)
+
+题意:
+
+给你一张课程表，请你查询出其中选课学生数量大于等于5的课程
+
+
+
+
+
+思路:
+
+- 需要明确一点的是: 统计选课的学生时一定是统计不同的学生，所以需要使用COUNT并结合DISTINCT，SQL如下:
+
+```mysql
+SELECT
+	class
+FROM (
+SELECT
+	class,
+	COUNT(DISTINCT student) AS 'sum'
+FROM
+	courses
+GROUP BY class
+HAVING sum >= 5
+) AS t1
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day16
+
+## Tag: DISTINCT, ROUND, IFNULL
+
+![Xnip2021-08-08_16-43-34](MySQL Note.assets/Xnip2021-08-08_16-43-34.jpg)
+
+
+
+![Xnip2021-08-08_16-42-56](MySQL Note.assets/Xnip2021-08-08_16-42-56.jpg)
+
+题意:
+
+给你一张表好友申请记录表和一张申请通过记录表，请你计算好友申请的通过率，且保留两位小数
+
+
+
+
+
+思路:
+
+- 首先在通过表中，同一个申请可能会被通过多次，所以需要去重，在申请表中，同一个好友申请也可能被发送多次，所以也需要去重
+- 其次，如果表为空的话，我们需要返回的数据为0而不是null，所以需要进行判断
+- 通过去重我们可以计算申请总数，SQL如下:
+
+SQL1
+
+```mysql
+SELECT 
+	COUNT(DISTINCT sender_id, send_to_id) AS 'request'
+FROM 
+	FriendRequest
+```
+
+
+
+- 同样还需要计算通过总数，SQL如下:
+
+SQL2:
+
+```mysql
+SELECT
+	COUNT(DISTINCT requester_id, accepter_id) AS 'accept'
+FROM
+	RequestAccepted
+```
+
+
+
+
+
+
+
+
+
+- 最后通过通过数除以申请数即可，为了防止表为空，我需要使用IFNULL进行讨论判断，SQL如下
+
+```mysql
+SELECT
+	ROUND(IFNULL(t1.accept / t2.request, 0), 2) AS 'accept_rate'
+FROM
+(SQL1) AS t1,
+(SQL2) AS t2;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day17
+
+## Tag: IN, MIN, GROUP BY
+
+![Xnip2021-08-09_17-10-08](MySQL Note.assets/Xnip2021-08-09_17-10-08.jpg)
+
+
+
+![Xnip2021-08-09_17-09-47](MySQL Note.assets/Xnip2021-08-09_17-09-47.jpg)
+
+题意:
+
+给你一张员工表和一张工资表，请你查询出其中还在职的员工从入职以来的工资涨幅和对应的员工号
+
+
+
+
+
+思路:
+
+- 首先，在职员工的to_date字段数据为9999-01-01，通过WHERE子句限定即可
+- 而工资涨幅就需要我们计算了，其等于最初入职时的工资 - 现在的工资
+- 而最初入职自然就是to_date最早了，使用MIN再根据员工号分组即可查询出，SQL如下:
+
+SQL1:
+
+```mysql
+SELECT
+	emp_no,
+	MIN(to_date) AS 'min'
+FROM
+	salaries
+GROUP BY emp_no;
+```
+
+
+
+
+
+
+
+- 我们所需要的数据全在salaries表中，所以不需要连接employees表，进行自连接即可
+- 而计算涨幅时，我们需要用to_date = '9999-01-01'的字段中对应的工资减去相同no但to_date日期最早的工资，利用之前的表即可，SQL如下:
+
+```mysql
+SELECT
+	t1.emp_no,
+	t1.salary - t2.salary AS 'growth'
+FROM
+	salaries AS t1,
+	salaries AS t2
+WHERE t1.to_date = '9999-01-01'
+AND t1.emp_no = t2.emp_no
+AND (t2.emp_no, t2.to_date) IN (
+	SQL1
+	)
+ORDER BY growth;
+```
 
 
 
