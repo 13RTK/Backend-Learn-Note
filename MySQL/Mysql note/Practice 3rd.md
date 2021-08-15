@@ -1274,6 +1274,441 @@ AND (t2.emp_no, t2.to_date) IN (
 ORDER BY growth;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day18
+
+## Tag: JOIN, IN
+
+![Xnip2021-08-10_13-42-19](MySQL Note.assets/Xnip2021-08-10_13-42-19.jpg)
+
+
+
+![Xnip2021-08-10_13-41-58](MySQL Note.assets/Xnip2021-08-10_13-41-58.jpg)
+
+题意:
+
+给你一张工资表，一张部门经理表，一张部门员工表。请你查询出其中工资大于其部门经理的员工的no，其经理的no，其工资，其经理工资(共四个字段)
+
+
+
+
+
+
+
+思路:
+
+- 首先我们可以根据部门经理表和员工表中的dept_no字段查询出员工和其对应部门的经理，再通过经理表排除掉其中的经理，即可获取员工号和其对应的部门经理号，SQL如下:
+
+SQL1:
+
+```mysql
+SELECT
+	t1.emp_no AS 'emp_no',
+	t2.emp_no AS 'manager',
+FROM
+	dept_emp AS t1,
+	dept_manager AS t2,
+WHERE t1.dept_no = t2.dept_no
+AND t1.emp_no != t2.emp_no;
+```
+
+
+
+
+
+- 获取该信息后，我们可以通过其中各自的emp_no在工资表中查询出两者的工资，并限定大小关系后，即为本题答案，SQL如下:
+
+```mysql
+SELECT
+	t1.emp_no AS 'emp_no',
+	t2.emp_no AS 'manager',
+	t3.salary AS 'emp_salary',
+	t4.salary AS 'manager_salary'
+FROM
+	dept_emp AS t1,
+	dept_manager AS t2,
+	salaries AS t3,
+	salaries AS t4
+WHERE t1.dept_no = t2.dept_no
+AND t1.emp_no != t2.emp_no
+AND t3.emp_no = t1.emp_no
+AND t4.emp_no = t2.emp_no
+AND t3.salary - t4.salary > 0;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day19
+
+## Tag: GROUP BY
+
+![Xnip2021-08-11_17-09-42](MySQL Note.assets/Xnip2021-08-11_17-09-42.jpg)
+
+
+
+![Xnip2021-08-11_17-08-58](MySQL Note.assets/Xnip2021-08-11_17-08-58.jpg)
+
+题意:
+
+给你一张部门表，一张员工信息表，一张职称表。请你查询出每个部门的no和部门名称，以及部门下所有职位和其对应员工的数量(共4个字段)，结果按照dept_no升序排列
+
+
+
+
+
+思路:
+
+- 前三个字段其实很简单，连接三个表，匹配部门no和员工no即可，SQL如下:
+
+```mysql
+SELECT
+	t1.dept_no,
+	t2.dept_name,
+	t3.title
+FROM
+	dept_emp AS t1,
+	departments AS t2,
+	titles AS t3
+WHERE t1.dept_no = t2.dept_no
+AND t1.emp_no = t3.emp_no;
+```
+
+
+
+
+
+- 至于计算岗位数的话，使用COUNT计算tital，之后再分组即可(注意需要写上我列出的所有非聚合函数字段)，SQL如下:
+
+```mysql
+SELECT
+	t1.dept_no,
+	t2.dept_name,
+	t3.title,
+	COUNT(t3.title) AS 'count'
+FROM
+	dept_emp AS t1,
+	departments AS t2,
+	titles AS t3
+WHERE t1.dept_no = t2.dept_no
+AND t1.emp_no = t3.emp_no
+GROUP BY t1.dept_no, t2.dept_name, t3.title
+ORDER BY t1.dept_no;
+```
+
+****
+
+
+
+
+
+
+
+
+
+# Day20
+
+## Tag: HAVING, IN
+
+![Xnip2021-08-12_15-35-05](MySQL Note.assets/Xnip2021-08-12_15-35-05.jpg)
+
+
+
+![Xnip2021-08-12_15-34-29](MySQL Note.assets/Xnip2021-08-12_15-34-29.jpg)
+
+题意:
+
+给你一张电影信息表，一张分类表，一张电影分类表，请你查询出当前分类包含电影总数 >= 5，且电影描述信息中有"robot"的电影对应的分类名称以及其数量
+
+
+
+
+
+思路:
+
+- 首先我们需要找出包含电影数超过5的分类，SQL如下:
+
+SQL1:
+
+```mysql
+SELECT
+	category_id
+FROM
+	film_category
+GROUP BY category_id
+HAVING COUNT(category_id) >= 5;
+```
+
+
+
+
+
+- 之后使用模糊搜索(如果能用全文本搜索的话就不推荐用这种方法)，并连接三个表，并以SQL1作为条件进行限定即可，SQL如下:
+
+```mysql
+SELECT
+	t3.name,
+	COUNT(t1.film_id) AS 'sum'
+FROM
+	film AS t1,
+	film_category AS t2,
+	category AS t3
+WHERE t1.description LIKE "%robot%"
+AND t1.film_id = t2.film_id
+AND t2.category_id = t3.category_id
+AND t2.category_id IN (
+	SQL1
+	)
+GROUP BY t3.name;
+```
+
+****
+
+
+
+
+
+
+
+
+
+# Day21
+
+## Tag: Sum, COUNT, JOIN
+
+![Xnip2021-08-13_10-55-15](MySQL Note.assets/Xnip2021-08-13_10-55-15.jpg)
+
+
+
+![Xnip2021-08-13_10-54-54](MySQL Note.assets/Xnip2021-08-13_10-54-54.jpg)
+
+题意:
+
+给你一张用户表，其中is_blacklist为0的是正常用户，其他为黑名单用户。再给你一张邮件表，其中包含每封邮件的发件人id、收件人id、发送状态和发送日期。请你根据这两张表，查询出每天正常用户给正常用户发送邮件失败的概率，并保留三位小数
+
+
+
+
+
+
+
+思路:
+
+- 计算失败率很明显就是计算状态为no_completed的个数除以所有数据，但前提是要保证发送者的id和接受者的id都为正常用户
+- 所以需要我们连接email和user表来限定正常用户，而结果需要按照日期来划分，所以自然使用GROUP BY，并将date指定为ORDER BY字段
+- 需要注意的是，我们之间计算的是type = 'completed'的逻辑运算结果，该结果是一个boolean值，为真则是1，为假则是0，所以需要我们使用SUM来计算，不能使用统计数据个数的COUNT，SQL如下:
+
+```mysql
+SELECT
+	t1.date,
+	round( SUM( t1.type = "no_completed" ) / count(*), 3 ) AS 'p'
+FROM
+	email AS t1
+	JOIN user AS t2 ON t1.send_id = t2.id
+	JOIN user AS t3 ON t1.receive_id = t3.id 
+WHERE t2.is_blacklist = 0 
+AND t3.is_blacklist = 0 
+GROUP BY date 
+ORDER BY date;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day22
+
+## Tag: DISTINCT, GROUP BY
+
+![Xnip2021-08-14_17-08-55](MySQL Note.assets/Xnip2021-08-14_17-08-55.jpg)
+
+
+
+![Xnip2021-08-14_17-25-46](MySQL Note.assets/Xnip2021-08-14_17-25-46.jpg)
+
+题意:
+
+给你一张登录记录表，请你查询出其中每天登录的新用户数量
+
+
+
+
+
+
+
+思路:
+
+- 看起来数据和结果很少，但我们需要获取每个用户最早登录的日期，即他作为新用户的日期，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id,
+	MIN(date) AS 'first_login'
+FROM
+	login
+GROUP BY user_id
+```
+
+
+
+
+
+- 之后我们还需要获取所有的日期，才能使得我们的数据能够按照日期划分，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	DISTINCT date
+FROM
+	login
+```
+
+
+
+
+
+
+
+- 最后我们将这两张表连接起来，通过SQL2的日期来连接两张表，并计算对应日期里SQL1中对应的数据量即为新用户登录数量SQL如下
+
+```mysql
+SELECT
+	t1.date,
+	COUNT(t2.user_id)
+FROM (
+	SQL2
+	) AS t1
+LEFT JOIN (
+	SQL1) AS t2 ON t1.date = t2.first_login
+GROUP BY t1.date
+ORDER BY t1.date;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day23
+
+## Tag: UNION, IN
+
+![](MySQL Note.assets/Xnip2021-08-15_15-15-38.jpg)
+
+
+
+![Xnip2021-08-15_15-15-08](MySQL Note.assets/Xnip2021-08-15_15-15-08.jpg)
+
+题意:
+
+给你一张登录表，请你查询出其中每一天新用户的留存率(注册第二天还登录的数量/前一天注册的新用户数量)
+
+
+
+
+
+思路:
+
+- 计算分母很简单，找出各个id最小的日期值即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id,
+	MIN(date) AS 'date'
+FROM
+	login
+GROUP BY user_id
+```
+
+
+
+- 之后在这张表的基础上与login表连接，使用DATE_ADD指定login中的日期为每个id注册日期的后一天，并制定两表的id相同，在同一id下计算后一天的id数，再计算这一天的注册数，两者相除，即为一天的留存率，最后再根据日期进行划分即可，SQL如下:
+
+SQL2
+
+```mysql
+SELECT
+	t1.date,
+	ROUND(COUNT(DISTINCT t2.user_id )/ COUNT(t1.user_id), 3 ) AS 'p'
+FROM
+	(SQL1) AS t1
+LEFT JOIN login AS t2 ON t2.user_id = t1.user_id 
+AND t2.date = DATE_ADD(t1.date, INTERVAL 1 DAY ) 
+GROUP BY t1.date;
+```
+
+
+
+
+
+
+
+- 这样查询后有一个纰漏: 要是某一天没有新用户注册呢？那么他的下一天的用户留存率就不会被计算到
+- 所以我们需要吧所有没有新用户注册的情况连接进来才行，SQL如下
+
+SQL3:
+
+```mysql
+SQL2
+UNION
+SELECT
+	date,
+	0.000 AS 'p'
+FROM
+	login 
+WHERE
+	date NOT IN (SELECT MIN(date) FROM login GROUP BY user_id) 
+ORDER BY date;
+```
+
+
+
 
 
 

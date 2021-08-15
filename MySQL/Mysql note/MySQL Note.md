@@ -1112,6 +1112,10 @@ alter table table_name drop index column;
 
 # 七、外键
 
+阿里巴巴Java开发手册: 外键与级连更新只适用于单机低并发应用，不适合分布式、高并发集群，外键影响数据库的插入速度，所以不得使用外键
+
+
+
 
 
 作用：
@@ -2858,7 +2862,7 @@ DROP INDEX index_name ON table;
 
 **了解**
 
-
+阿里巴巴java开发手册: 存储过程难以调试和扩展，没有移植性，禁止使用
 
 
 
@@ -3296,8 +3300,110 @@ MD5:
 所以全文本搜索的特点如下:
 
 1. 使用时不需要查看每一行，不需要分别处理每个词
-2. 在使用时仅在创建索引的指定行中进行搜索
+2. 在使用时仅在创建索引的指定列中进行搜索
 3. 查询结果可以反映出匹配的频率，出现次序等等
+
+
+
+关于Innodb与MyISAM:
+
+1. innodb支持事务，但MyISAM不支持
+2. innodb支持外键，但MyISAM不支持。如果将一个包含外键的innodb表转为MyISAM会失败的
+3. 从MySQL5.5开始，innodb就成为了MySQL的默认引擎
+4. 从MySQL5.6开始，innodb和MyISAM都支持全文本索引，之前只有MyISAM支持
+
+
+
+
+
+
+
+## 1. 建立索引列
+
+- 由于全文本搜索只对创建索引的列进行搜索，所以需要在创建表的时候指定索引列
+
+Syntax:
+
+```mysql
+CREATE TABLE IF NOT EXISTS table_name (
+column_name type,
+...
+FULLTEXT(index_column),
+......
+)ENGINE=MYISAM
+```
+
+注: 如果要将数据导入到一个新表中(比如将SQL的结果存在一个新的表里)，一定要等数据插入完成后再指定全文本搜索索引如下
+
+
+
+
+
+
+
+
+
+Syntax:
+
+```mysql
+ALTER TABLE table_name add FULLTEXT(index_column);
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 使用全文本索引
+
+- 在WHERE子句中使用MATCH()和AGAINST()
+
+Syntax:
+
+```mysql
+SELECT
+	column_name
+FROM
+	table
+WHERE MATCH(index_column) AGAINST('rule');
+```
+
+
+
+- match()中的字段名一定要是表中FULLTEXT索引指定的字段，AGAINST()为搜索的规则
+
+
+Eg:
+
+![Xnip2021-08-12_17-16-57](MySQL Note.assets/Xnip2021-08-12_17-16-57.jpg)
+
+
+
+*注：*
+
+1. Match()和Against()是一起使用的，两者结合起来会形成一个字段
+2. 如果查询Match() Against()字段，则会查询出每个字段的匹配度(而非查询出匹配的字段)
+
+
+
+Eg:
+
+![Xnip2021-08-12_18-58-47](MySQL Note.assets/Xnip2021-08-12_18-58-47.jpg)
+
+
+
+
+
+
+
+
 
 
 
