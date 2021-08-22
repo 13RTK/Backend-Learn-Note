@@ -1707,9 +1707,464 @@ WHERE
 ORDER BY date;
 ```
 
+****
 
 
 
 
 
+
+
+
+
+
+
+
+
+# Day24
+
+## Tag: SUM() OVER
+
+![Xnip2021-08-16_10-17-58](MySQL Note.assets/Xnip2021-08-16_10-17-58.jpg)
+
+
+
+![Xnip2021-08-16_10-18-20](MySQL Note.assets/Xnip2021-08-16_10-18-20.jpg)
+
+题意:
+
+给你一张用户信息表，一张登录表，一张答题记录表。请你查询出截止每天每个用户累计答题的数量，未答题的用户不需要计算
+
+
+
+
+
+思路:
+
+- 首先未答题的用户分为两种: 登陆了但未答题，未登录
+- 所以我们只需要在答题记录表中获取数据即可，用不到登录表
+- 计算的答题记录需要按照用户划分，但同时还需要随着日期递增累加，所以用窗口函数再合适不过了，SQL如下
+
+```mysql
+SELECT
+	t1.name AS 'u_n',
+	t2.date,
+	SUM(t2.number) OVER (
+	PARTITION BY t2.user_id ORDER BY t2.date
+	) AS 'ps_num'
+FROM
+	user AS t1
+INNER JOIN passing_number AS t2 ON t1.id = t2.user_id
+ORDER BY t2.date, t1.name;
+```
+
+****
+
+
+
+
+
+
+
+
+
+# Day25
+
+## Tag: DENSE_RANK(), COUNT() OVER, MID
+
+![Xnip2021-08-17_11-51-59](MySQL Note.assets/Xnip2021-08-17_11-51-59.jpg)
+
+
+
+![Xnip2021-08-17_11-51-36](MySQL Note.assets/Xnip2021-08-17_11-51-36.jpg)
+
+题意:
+
+给你一张分数表，请你查询出每个岗位的中位数对应的信息(id, job, score, rank共4个字段)
+
+
+
+
+
+思路:
+
+- 首先需要明确的是，求中位数有一个规则: ((总数 + 1) / 2)即为中位数
+- 但如果总数为偶数，那么该结果一定是两个中位数之间的数字例如:
+- 总数 = 4，中位数应该为第2，3位，我们的结果为: (4 + 1)/2 = 2.5，恰好处于两个中位数之间
+- 所以我们只需要限定中位数的id满足以下条件即可: |id - (总数 + 1) / 2| <= 0.5
+- 所以要获取中位数则只需要求出每个岗位的总数即可
+- 排名可以使用DENSE_RANK，而想要不使用GROUP BY获取总数则可以使用COUNT() OVER，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	*,
+	(DENSE_RANK() OVER ( PARTITION BY job ORDER BY score DESC )) AS 't_rank',
+	(COUNT(score) OVER ( PARTITION BY job )) AS 'num'
+FROM
+	grade;
+```
+
+
+
+
+
+
+
+- 在此基础上使用我们获取中位数的限定条件即可，SQL如下
+
+```mysql
+SELECT
+	id,
+	job,
+	score,
+	t_rank
+FROM (
+	SQL1
+	) AS t1
+WHERE ABS(t1.t_rank - (t1.num + 1) / 2) <= 0.5
+ORDER BY id;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day26
+
+## Tag: TRIGGER
+
+![Xnip2021-08-18_11-54-40](MySQL Note.assets/Xnip2021-08-18_11-54-40.jpg)
+
+
+
+![Xnip2021-08-18_11-58-03](MySQL Note.assets/Xnip2021-08-18_11-58-03.jpg)
+
+题意:
+
+给你一张员工信息测试表和一张审计表，请你创建一个触发器，使得所有往员工测试表中插入的数据都被自动保存到审计表中
+
+
+
+
+
+思路:
+
+- 这道题目其实就是考察触发器的创建，但其中还需要我们把触发的数据读取出来并存储到另一张表中
+- 其中对数据的操作需要写在触发器体本身中，需要我们使用BEGIN END块(同存储过程)来限定
+- 需要明确的是: 对应插入操作的触发器，每次执行相应表的操作后，插入的数据都会被保存在一个名为"NEW"的临时表中
+- 所以我们需要在触发器体中即BEGIN END块内，将NEW表中的数据插入到需要的其他表中，以完成插入数据的读取操作与保存
+- 创建触发器的语法如下:
+
+Syntax: 
+
+```mysql
+CREATE TRIGGER trigger_name operate(INSERT/UPDATE/DELETE) AFTER/BEFORE ON trigger_table
+(FOR EACH ROW)
+BEGIN
+...
+END
+```
+
+
+
+
+
+
+
+- 我们需要创建一个名为audit_log的插入触发器，且需要将所以数据都另行存储至另一张表中，为了对所有插入的数据生效，我们需要标记FOR EACH ROW，在BEGIN END块中，我们又需要将另时表NEW中的数据记录到audit表中，SQL如下
+
+```mysql
+CREATE TRIGGER audit_log AFTER INSERT ON employees_test
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit(EMP_NO, NAME) VALUES(NEW.ID, NEW.NAME);
+END;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day27
+
+## Tag: DATE_FORMAT, YEAR, RIGHT
+
+![Xnip2021-08-19_11-39-32](MySQL Note.assets/Xnip2021-08-19_11-39-32.jpg)
+
+
+
+![Xnip2021-08-19_11-33-43](MySQL Note.assets/Xnip2021-08-19_11-33-43.jpg)
+
+题意:
+
+给你一张简历投递统计表，请你查询出每个岗位在2025年每个月的简历投递情况和2026对应月份的投递情况，最后先根据第一年的月份倒序排列，再根据岗位倒序排列
+
+
+
+
+
+思路:
+
+- 结果表有5个字段，看起来很复杂，但我们可以先看其中一半，将问题简化为: 2025年每个月各个岗位简历的投递情况
+- 首先要解决日期输出的问题，想要将日期输出为"XXXX-XX"的格式需要借助函数"DATE_FORMAT"，并使用对应的格式"%Y-%m"
+- 统计投递数量则使用SUM函数即可，想要限制年份的话，我们可以使用YEAR函数取出日期值中年份的部分并限定在2025即可
+- 最后再分组即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	job,
+	DATE_FORMAT(date, '%Y-%m') AS 'first_year_mon',
+	SUM(num) AS 'first_year_cnt'
+FROM
+	resume_info
+WHERE YEAR(date) = '2025'
+GROUP BY job, first_year_mon;
+```
+
+
+
+
+
+- 以同样的方式，我们可以获取2026年对应的数据，SQL如下:
+
+SQL2:
+
+```mysql
+SELECT
+	job,
+	DATE_FORMAT(date, '%Y-%m') AS 'second_year_mon',
+	SUM(num) AS 'second_year_cnt'
+FROM
+	resume_info
+WHERE YEAR(date) = '2026'
+GROUP BY job, second_year_mon
+```
+
+
+
+
+
+
+
+- 最后我们根据两表的联系，限定job和月份字段后将两表连接即可
+- 在限定月份时，我们可以通过RIGHT函数截取后两个字符，从而比对两表中日期值的月份，SQL如下
+
+```mysql
+SELECT
+	t1.job,
+	t1.first_year_mon,
+	t1.first_year_cnt,
+	t2.second_year_mon,
+	t2.second_year_cnt
+FROM (
+SELECT
+	SQL1
+	) AS t1,
+(
+SQL2
+	) AS t2
+WHERE t1.job = t2.job
+AND RIGHT(t1.first_year_mon, 2) = RIGHT(t2.second_year_mon, 2)
+ORDER BY t1.first_year_mon DESC, t1.job DESC;
+
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day28
+
+## Tag: IF, WITH AS
+
+![Xnip2021-08-20_14-40-09](MySQL Note.assets/Xnip2021-08-20_14-40-09.jpg)
+
+
+
+![Xnip2021-08-20_14-39-01](MySQL Note.assets/Xnip2021-08-20_14-39-01.jpg)
+
+题意:
+
+给你一张用户信息表和一张积分统计表，请你查出其中积分最高的所有用户的信息
+
+
+
+
+
+思路:
+
+- 想要找到积分最高用户，则需要计算每个用户的积分，计算加分很容易，使用SUM即可，但减分怎么计算呢？
+- 这里我们可以使用IF，其含有三个参数: 条件，为真时执行内容，为假时执行内容
+- 将IF嵌套到SUM中，我们就可以很方便地计算积分值了
+- 计算出结果后我们还需要用这张表本身来查找最高值，通过最高值来查询出相应的用户id，所以这张表会被多次利用
+- 我们需要将这张表作为临时表，所以使用WITH AS即可，SQL如下
+
+SQL1:
+
+```mysql
+WITH temp AS(
+SELECT
+	t1.user_id,
+	t2.name,
+	SUM(IF(t1.type = 'add', grade_num, -1 * grade_num)) AS 'grade_sum'
+FROM
+	grade_info AS t1
+INNER JOIN user AS t2 ON t1.user_id = t2.id
+GROUP BY user_id, t2.name
+ORDER BY grade_sum DESC
+)
+```
+
+
+
+
+
+- 最后查询出这张表中的所有数据，但分数限定为最高值，SQL如下:
+
+```mysql
+SQL1
+
+SELECT
+	*
+FROM
+	temp
+WHERE grade_sum = (SELECT MAX(grade_sum) FROM temp);
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day29
+
+## Tag: IN
+
+![Xnip2021-08-21_15-55-33](MySQL Note.assets/Xnip2021-08-21_15-55-33.jpg)
+
+
+
+![Xnip2021-08-21_15-58-28](MySQL Note.assets/Xnip2021-08-21_15-58-28.jpg)
+
+题意:
+
+给你一张用户活跃表，请你查询出所有用户第一次登录时使用的设备id
+
+
+
+思路:
+
+- 题目要求每个用户的第一次，所以我们需要使用MIN找出最小的日期值，并按照用户id分类，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	player_id,
+	MIN(event_date) AS 'first_play'
+FROM
+	Activity
+GROUP BY player_id;
+```
+
+
+
+- 之后再通过同时限制这两个字段，来获取用户的id和设备id，SQL如下
+
+```mysql
+SELECT
+	t1.player_id,
+	t1.device_id
+FROM
+	Activity AS t1
+WHERE (t1.player_id, t1.event_date) IN (
+	SQL1
+);
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day30
+
+## Tag: DISTINCT, IF
+
+![Xnip2021-08-22_21-18-28](MySQL Note.assets/Xnip2021-08-22_21-18-28.jpg)
+
+
+
+![Xnip2021-08-22_21-20-56](MySQL Note.assets/Xnip2021-08-22_21-20-56.jpg)
+
+题意:
+
+给你一个机械工作表，其中每个机械都有相同数量的线程，而每个线程都有一个开始时间和终止时间。请你查询出每个机械执行一个线程的平均用时，并保留三位有效数字
+
+
+
+思路:
+
+- 首先需要明确的是，每台机械每个线程的平均用时计算公式为: 线程用时之和 / 线程数
+- 线程数按照机械id分类后再使用COUNT便能很快得到，但问题是线程用时怎么求？
+- 这里我们可以在SUM中嵌套使用IF，对线程类型进行判断
+- 如果为start，则计算为-timestamp，否则为timestamp，这样我们就成功计算出了线程用时之和
+- 最后再嵌套一个ROUND函数来限定小数位数即可，SQL如下
+
+```mysql
+SELECT 
+	machine_id,
+	ROUND(SUM(IF(activity_type = 'start', -timestamp , timestamp)) 
+	/
+	COUNT(DISTINCT process_id) ,3) AS 'processing_time'
+FROM 
+	Activity
+GROUP BY machine_id
+```
 

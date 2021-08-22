@@ -80,15 +80,25 @@ eg:
 
 ## 2) SUM() OVER
 
+- 根据整体或分组进行求和计算(PARTITION BY)
+- 能根据排序的字段(ORDER BY)进行逐次累加
+- 累计字段需要在SUM()中指出
+
+Syntax:
+
+```mysql
+SUM(sum_column) OVER(
+PARTITION BY column ORDER BY column
+)
+```
 
 
 
 
 
+Eg:
 
-
-
-
+![Xnip2021-08-16_10-38-57](MySQL Note.assets/Xnip2021-08-16_10-38-57.jpg)
 
 ****
 
