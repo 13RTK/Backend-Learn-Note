@@ -334,6 +334,199 @@ ORDER BY COUNT(order_number) DESC
 LIMIT 1;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+# Day38
+
+## Tag: 
+
+![Xnip2021-08-30_21-21-28](MySQL Note.assets/Xnip2021-08-30_21-21-28.jpg)
+
+
+
+![Xnip2021-08-30_21-23-28](MySQL Note.assets/Xnip2021-08-30_21-23-28.jpg)
+
+题意:
+
+给你一张交易记录表和一张退款表，请你查出每个月每个国家接受的退款订单数和金额，以及拒绝的退款订单数和金额
+
+
+
+
+
+思路:
+
+- 看起来要查询的字段很多，但我们可以分开查询接受退款的部分和拒绝的部分，其中接受的部分我们只需要限定state为'approved'即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	country,
+	amonut,
+	1 AS 'tag',
+	DATE_FORMAT('%Y-%m') AS 'month'
+FROM
+	Transactions
+WHERE state = 'approved';
+```
+
+- 格式化输出日期采用DATE_FORMAT，为了方便后期统计，我们将这些数据统一标记为tag'1'
+
+
+
+
+
+- 之后我们再连接两表查询出被拒绝的订单数据，SQL如下
+
+SQL2:
+
+```mysql
+SELECT 
+	country,
+	amount, 
+0 AS 'tag',
+	DATE_FORMAT(t2.trans_date, '%Y-%m') AS 'month'
+FROM 
+	Transactions AS t1
+RIGHT JOIN Chargebacks AS t2 ON t1.id = t2.trans_id
+```
+
+- 退款的日期以Chargebacks表为准，所以需要使用RIGHT JOIN右连接
+
+
+
+
+
+
+- 最后联合两SQL，并根据了留下的tag进行分类统计，SQL如下:
+
+```mysql
+SELECT 
+	month,
+	country,
+	SUM(IF(tag=1, 1, 0)) AS 'approved_count',
+	SUM(IF(tag=1, amount, 0)) AS 'approved_amount',
+	SUM(IF(tag=0, 1, 0)) AS 'chargeback_count',
+	SUM(IF(tag=0, amount, 0)) AS 'chargeback_amount'
+FROM (
+  SQL1
+	UNION ALL
+  SQL2
+) AS temp
+GROUP BY month, country;
+```
+
+****
+
+
+
+
+
+
+
+
+
+# Day39
+
+## Tag: AVG, ROUND, IF
+
+![Xnip2021-08-31_16-29-29](MySQL Note.assets/Xnip2021-08-31_16-29-29.jpg)
+
+
+
+![Xnip2021-08-31_16-29-50](MySQL Note.assets/Xnip2021-08-31_16-29-50.jpg)
+
+题意:
+
+给你一张查询结果表，请你根据查询名称，查询出查询的质量和劣质查询的百分比，查询结果保留两位小数，其中查询质量大的定义为:(查询评分(rating) / 位置(position) 之和) / 查询总数
+
+
+
+
+
+思路:
+
+- 查询质量其实就是一个平均值而已，我们直接在AVG里写上rating / position的关系就行了
+- 筛选劣质查询则需要限定rating字段，由于rating小于3为劣质查询，所以我们直接使用IF来区分两种情况即可，最后再乘以100来表示百分数，SQL如下
+
+```mysql
+SELECT
+	query_name,
+	ROUND(AVG(rating / position), 2) AS 'quality',
+	ROUND(SUM(IF(rating < 3, 1, 0)) / COUNT(*) * 100, 2) AS 'poor_query_percentage'
+FROM 
+	Queries
+GROUP BY query_name
+```
+
+****
+
+
+
+
+
+
+
+# Day40
+
+## Tag: Sub Query, NOT IN
+
+![Xnip2021-09-01_17-47-03](MySQL Note.assets/Xnip2021-09-01_17-47-03.jpg)
+
+
+
+![Xnip2021-09-01_17-47-52](MySQL Note.assets/Xnip2021-09-01_17-47-52.jpg)
+
+题意:
+
+给你一张销售员工表，一张订单表，一张公司信息表，请你查询出所有未和公司"RED"产生交易的员工名称
+
+
+
+
+
+思路:
+
+- 在订单表中有公司id和员工id的对应关系，而公司表中又有公司id和公司名的对应关系，所有我们可以连接两表来获取所有与公司RED进行交易的员工id，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	t2.sales_id
+FROM
+	company AS t1,
+	orders AS t2
+WHERE t1.com_id = t2.com_id
+AND t1.name = 'RED'
+```
+
+
+
+
+
+- 之后直接通过该表来排除对于的员工id即可，SQL如下
+
+```mysql
+SELECT
+	name
+FROM
+	salesperson
+WHERE sales_id NOT IN (
+	SQL1
+)
+```
+
+****
 
 
 
@@ -347,4 +540,194 @@ LIMIT 1;
 
 
 
+
+
+# Day41
+
+## Tag: HAVING, IF
+
+![Xnip2021-09-02_15-09-54](MySQL Note.assets/Xnip2021-09-02_15-09-54.jpg)
+
+
+
+![Xnip2021-09-02_15-23-28](MySQL Note.assets/Xnip2021-09-02_15-23-28.jpg)
+
+题意:
+
+给你一张产品信息表和一张销售记录表，请你查询出所有购买了S8但没有购买iPhone的用户id
+
+
+
+思路:
+
+- 由于需要查询的字段和限制的字段在两张表中，所以我们需要进行连接
+- 限制条件是根据用户id来划分的，所以我们需要分组
+- 最后在分组的前提下用HAVING进行限制，分别计算购买两种产品的数量即可，SQL如下:
+
+```mysql
+SELECT
+	t1.buyer_id
+FROM
+	Sales AS t1
+LEFT JOIN Product AS t2 ON t1.product_id = t2.product_id
+GROUP BY t1.buyer_id
+HAVING SUM(IF(t2.product_name = 'S8', 1, 0)) >= 1 AND SUM(IF(t2.product_name = 'iPhone', 1, 0)) = 0;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day42
+
+## Tag: HAVING, SUM, LEFT
+
+![Xnip2021-09-03_14-33-27](MySQL Note.assets/Xnip2021-09-03_14-33-27.jpg)
+
+
+
+![Xnip2021-09-03_14-36-58](MySQL Note.assets/Xnip2021-09-03_14-36-58.jpg)
+
+
+
+![Xnip2021-09-03_14-32-26](MySQL Note.assets/Xnip2021-09-03_14-32-26.jpg)
+
+题意:
+
+给你一张消费者信息表，一张产品表，一张订单记录表请你查询出所有在2020年6月和7月累加的销售金额超过100的用户id和姓名
+
+
+
+
+
+思路1:
+
+- 首先，我们需要限制日期，之后再计算金额，这里我们可以用YEAR和MONTH来分别限制月份和年
+- 由于金额需要按照月份和用户划分计算，所以我们需要DATE_FORMAT来格式化输出，分组后使用HAVING筛选出所有累计金额大于等于100的数据，SQL如下:
+
+SQL1:
+
+```mysql
+SELECT
+	t3.name,
+	t3.customer_id,
+	DATE_FORMAT(t1.order_date, '%Y-%m') AS 'month',
+	SUM(t1.quantity * t2.price) AS 'cost'
+FROM
+	Orders AS t1,
+	Product AS t2,
+	Customers AS t3
+WHERE t1.product_id = t2.product_id
+AND YEAR(t1.order_date) = '2020'
+AND MONTH(t1.order_date) REGEXP '[67]'
+AND t1.customer_id = t3.customer_id
+GROUP BY t3.name, month, t3.customer_id
+HAVING cost >= 100
+```
+
+- 月份这里我们使用了正则表达式，这样可以避免写两个MONTH判断
+
+
+
+- 根据这张临时表，我们可以获得对应时期内所有交易大于100的用户数据
+- 由于数据是按照月份和用户划分的，所以如果一个用户在表中有两条数据，则说明他在两个月份都达到了100及以上的消费金额，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	customer_id,
+	name
+FROM (
+	SQL1
+ ) AS t1
+GROUP BY name, customer_id
+HAVING COUNT(name) > 1;
+```
+
+
+
+
+
+
+
+
+
+思路2:
+
+- 分组的思路不变，我们可以利用SUM嵌套IF来计算符合日期的金额
+- 取日期的时候，可利用LEFT来获取左边的7位字符，限定SUM结果 >= 100即可，这样便简洁了不少，SQL如下
+
+```mysql
+SELECT
+	t1.customer_id,
+	t1.name
+FROM
+	Customers AS t1
+JOIN Orders AS t20N t1.customer_id =t2.customer_id
+JOIN Product AS t3 oN t2.product_id =t3.product_id
+GROUP BY t1.customer_id, t1.name
+HAVING SUM(IF (LEFT(t2.order_date,7) ='2020-06', t2.quantity * t3.price,8)) >=100 
+AND SUM(IF(LEFT(t2.order_date,7) ='2020-07', t2.q2uantity * t3.price,8))>=100;
+```
+
+****
+
+
+
+
+
+
+
+# Day43
+
+## Tag: AND in IF
+
+![Xnip2021-09-05_20-58-16](MySQL Note.assets/Xnip2021-09-05_20-58-16.jpg)
+
+
+
+![Xnip2021-09-05_20-58-45](MySQL Note.assets/Xnip2021-09-05_20-58-45.jpg)
+
+题意:
+
+给你一张表，其中每条数据有三个字段，分别代表三角形的三个边，请你判断每一条数据是否可以构成三角形
+
+
+
+思路:
+
+- 按照传统的方法，我们需要判断三次两边之和是否大于第三边，这里我们可以使用IF中嵌套使用AND的方式来做，SQL如下
+
+```mysql
+SELECT
+	x,
+	y,
+	z,
+	IF(x + y > z AND x + z > y AND y + z > x, 'Yes', 'No') AS 'triangle'
+FROM
+	triangle
+```
+
+
+
+- 当然还可以使用更有逼格的余弦定理，SQL如下
+
+```mysql
+SELECT
+	x,
+	y,
+	z,
+	IF(ABS((POWER(x, 2) - POWER(y, 2) - POWER(z, 2)) / (2 * y * z)) < 1,'Yes','No') AS 'triangle'
+FROM 
+	triangle
+```
 
