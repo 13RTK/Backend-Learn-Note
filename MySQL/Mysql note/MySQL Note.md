@@ -2441,6 +2441,10 @@ exam:
 
 **了解**
 
+- 不能对视图创建索引，也不能关联触发器Trigger
+
+
+
 
 
 - 视图的作用:
@@ -3521,9 +3525,165 @@ Eg:
 
 ![Xnip2021-08-16_16-57-21](MySQL Note.assets/Xnip2021-08-16_16-57-21.jpg)
 
+****
 
 
 
+
+
+
+
+
+
+
+
+
+
+# 十八、游标
+
+// 了解
+
+
+
+- 游标存储SQL的结果，它只能在存储过程中使用
+- 使用游标前必须声明它(其定义的SELECT语句)，声明后需要打开打开才能使用，使用后必须关闭
+
+
+
+## 1. 创建/打开/关闭游标
+
+
+
+在存储过程中创建游标:
+
+Syntax:
+
+```mysql
+CREATE PROCEDURE procedure_name()
+BEGIN
+	DECLARE cursor_name CURSOR
+	FOR
+	SELECT...										#SQL Query
+END;
+```
+
+
+
+
+
+打开已经创建的游标:
+
+Syntax:
+
+```mysql
+OPEN cursor_name;
+```
+
+
+
+
+
+关闭打开的游标:
+
+Syntax:
+
+```mysql
+CLOSE cursor_name;
+```
+
+
+
+
+
+
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十九、触发器
+
+- 触发器可以在指定操作发生后自动执行
+- 触发器只能响应三中语句: DELETE, UPDATE, INSERT
+- 最好保证触发器的名字是数据库范围内是唯一的
+
+
+
+
+
+## 1. 创建/删除触发器
+
+
+
+创建:
+
+- 创建时需要给出三个参数:
+- 关联的表、响应的操作、响应的时间(操作之前或者之后)
+- 一个触发器只能与一张表或者一个事件关联
+
+
+
+Syntax:
+
+```mysql
+CREATE TRIGGER trigger_name AFTER/BEFORE INSERT/UPDATE/DELETE ON relate_table
+option(FOR EACH ROW) execute_SQL
+```
+
+
+
+Eg:
+
+
+
+
+
+
+
+
+
+
+
+
+
+删除:
+
+- 触发器不能进行覆盖，所以想要修改触发器只能先删除再创建
+
+Syntax:
+
+```mysql
+DROP TRIGGER trigger_name
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. INSERT触发器
+
+- INSERT触发器的临时表名为"NEW"，调用时使用NEW.colum即可
+- 如果要在数据插入之前对数据进行验证和修改，则需要使用BEFORE触发器，简单的查看插入的数据则使用AFTER
 
 
 

@@ -731,3 +731,492 @@ FROM
 	triangle
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day44
+
+## Tag: CASE WHEN, IF
+
+![Xnip2021-09-06_09-04-03](MySQL Note.assets/Xnip2021-09-06_09-04-03.jpg)
+
+
+
+![Xnip2021-09-06_09-01-38](MySQL Note.assets/Xnip2021-09-06_09-01-38.jpg)
+
+题意:
+
+给你一张队伍信息表和一张比赛记录表，请你查询出每个队伍的的比赛次数、比赛总得分、进球总数、对手的进球总数和与对手进球总数的差值。如果两队比分相同，则各加1分，否则胜者加3分
+
+
+
+
+
+思路:
+
+- 因为比赛记录和对我名称在两张表中，所以我们需要通过id来连接
+- 计算比赛次数可以通过两边的id匹配来获得，由于记录中的id有两列，所以我们可以使用OR来覆盖匹配两列字段，SQL如下
+
+```mysql
+SUM(IF(t2.home_team_id = t1.team_id OR t2.away_team_id = t1.team_id, 1, 0)) AS 'matches_played',
+```
+
+
+
+
+
+- 分数的计算大致有三种情况，但每种情况又要分为主队和客队，所以我们可以通过CASE WHEN来连接三种情况，每种情况又用OR来覆盖主队和客队的情况，SQL如下
+
+```mysql
+SUM(
+	CASE 
+	WHEN (t1.team_id = t2.home_team_id AND t2.home_team_goals > t2.away_team_goals) OR
+	(t1.team_id = t2.away_team_id AND t2.away_team_goals > t2.home_team_goals) THEN 3
+	WHEN (t1.team_id = t2.home_team_id AND t2.home_team_goals < t2.away_team_goals) OR
+	(t1.team_id = t2.away_team_id AND t2.away_team_goals < t2.home_team_goals) THEN 0
+	ELSE 1 END) AS 'points',
+```
+
+
+
+- 进球数则简单的用IF来划分主客队的情况，并用SUM来计算即可，对手的进球数也是如此
+- 最后再将这两个查询相减即可，SQL如下
+
+```mysql
+SUM(IF(team_id = home_team_id, home_team_goals, away_team_goals)) AS 'goal_for',
+	SUM(IF(team_id = home_team_id, away_team_goals, home_team_goals)) AS 'goal_against',
+	SUM(IF(team_id = home_team_id, home_team_goals, away_team_goals)) - SUM(IF(team_id = home_team_id, away_team_goals, home_team_goals)) AS 'goal_diff'
+```
+
+
+
+
+
+- 连接这些字段，最终SQL如下
+
+```mysql
+SELECT
+	t1.team_name,
+	SUM(IF(t2.home_team_id = t1.team_id OR t2.away_team_id = t1.team_id, 1, 0)) AS 'matches_played',
+	SUM(
+	CASE
+	WHEN (t1.team_id = t2.home_team_id AND t2.home_team_goals > t2.away_team_goals) OR
+	(t1.team_id = t2.away_team_id AND t2.away_team_goals > t2.home_team_goals) THEN 3
+	WHEN (t1.team_id = t2.home_team_id AND t2.home_team_goals < t2.away_team_goals) OR
+	(t1.team_id = t2.away_team_id AND t2.away_team_goals < t2.home_team_goals) THEN 0
+	ELSE 1 END) AS 'points',
+	SUM(IF(team_id = home_team_id, home_team_goals, away_team_goals)) AS 'goal_for',
+	SUM(IF(team_id = home_team_id, away_team_goals, home_team_goals)) AS 'goal_against',
+	SUM(IF(team_id = home_team_id, home_team_goals, away_team_goals)) - SUM(IF(team_id = home_team_id, away_team_goals, home_team_goals)) AS 'goal_diff'
+FROM
+	Teams AS t1,
+	Matches AS t2
+WHERE t1.team_id = t2.home_team_id OR t1.team_id = t2.away_team_id
+GROUP BY t1.team_name
+ORDER BY points DESC, goal_diff DESC, t1.team_name;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day45
+
+## Tag: HAVING, AVG
+
+![Xnip2021-09-07_14-41-06](MySQL Note.assets/Xnip2021-09-07_14-41-06.jpg)
+
+
+
+![Xnip2021-09-07_14-40-05](MySQL Note.assets/Xnip2021-09-07_14-40-05.jpg)
+
+题意:
+
+给你一张国家号码对照表，一张用户信息表，一张通话记录表，请你查询出其中平均通话时长大于全球平均时长的国家名称
+
+
+
+
+
+思路:
+
+- 首先我们需要查询出平均时长，这里使用AVG即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+	AVG(duration)
+FROM
+	Calls
+```
+
+
+
+
+
+- 之后我们需要连接三张表，其中用户id和用户号码之间靠caller_id和callee_id关联
+- 用户电话号码则通过LEFT提取左边三位后与国家号码匹配即可，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	t3.name AS 'country'
+FROM
+	Calls AS t1,
+	Person AS t2,
+	Country AS t3
+WHERE (t1.caller_id = t2.id OR t1.callee_id = t2.id) 
+AND t3.country_code = LEFT(t2.phone_number, 3) 
+```
+
+
+
+
+
+- 在SQL2的基础上，我们可以获取每个国家的平均通话时长，SQL如下:
+
+```mysql
+SELECT
+	t3.name AS 'country',
+	AVG(t1.duration)
+FROM
+	Calls AS t1,
+	Person AS t2,
+	Country AS t3
+WHERE (t1.caller_id = t2.id OR t1.callee_id = t2.id) 
+AND t3.country_code = LEFT(t2.phone_number, 3) 
+GROUP BY t3.name
+```
+
+
+
+
+
+- 因此，我们在SQL2的基础上使用HAVING进行分组后查询，并结合SQL1来判断，SQL如下:
+
+```mysql
+SQL1 
+GROUP BY t3.name
+HAVING AVG(t1.duration) > (SQL1);
+```
+
+****
+
+
+
+
+
+
+
+
+
+# Day46
+
+## Tag: IFNULL, LEFT JOIN
+
+![Xnip2021-09-08_07-46-30](MySQL Note.assets/Xnip2021-09-08_07-46-30.jpg)
+
+
+
+![Xnip2021-09-08_08-01-34](MySQL Note.assets/Xnip2021-09-08_08-01-34.jpg)
+
+题意:
+
+给你一张学校招生限额表和一张学生分数段统计表，请你根据这两张表查询出每个学校应该设置的分数线，其中每个学校的分数线应该尽可能高，且应该招收尽可能多的学生，无法满足的学校设置为-1
+
+
+
+思路:
+
+- 因为需要招收尽可能多的学生，所以我们需要满足学校容量大于等于对应分数段的人数，而容量大的学校对应的分数应该尽可能低，所以需要取最小值
+- 又因为部分学校名额不足，可能无法获取对应的分数段，所以连接两表时需要以学校表为主，使用左/右连接
+- 如果出现名额不足，则分数查询结果为NULL，此时需要我们将NULL转换为-1，使用IFNULL即可，SQL如下
+
+```mysql
+SELECT
+    t1.school_id,
+    IFNULL(MIN(t2.score), -1) AS 'score'
+FROM
+    Schools AS t1
+LEFT JOIN Exam AS t2 ON t1.capacity >= t2.student_count
+GROUP BY t1.school_id;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day47
+
+## Tag: LEFT JOIN, IFNULL
+
+![Xnip2021-09-09_09-13-26](MySQL Note.assets/Xnip2021-09-09_09-13-26.jpg)
+
+
+
+![Xnip2021-09-09_09-13-43](MySQL Note.assets/Xnip2021-09-09_09-13-43.jpg)
+
+题意:
+
+给你一张大箱子的表，其中每个大箱子里可能有小箱子，没有小箱子的话chest_id为null，但每个大箱子都有一定数量的苹果和橘子，
+
+请你计算出每个大箱子中所有的苹果和桃子的数量(有小箱子的话也要计算小箱子里的数量)
+
+
+
+
+
+思路:
+
+- 首先不考虑null，如果每个大箱子里都有小箱子，则连接两张表(以大箱子为主的左/右连接)
+- 直接将两个表中的两字段通过SUM相加即可
+- 但如果部分大箱子内没有小箱子的话，我们就要讨论null的情况了
+- 这里我们直接使用IFNULL即可，如果连接后为null，则记为0即可，SQL如下:
+
+```mysql
+SELECT
+	SUM(IFNULL(t1.apple_count, 0) + IFNULL(t2.apple_count, 0)) AS 'apple_count',
+	SUM(IFNULL(t1.orange_count, 0) + IFNULL(t2.orange_count, 0)) AS 'orange_count'
+FROM
+	Boxes AS t1
+LEFT JOIN Chests AS t2 ON t1.chest_id = t2.chest_id;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day48
+
+## Tag: LEFT JOIN, HAVING, AVG
+
+![Xnip2021-09-10_09-55-29](MySQL Note.assets/Xnip2021-09-10_09-55-29.jpg)
+
+
+
+![Xnip2021-09-10_09-55-43](MySQL Note.assets/Xnip2021-09-10_09-55-43.jpg)
+
+题意:
+
+给你一张业务记录表，请你找出其中活跃业务的id，其中活跃业务是指其业务中至少有两个类型的事件发生数大于平均值
+
+
+
+
+
+思路:
+
+- 首先自然需要算出每个类型时间的平均值，方便后面的比对，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	event_type,
+	AVG(occurences) AS 'avg_occurence'
+FROM
+	Events
+GROUP BY event_type;
+```
+
+
+
+
+
+- 根据这张临时表，我们再连接上原表后，以原表的记录为主，找出所有对应类型事件发生数大于平均值的数据，SQL如下:
+
+SQL2:
+
+```mysql
+SELECT
+	business_id
+FROM
+	Events AS t1
+LEFT JOIN (
+	SQL1
+	) AS t2 ON t1.event_type = t2.event_type
+WHERE t1.occurences > t2.avg_occurence;
+```
+
+
+
+
+
+
+
+- 执行这段SQL后可以发现符合条件的id出现了两次以上，所以我们只需要再分组后计算id出现次数大于1的即可，SQL如下
+
+```mysql
+SQL1
+GROUP BY business_id
+HAVING COUNT(business_id) > 1;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day49
+
+## Tag: WHERE, BETWEEN AND
+
+![Xnip2021-09-11_13-44-34](MySQL Note.assets/Xnip2021-09-11_13-44-34.jpg)
+
+
+
+![Xnip2021-09-11_13-51-40](MySQL Note.assets/Xnip2021-09-11_13-51-40.jpg)
+
+题意:
+
+给你一张用户活动记录表，请你查询出截止2019-07-27，近30天中每天活跃用户的数量
+
+
+
+
+
+
+
+思路:
+
+- 很明显需要按照时间来分组，但用户的id在一天中可能出现多次，所以需要去重
+- 限制的条件为日期值区间，所以我们使用BETWEEN AND即可，但这里需要注意的是，左边界应该为2019-06-28，SQL如下
+
+```mysql
+SELECT
+	activity_date AS 'day',
+	COUNT(DISTINCT user_id) AS 'active_users'
+FROM
+	Activity
+WHERE activity_date BETWEEN '2019-06-28' AND '2019-07-27'
+GROUP BY activity_date;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day50
+
+## Tag: CROSS JOIN, LEFT JOIN
+
+![Xnip2021-09-12_14-34-58](MySQL Note.assets/Xnip2021-09-12_14-34-58.jpg)
+
+
+
+![Xnip2021-09-12_14-34-29](MySQL Note.assets/Xnip2021-09-12_14-34-29.jpg)
+
+题意:
+
+给你一张学生信息表，一张学科表，一张测试记录表，请你计算出每个学生在这次测试中每个科目的参与次数
+
+
+
+
+
+思路:
+
+- 看起来只需要简单的连接学生信息表和测试记录表，使用COUNT计算subject_name字段就行了，但需要注意的是，部分学生可能并没有参加所有的科目，因此其在部分科目的参与次数为0
+- 为了解决这个问题，我们首先需要将学生表和科目表进行交叉连接得到笛卡尔积才行，这样才能将每个学生与每个学科都对应上，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.student_id,
+	t1.student_name,
+	t2.subject_name
+FROM
+	Students AS t1
+CROSS JOIN Subjects AS t2
+```
+
+
+
+
+
+- 通过得到的笛卡尔积，再以此为基础连接测试记录表，得出连接结果为null的部分则说明该学生没有参加该科目，此时我们用COUNT进行计算便能成功计入每个学生在每个科目的测试次数了，SQL如下:
+
+SQL2:
+
+```mysql
+SELECT
+	t1.student_id AS 'student_id',
+	t1.student_name AS 'student_name',
+	t2.subject_name AS 'subject_name',
+	COUNT(t3.subject_name) AS 'attended_exams'
+FROM
+	Students AS t1
+CROSS JOIN Subjects AS t2
+LEFT JOIN Examinations AS t3 ON t1.student_id = t3.student_id 
+AND t2.subject_name = t3.subject_name 
+GROUP BY t1.student_id, t2.subject_name, t1.student_name 
+ORDER BY t1.student_id, t2.subject_name;
+```
+
+
+
+
+
+
+
+
+
