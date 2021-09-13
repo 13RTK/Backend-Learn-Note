@@ -1212,9 +1212,73 @@ GROUP BY t1.student_id, t2.subject_name, t1.student_name
 ORDER BY t1.student_id, t2.subject_name;
 ```
 
+****
 
 
 
+
+
+
+
+
+
+
+
+# Day51
+
+## Tag: JOIN, HAVING
+
+![Xnip2021-09-13_08-00-31](MySQL Note.assets/Xnip2021-09-13_08-00-31.jpg)
+
+
+
+![Xnip2021-09-13_08-06-14](MySQL Note.assets/Xnip2021-09-13_08-06-14.jpg)
+
+题意:
+
+给你一张用户信息表，一张登录记录表，请你其中连续5天都登录的用户信息
+
+
+
+
+
+
+
+思路:
+
+- 因为用户姓名与登录记录在不同的表中，所以需要我们连接两张表，有因为需要我们找到联系五天登录的用户，所以需要将登陆表进行自连接后进行较
+- 为了找到连续的五天的登录用户，连接登录表后我们只需要找到其中一张表的日期减去另一张表在0到4的范围即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	DISTINCT t1.*,
+	COUNT(t3.login_date)
+FROM
+	Accounts AS t1
+INNER JOIN Logins AS t2 ON t1.id = t2.id
+INNER JOIN Logins AS t3 ON t2.id = t3.id
+AND DATEDIFF(t3.login_date, t2.login_date) BETWEEN 0 AND 4
+```
+
+
+
+
+
+- 这样我们就找到了每条原始数据的日期值中对比起本身所具有的连续日期的数量，之后我们只需要找出其中连续日期数为5的数据中对应的用户信息即可，SQL如下
+
+```mysql
+SELECT
+	DISTINCT t1.*
+FROM
+	Accounts AS t1
+INNER JOIN Logins AS t2 ON t1.id = t2.id
+INNER JOIN Logins AS t3 ON t2.id = t3.id
+AND DATEDIFF(t3.login_date, t2.login_date) BETWEEN 0 AND 4
+GROUP BY t1.id, t1.name, t2.login_date
+HAVING COUNT(DISTINCT t3.login_date) = 5;
+```
 
 
 
