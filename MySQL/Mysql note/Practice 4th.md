@@ -1280,6 +1280,68 @@ GROUP BY t1.id, t1.name, t2.login_date
 HAVING COUNT(DISTINCT t3.login_date) = 5;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day52
+
+## Tag: IS (NOT) NULL, LEFT JOIN
+
+![Xnip2021-09-14_07-49-47](MySQL Note.assets/Xnip2021-09-14_07-49-47.jpg)
+
+
+
+![Xnip2021-09-14_07-50-03](MySQL Note.assets/Xnip2021-09-14_07-50-03.jpg)
+
+题意:
+
+给你一张员工信息表，请你找出其中上司离职，且工资低于30000的员工id
+
+
+
+
+
+
+
+思路:
+
+- 从题目给我们的表中数据来看，如果员工的上司离职，那么该的员工的manager_id字段虽然不为null，但自连接后是找不到对应的员工name的，所以我们以一边为准，通过匹配manager_id和employee_id后会出现上司为null的情况
+- 之后我们再筛选出所有上司为null，且工资小于30000的员工id就行了吗？
+- 看起来是这样的，但需要注意的是，部分员工的上司id为null，且这类员工有可能出现工资低于30000的情况，这样的数据不是我们想要的，但被查询了出来，所以我们需要去除这些上司id为null的数据，SQL如下
+
+```mysql
+SELECT
+	t1.employee_id
+FROM
+	Employees AS t1
+LEFT JOIN Employees AS t2 ON t1.manager_id = t2.employee_id
+WHERE t1.salary < 30000
+AND t2.name IS NULL
+AND t1.manager_id IS NOT NULL
+ORDER BY t1.employee_id;
+```
+
+
+
+
+
+
+
+
+
 
 
 

@@ -3623,14 +3623,14 @@ CLOSE cursor_name;
 
 
 
-## 1. 创建/删除触发器
+## 1. 创建/删除/查看触发器
 
 
 
 创建:
 
 - 创建时需要给出三个参数:
-- 关联的表、响应的操作、响应的时间(操作之前或者之后)
+- 响应的时间(操作之前或者之后)、响应的操作、关联的表
 - 一个触发器只能与一张表或者一个事件关联
 
 
@@ -3646,9 +3646,9 @@ option(FOR EACH ROW) execute_SQL
 
 Eg:
 
+![Xnip2021-09-13_20-41-41](MySQL Note.assets/Xnip2021-09-13_20-41-41.jpg)
 
-
-
+**注意：**《MySQL必知必会》中返回NEW临时表的形式已经不能使用了，在MySQL5.7中会报错，需要将数据传入到一个自定义的变量中才行(@insert)
 
 
 
@@ -3674,6 +3674,21 @@ DROP TRIGGER trigger_name
 
 
 
+查看:
+
+- 触发器的查看与表相同
+
+Syntax:
+
+```mysql
+show create trigger trigger_name;
+show triggers;
+```
+
+
+
+
+
 
 
 
@@ -3682,8 +3697,144 @@ DROP TRIGGER trigger_name
 
 ## 2. INSERT触发器
 
-- INSERT触发器的临时表名为"NEW"，调用时使用NEW.colum即可
-- 如果要在数据插入之前对数据进行验证和修改，则需要使用BEFORE触发器，简单的查看插入的数据则使用AFTER
+- INSERT触发器只能将插入的值通过insert赋给变量(@)，触发后查询该变量即可
+
+
+
+Syntax:
+
+```mysql
+CREATE TRIGGER trigger_name AFTER/BEFORE ON trigger_table
+FOR EACH ROW SELECT 'text' INTO @var
+```
+
+
+
+Eg:
+
+![Xnip2021-09-13_20-41-41](MySQL Note.assets/Xnip2021-09-13_20-41-41.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. DELETE触发器
+
+- 所有被删除的数据都在临时表OLD中，通过OLD.的方式直接调用即可
+
+
+
+Syntax:
+
+```mysql
+CREATE TRIGGER trigger_name BEFORE DELETE trigger_table
+FOR EACH ROW SQL;
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-13_21-35-58](MySQL Note.assets/Xnip2021-09-13_21-35-58.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. UPDATE触发器
+
+- 更新的数据存储在名为NEW的虚拟表中
+- 更新前的老数据在名为OLD的虚拟表中
+- 可以在BEFORE触发器中更新NEW中的数据，从而实现在数据插入之前对数据进行更新
+- OLD表中的数据是只读的，无法更改
+
+
+
+
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-14_08-15-19](MySQL Note.assets/Xnip2021-09-14_08-15-19.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 二十、全球化/本地化
+
+
+
+
+
+## 1. 字符集
+
+
+
+显示支持的字符集:
+
+```mysql
+show character set;
+```
+
+
+
+
+
+显示默认的字符集:
+
+```mysql
+show variables like 'character%';
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 校对
+
+
 
 
 
