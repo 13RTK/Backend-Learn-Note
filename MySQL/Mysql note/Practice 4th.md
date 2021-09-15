@@ -1334,6 +1334,53 @@ AND t1.manager_id IS NOT NULL
 ORDER BY t1.employee_id;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+# Day53
+
+## Tag: DATE_FORMAT()
+
+![Xnip2021-09-15_08-13-55](MySQL Note.assets/Xnip2021-09-15_08-13-55.jpg)
+
+
+
+![Xnip2021-09-15_08-14-32](MySQL Note.assets/Xnip2021-09-15_08-14-32.jpg)
+
+
+
+![Xnip2021-09-15_08-16-09](MySQL Note.assets/Xnip2021-09-15_08-16-09.jpg)
+
+
+
+题意:
+
+给你一张日期表，请你将它转换为特定的格式
+
+
+
+
+
+思路:
+
+- 日期格式很明显需要使用DATE_FORMAT函数，这里所指定的日期格式都有对应的格式符号，所以简单查一下表就行了，SQL如下
+
+```mysql
+SELECT
+    DATE_FORMAT(day, '%W, %M %e, %Y') AS 'day'
+FROM
+    Days;
+```
+
+
+
 
 
 

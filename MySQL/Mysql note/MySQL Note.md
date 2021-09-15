@@ -8,6 +8,8 @@
 
 
 
+
+
 # 一、MySQL基础操作(数据库操作)
 
 
@@ -3810,7 +3812,11 @@ Eg:
 show character set;
 ```
 
+Eg:
 
+![Xnip2021-09-14_10-16-53](MySQL Note.assets/Xnip2021-09-14_10-16-53.jpg)
+
+- 同时会显示该字符集默认的校对
 
 
 
@@ -3821,6 +3827,10 @@ show variables like 'character%';
 ```
 
 
+
+Eg:
+
+![Xnip2021-09-14_10-18-06](MySQL Note.assets/Xnip2021-09-14_10-18-06.jpg)
 
 
 
@@ -3833,6 +3843,318 @@ show variables like 'character%';
 
 
 ## 2. 校对
+
+- 规定了字符的比较规则(是否区分大小写等等)
+
+
+
+显示所有支持的校对
+
+Syntax:
+
+```mysql
+show collation;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-14_10-21-55](MySQL Note.assets/Xnip2021-09-14_10-21-55.jpg)
+
+- 同时会显示其支持的字符集
+
+
+
+
+
+
+
+
+
+
+
+## 3. 字符集和校对的使用
+
+- 对于库/表/字段都可以设置不同的字符集和校对
+- 如果指定了character set和collate，则使用指定的字符集和校对
+- 如果只指定了character set，则只会使用该字符集默认的校对
+
+
+
+
+
+指定表的字符集和校对:
+
+Syntax:
+
+```mysql
+create table table_name(
+column1...,
+) DEFAULT CHARACTER SET char_name
+COLLATE collation_name;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-14_10-32-29](MySQL Note.assets/Xnip2021-09-14_10-32-29.jpg)
+
+
+
+
+
+修改表的字符集
+
+Syntax:
+
+```mysql
+ALTER TABLE table_name CONVERT TO CHARACTER SET char_set_name;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-14_10-43-27](MySQL Note.assets/Xnip2021-09-14_10-43-27.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+指定字段的字符集和校对
+
+Syntax:
+
+```mysql
+create table table_name(
+column1 type character set xx collate xx,
+...
+);
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-14_10-38-18](MySQL Note.assets/Xnip2021-09-14_10-38-18.jpg)
+
+
+
+
+
+
+
+修改字段的字符集
+
+Syntax:
+
+```mysql
+ALTER TABLE table_name MODIFY column_name type character set char_set_name;
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-14_10-46-39](MySQL Note.assets/Xnip2021-09-14_10-46-39.jpg)
+
+****
+
+
+
+
+
+# 二十一、安全管理
+
+
+
+## 1. 用户管理
+
+
+
+- 日常中不得使用root用户
+- 用户信息都存储在mysql库，user表中
+- 查看当前用户的方法: SELECT user()或者SELECT current_user();
+
+
+
+Eg: 
+
+![Xnip2021-09-14_10-55-58](MySQL Note.assets/Xnip2021-09-14_10-55-58.jpg)
+
+
+
+
+
+创建用户账号
+
+Syntax:
+
+```mysql
+CREATE USER user_name IDENTIFIED BY 'password';
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-14_11-03-28](MySQL Note.assets/Xnip2021-09-14_11-03-28.jpg)
+
+
+
+
+
+
+
+重命名用户名
+
+Syntax:
+
+```mysql
+RENAME USER user_name to new_user_name
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-14_11-05-45](MySQL Note.assets/Xnip2021-09-14_11-05-45.jpg)
+
+- 注：在MySQL5之后的版本才能这样用，之前的版本只能通过UPDATE更新字段
+
+
+
+
+
+
+
+删除用户
+
+syntax:
+
+```mysql
+DROP user user_name;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-14_11-07-59](MySQL Note.assets/Xnip2021-09-14_11-07-59.jpg)
+
+- 在MySQL5之后的版本通过drop可以删除用户及其权限，但之前的版本无法删除权限
+
+
+
+
+
+
+
+
+
+## 2. 用户权限
+
+- 添加/删除对于整个服务器的权限: GRANT ALL/REVOKE ALL
+- 针对整个数据库: ON database.* 和 FROM database.*
+- 针对某张表: ON database.table_name 和 FROM database.table
+- 在使用GRANT/REVOKE时，其指定的库/表可以不存在(即在设计之前对用户进行权限的管理)，但该权限不会随对应的库表的删除而消失
+
+
+
+查看用户权限
+
+syntax:
+
+```mysql
+show grant for user_name;
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-14_11-13-29](MySQL Note.assets/Xnip2021-09-14_11-13-29.jpg)
+
+- USAGE表示没有任何权限，TO后面是用户@主机名的组合
+- 查询时如果不指定主机名，则默认使用%即不限制主机名
+
+
+
+
+
+
+
+
+
+
+
+设置用户权限
+
+syntax:
+
+```mysql
+GRANT SELECT ON database_name.table_name TO user_name;
+```
+
+
+
+
+
+Eg:
+
+<img src="MySQL Note.assets/Xnip2021-09-14_13-27-25.jpg" alt="Xnip2021-09-14_13-27-25" style="zoom:50%;" />
+
+
+
+
+
+
+
+
+
+删除用户权限
+
+syntax:
+
+```mysql
+REVOKE operation ON database.table FROM user_name
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-14_13-43-24](MySQL Note.assets/Xnip2021-09-14_13-43-24.jpg)
+
+
+
+
+
+
 
 
 
