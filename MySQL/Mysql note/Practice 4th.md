@@ -1379,7 +1379,52 @@ FROM
     Days;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+# Day54
+
+## Tag: GROUP BY
+
+![Xnip2021-09-16_08-18-39](MySQL Note.assets/Xnip2021-09-16_08-18-39.jpg)
+
+
+
+![Xnip2021-09-16_08-18-15](MySQL Note.assets/Xnip2021-09-16_08-18-15.jpg)
+
+题意:
+
+给你一张演员-导演合作表，请你计算出其中合作过至少三次的演员-导演对
+
+
+
+
+
+
+
+思路:
+
+- 通常的分组都是针对一个字段的，所以看这道题可能认为无法使用group by，但其实直接使用group by即可
+- 具体的筛选则需要使用分组后的HAVING，SQL如下
+
+```mysql
+SELECT
+	actor_id,
+	director_id
+FROM
+	ActorDirector
+GROUP BY actor_id, director_id
+HAVING COUNT(*) >= 3;
+```
 
 
 
