@@ -1426,6 +1426,52 @@ GROUP BY actor_id, director_id
 HAVING COUNT(*) >= 3;
 ```
 
+****
+
+
+
+
+
+
+
+# Day55
+
+## Tag: DATE_FORMAT, DISTINCT
+
+![Xnip2021-09-17_15-31-40](MySQL Note.assets/Xnip2021-09-17_15-31-40.jpg)
+
+
+
+![Xnip2021-09-17_15-31-24](MySQL Note.assets/Xnip2021-09-17_15-31-24.jpg)
+
+题意:
+
+给你一张订单记录表，请你找出每个月中订单消费金额大于20的订单数和用户数
+
+
+
+
+
+思路:
+
+- 统计订单数和用户数都需要COUNT，但按月份划分则需要使用DATE_FORMAT
+- 且由于存在聚合函数，所以需要分组，SQL如下
+
+```mysql
+SELECT
+	DATE_FORMAT(order_date, '%Y-%m') AS 'month',
+	COUNT(order_id) AS 'order_count',
+	COUNT(DISTINCT customer_id) AS 'customer_count'
+FROM
+	Orders
+WHERE invoice > 20
+GROUP BY month;
+```
+
+
+
+
+
 
 
 

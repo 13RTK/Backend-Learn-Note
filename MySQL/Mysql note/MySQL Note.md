@@ -4156,6 +4156,45 @@ Eg:
 
 
 
+## 3. 修改密码
+
+
+
+为特定用户修改密码
+
+syntax:
+
+```mysql
+SET PASSWORD FOR user_name = PASSWORD('content');
+```
+
+- 必须使用PASSWORD函数进行加密
+
+
+
+
+Eg:
+
+![Xnip2021-09-17_18-27-34](MySQL Note.assets/Xnip2021-09-17_18-27-34.jpg)
+
+- 如果不指定用户(for user_name)则默认修改当前用户的密码
+
+****
+
+
+
+
+
+
+
+
+
+
+
+# 二十二、数据库维护
+
+## 
+
 
 
 
