@@ -4193,7 +4193,43 @@ Eg:
 
 # 二十二、数据库维护
 
-## 
+
+
+## 1. Analyze检查表键
+
+syntax:
+
+```mysql
+Analyze Table table_name;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-17_18-41-23](MySQL Note.assets/Xnip2021-09-17_18-41-23.jpg)
+
+
+
+
+
+
+
+
+
+## 2. Check检查表的问题
+
+syntax:
+
+```mysql
+Check Table table_name;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-17_18-45-48](MySQL Note.assets/Xnip2021-09-17_18-45-48.jpg)
 
 
 

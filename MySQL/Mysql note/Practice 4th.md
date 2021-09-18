@@ -1468,6 +1468,7 @@ WHERE invoice > 20
 GROUP BY month;
 ```
 
+****
 
 
 
@@ -1475,6 +1476,46 @@ GROUP BY month;
 
 
 
+
+
+
+
+# Day56
+
+## Tag: HAVING, MIN, MAX, GROUP BY
+
+![Xnip2021-09-18_08-07-01](MySQL Note.assets/Xnip2021-09-18_08-07-01.jpg)
+
+
+
+![Xnip2021-09-18_08-07-18](MySQL Note.assets/Xnip2021-09-18_08-07-18.jpg)
+
+题意:
+
+给你一张产品表，一张销售记录表，请你查询出所有仅在2019年春季销售的产品
+
+
+
+
+
+思路:
+
+- 根据题目的条件，可能会第一时间想到限制销售时间，使用一个BETWEEN AND就能做到，但这里没这么简单
+- 题目要求是只在春季销售的产品，所以该产品不仅仅需要有春季的销售记录，而且在此外的时间内不得有任何销售记录才行
+- 也就是说，产品的销售日期最值应该都在春季，日期最值我们可以使用MAX和MIN，而使用聚合函数则需要分组，所以SQL如下
+
+```mysql
+SELECT
+    t1.product_id,
+    t2.product_name
+FROM
+    Sales AS t1,
+    Product AS t2
+WHERE t1.product_id = t2.product_id
+GROUP BY t1.product_id
+HAVING MIN(t1.sale_date) >= '2019-01-01'
+AND MAX(t1.sale_date) <= '2019-03-31';
+```
 
 
 
