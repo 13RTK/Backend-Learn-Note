@@ -1517,6 +1517,63 @@ HAVING MIN(t1.sale_date) >= '2019-01-01'
 AND MAX(t1.sale_date) <= '2019-03-31';
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day57
+
+## Tag: JOIN
+
+![Xnip2021-09-19_08-08-36](MySQL Note.assets/Xnip2021-09-19_08-08-36.jpg)
+
+
+
+![Xnip2021-09-19_08-08-50](MySQL Note.assets/Xnip2021-09-19_08-08-50.jpg)
+
+题意:
+
+给你三张学校的学生信息表，从每个学校中选一个人，请你查询出所有可能的组合(组合中成员的id和姓名不能相同)
+
+
+
+
+
+思路:
+
+- 由于有3个字段需要查询，而限制条件有2个，所以需要写6条限制语句，SQL如下
+
+```mysql
+SELECT
+    t1.student_name AS 'member_A',
+    t2.student_name AS 'member_B',
+    t3.student_name AS 'member_C'
+FROM
+    SchoolA AS t1,
+    SchoolB AS t2,
+    SchoolC AS t3
+WHERE t1.student_name != t2.student_name
+AND t1.student_name != t3.student_name
+AND t2.student_name != t3.student_name
+AND t1.student_id != t2.student_id
+AND t1.student_id != t3.student_id
+AND t2.student_id != t3.student_id;
+```
+
+
+
 
 
 
