@@ -1572,6 +1572,57 @@ AND t1.student_id != t3.student_id
 AND t2.student_id != t3.student_id;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day58
+
+## Tag: INNER JOIN
+
+![Xnip2021-09-20_07-48-42](MySQL Note.assets/Xnip2021-09-20_07-48-42.jpg)
+
+
+
+![Xnip2021-09-20_07-48-52](MySQL Note.assets/Xnip2021-09-20_07-48-52.jpg)
+
+题意:
+
+给你一张表，其中的值表示每个点在坐标上的位置，请你返回其中最小的两点间距离
+
+
+
+
+
+思路:
+
+- 求距离最小无非就是两表的字段相减，再取绝对值最小的结果即可，为了不让同一条数据相减，还需要限制数据不等
+- 看似要用到MIN再套一个ABS，但其实只需要一个MIN就够了，我们只需要将限制条件改为其中一个字段值大于另一个即可，这样就能保证差值为非负数了，SQL如下
+
+```mysql
+SELECT
+    MIN(t2.x - t1.x) AS 'shortest'
+FROM
+    point AS t1
+INNER JOIN point AS t2 ON t1.x < t2.x;
+```
+
+
+
+
+
 
 
 
