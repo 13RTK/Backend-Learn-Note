@@ -1678,7 +1678,56 @@ SELECT
 	(SQL1) AS 'num';
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day60
+
+## Tag: DISTINCT
+
+![Xnip2021-09-22_07-27-26](MySQL Note.assets/Xnip2021-09-22_07-27-26.jpg)
+
+
+
+![Xnip2021-09-22_07-27-39](MySQL Note.assets/Xnip2021-09-22_07-27-39.jpg)
+
+题意:
+
+给你一张活动表，请你查询出在2019-07-04各个报告理由各自的数量
+
+
+
+
+
+思路:
+
+- 查询报告理由的前提是报告，所以action字段必须为report，又由于extra字段可能为null，所以我们需要排除null，使用IS NOT NULL
+- 最后根据理由分组即可，SQL如下
+
+```mysql
+SELECT
+    extra AS 'report_reason',
+    COUNT(DISTINCT post_id) AS 'report_count'
+FROM
+    Actions
+WHERE extra IS NOT NULL
+AND action_date = '2019-07-04'
+AND action = 'report'
+GROUP BY extra
+```
 
 
 
