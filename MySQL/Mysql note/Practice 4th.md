@@ -1619,9 +1619,64 @@ FROM
 INNER JOIN point AS t2 ON t1.x < t2.x;
 ```
 
+****
 
 
 
+
+
+
+
+
+
+
+
+# Day59
+
+## Tag: NULL
+
+![Xnip2021-09-21_08-57-11](MySQL Note.assets/Xnip2021-09-21_08-57-11.jpg)
+
+
+
+![Xnip2021-09-21_08-57-24](MySQL Note.assets/Xnip2021-09-21_08-57-24.jpg)
+
+题意:
+
+给你一张数据表，请你查询出其中未重复的最大数值
+
+
+
+
+
+思路:
+
+- 未重复也就是对每个数值分组统计后，该数值的次数应该为1，最大则可以用MAX或者排序结合LIMIT来解决，这里选择后者，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	num
+FROM
+	my_numbers
+GROUP BY num
+HAVING COUNT(num) = 1
+ORDER BY num DESC
+LIMIT 1;
+```
+
+
+
+
+
+- 这样做乍一看没什么问题，但无法通过测试，因为当不存在该数值时(所有的数都有重复)，结果为空，而不是null，表格本身也没有null值，所以其没有任何输出
+- 这里我需要再次嵌套一个select，因为在select中写入空值的话，其会返回null，SQL如下
+
+```mysql
+SELECT 
+	(SQL1) AS 'num';
+```
 
 
 
