@@ -36,6 +36,57 @@ WHERE t1.parent_id is null
 ORDER BY t1.sub_id
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day62
+
+## Tag: LEFT JOIN
+
+![Xnip2021-09-24_09-02-45](MySQL Note.assets/Xnip2021-09-24_09-02-45.jpg)
+
+
+
+![Xnip2021-09-24_09-02-57](MySQL Note.assets/Xnip2021-09-24_09-02-57.jpg)
+
+题意:
+
+给你一张项目人员对应表，一张员工信息表，请你查询出每个项目对应的平均人员工作年限
+
+
+
+
+
+思路:
+
+- 求平均年限即对employee表中的experience_year字段求平均值，一个AVG就能搞定
+- 但项目信息在另一张表中，所以需要我们连接两张表，SQL如下
+
+```mysql
+SELECT
+    t1.project_id,
+    ROUND(AVG(t2.experience_years), 2) AS 'average_years'
+FROM
+    Project AS t1
+LEFT JOIN Employee AS t2 ON t1.employee_id = t2.employee_id
+GROUP BY t1.project_id;
+```
+
+
+
 
 
 
