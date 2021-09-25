@@ -275,3 +275,27 @@ Eg:
 
 
 
+### 查看支持的引擎
+
+syntax:
+
+```mysql
+show engines;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-25_21-43-33](MySQL Note.assets/Xnip2021-09-25_21-43-33.jpg)
+
+
+
+
+
+
+
+
+
+
+

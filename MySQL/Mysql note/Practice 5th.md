@@ -85,6 +85,75 @@ LEFT JOIN Employee AS t2 ON t1.employee_id = t2.employee_id
 GROUP BY t1.project_id;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+# Day63
+
+## Tag: GROUP BY, HAVING
+
+![MySQL mac ver.](MySQL Note.assets/MySQL mac ver..jpg)
+
+
+
+![Xnip2021-09-25_08-06-04](MySQL Note.assets/Xnip2021-09-25_08-06-04.jpg)
+
+题意:
+
+给你一张项目表，请你查询出其中员工数最多的项目
+
+
+
+
+
+思路:
+
+- 需要注意的是，员工数最多的项目很可能不知一个，所以我们需要先查询出其中最大的员工数量，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	COUNT(employee_id) AS 'emp_num'
+FROM
+	Project
+GROUP BY project_id
+ORDER BY emp_num DESC
+LIMIT 1;
+```
+
+
+
+
+
+
+
+- 之后再根据这个数据来匹配即可，SQL如下
+
+```mysql
+SELECT
+    project_id
+FROM
+    Project
+GROUP BY project_id
+HAVING COUNT(employee_id) = SQL1;
+```
+
+
+
+
+
+
+
 
 
 
