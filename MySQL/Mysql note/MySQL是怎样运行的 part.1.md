@@ -297,5 +297,150 @@ Eg:
 
 
 
+### 设置表的存储引擎
+
+
+
+在创建表时指定
+
+syntax:
+
+```mysql
+create table table_name(
+column_1 type,
+...
+)engine=engine_name;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-25_21-53-08](MySQL Note.assets/Xnip2021-09-25_21-53-08.jpg)
+
+
+
+
+
+
+
+修改已存在表的存储引擎
+
+syntax:
+
+```mysql
+alter table table_name engine = new_engine_name;
+```
+
+![Xnip2021-09-25_21-56-32](MySQL Note.assets/Xnip2021-09-25_21-56-32.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 二、MySQL设置
+
+
+
+## 1. 启动参数/配置文件
+
+
+
+### CLI上使用选项参数
+
+- 该方法仅针对当次启动
+
+
+
+- 禁用TCP/IP通信
+
+```shell
+mysqld --skip-networking
+```
+
+
+
+
+
+- 设置默认的存储引擎
+
+```shell
+mysqld --default-storage-engine=engine_name
+```
+
+**注：**选项名和选项值之间不得有空格
+
+
+
+
+
+- 查看运行程序的帮助说明
+
+```shell
+mysql --help
+mysql_safe --help
+mysqld --verbose --help(特殊)
+```
+
+- 许多选项参数都有对应的短形式
+- 短形式允许选项名与选项值之间用space隔开
+
+
+
+
+
+
+
+
+
+
+
+### 配置文件
+
+- 比起CLI，修改配置文件能一劳永逸！
+
+
+
+UNIX系统依次读取配置文件的顺序:
+
+|        Path        |             Describ              |
+| :----------------: | :------------------------------: |
+|    /etc/my.cnf     |                                  |
+| /etc/mysql/my.cnf  |                                  |
+| SYSCONFDIR/my.cnf  |                                  |
+| $MYSQL_HOME/my.cnf |        仅指定服务器的选项        |
+| default-extra-file | 由命令行指定的额外的配置文件路径 |
+|     ～/.my.cnf     |          用于用户的选项          |
+|   /.mylogin.cnf    |    仅指定客户端的登录路径选项    |
+
+- 除了$MYSQL_HOME/my.cnf和/.mylogin.cnf外其余配置文件既能放server也能放client的文件
+- .mylogin.cnf只能用mysql_config_editor创建/修改
+
+
+
+
+
+
+
+
+
+
+
 
 

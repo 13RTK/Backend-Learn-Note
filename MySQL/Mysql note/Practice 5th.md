@@ -148,6 +148,58 @@ GROUP BY project_id
 HAVING COUNT(employee_id) = SQL1;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day64
+
+## Tag: DISTINCT, BETWEEN AND
+
+![Xnip2021-09-26_07-36-10](MySQL Note.assets/Xnip2021-09-26_07-36-10.jpg)
+
+
+
+![Xnip2021-09-26_07-35-47](MySQL Note.assets/Xnip2021-09-26_07-35-47.jpg)
+
+题意:
+
+给你一张用户活动表，请你计算出截止2019-07-27(包含)30天内平均每个用户的通话数
+
+
+
+
+
+思路:
+
+- 题目虽然强调了一个有效通话，但其实没什么用，这里唯一的限制就是日期，我们使用DATE_DIFF或者BETWEEN AND都行
+- 这里由于数据中存在很多重复字段，所以只能通过COUNT再DISTINCT去重的方式来计算
+- 且如果没有匹配数据，则需要将null变为0，所以需要使用IFNULL，SQL如下
+
+```mysql
+SELECT
+    IFNULL(ROUND(COUNT(DISTINCT session_id) / COUNT(DISTINCT user_id), 2), 0) AS 'average_sessions_per_user'
+FROM
+    Activity
+WHERE activity_date BETWEEN '2019-06-28' AND '2019-07-27'
+```
+
+
+
+
+
 
 
 
