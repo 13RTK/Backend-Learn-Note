@@ -1,3 +1,5 @@
+
+
 # 一、MySQL概述
 
 
@@ -431,6 +433,313 @@ UNIX系统依次读取配置文件的顺序:
 
 - 除了$MYSQL_HOME/my.cnf和/.mylogin.cnf外其余配置文件既能放server也能放client的文件
 - .mylogin.cnf只能用mysql_config_editor创建/修改
+
+
+
+Eg:
+
+![Xnip2021-09-26_08-16-08](MySQL Note.assets/Xnip2021-09-26_08-16-08.jpg)
+
+
+
+![Xnip2021-09-26_08-15-02](MySQL Note.assets/Xnip2021-09-26_08-15-02.jpg)
+
+
+
+
+
+配置文件中程序对应组名以及作用
+
+| Program_name | Effect |               Group                |
+| :----------: | :----: | :--------------------------------: |
+|    mysqld    | server |         [mysqld], [server]         |
+| mysqld_safe  | server | [mysqld], [server], [mysqld_safe]  |
+| mysql.server | server | [mysqld], [server], [mysql.server] |
+|    mysql     | client |         [mysql], [client]          |
+|  mysqladmin  | client |       [mysqladmin], [client]       |
+|  mysqldump   | client |       [mysqldump], [client]        |
+
+- 任意选项组后都能添加版本号，用于特定的版本
+
+
+
+
+
+多个配置文件的优先级:
+
+- 如果多个配置文件中有重复的配置选项，且选项值不同，则以最后一次加载的文件为准
+- 加载顺序与读取顺序相同
+
+
+
+
+
+同一个配置文件中组的优先级:
+
+- 如果同一个配置文件中有多个相同作用的组，且选项值不同，则以最后一个组为准
+
+如:
+
+```json
+[server]
+default-storage-engine=InnoDB
+
+[mysqld]
+default-storage-engine=MyISAM
+```
+
+- 此时默认的引擎为MyISAM，因为[mysqld]选项组靠后
+
+
+
+
+
+
+
+
+
+额外文件:
+
+- 在CLI中，使用default-file可以指定server加载**唯一的配置文件**
+- 使用default-extra-file则依然会加载默认的配置文件
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### CLI和配置文件的区别
+
+- 如果一个选项同时出现在配置文件和命令行，则以CLI为准
+- 选项只能用于CLI，类似default-file和default-extra-file这样的放在配置文件中无意义
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 系统变量
+
+- 用于在运行中限制服务器
+- 可以在运行中修改，不需要重启
+
+
+
+
+
+
+
+### 查看系统变量
+
+syntax:
+
+```mysql
+show variables like parttern
+```
+
+- 可以结合通配符进行模糊查询
+- 未指定global和session时，默认输出为会话变量
+
+
+
+Eg:
+
+![Xnip2021-09-26_10-25-09](MySQL Note.assets/Xnip2021-09-26_10-25-09.jpg)
+
+
+
+![Xnip2021-09-26_10-25-57](MySQL Note.assets/Xnip2021-09-26_10-25-57.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 设置系统变量
+
+
+
+#### 通过启动项
+
+- 命令行直接设置(同启动参数)
+- 配置文件
+
+**注：**通过启动项的方式时，各个单词可以使用-隔开，也能使用_，但对于系统变量而言，必须使用 _(建议统一使用 _)。
+
+
+
+
+
+
+
+#### 运行过程中修改
+
+- 大多数系统变量可以在运行时修改
+- 但系统变量按照作用范围可分为GLOBAL(全局)和SESSION(会话)
+
+
+
+全局变量(global):
+
+- 在服务器启动时初始化为默认值，默认值来自CLI或者配置文件
+- 会影响服务器的整体操作
+- 通过CLI和配置文件设置的是全局变量
+
+
+
+会话变量(session):
+
+- 影响服务器和某个客户端的连接(大部分会根据全局变量进行初始化)
+
+
+
+
+
+
+
+
+
+#### 通过client
+
+- 设置全局变量
+
+syntax:
+
+```mysql
+SET GLOBAL variable_name = value
+```
+
+- 设置的全局变量对当前连接的client中会话变量无影响
+
+
+
+Eg:
+
+![Xnip2021-09-26_10-49-46](MySQL Note.assets/Xnip2021-09-26_10-49-46.jpg)
+
+
+
+
+
+
+
+- 设置会话变量
+
+syntax:
+
+```mysql
+SET SESSION variable_name = value;
+```
+
+- 同样，会话变量不会影响到全局
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-26_10-52-42](MySQL Note.assets/Xnip2021-09-26_10-52-42.jpg)
+
+
+
+
+
+
+
+**注意：**
+
+1. 如果在server运行中修改了global变量，之后与其连接的client的session变量都会受到影响
+2. 修改后不会影响已经与其建立连接的client中的session变量
+3. 如果修改后的变量值与配置文件中不同，则下次启动后，还是会恢复至配置文件/CLI中的值
+4. 一些变量只有global或者session作用范围
+5. 部分变量是只读的(如版本)
+6. 部分启动项和系统变量相同，但部分只能作为启动项或者系统变量
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. 状态变量
+
+- 显示server的运行状态
+- 不能自由修改，只能自动生成
+- 同样分为global和session
+
+
+
+查看
+
+syntax:
+
+```mysql
+show status like variable_name;
+```
+
+- 不指定范围则默认为session
+
+
+
+Eg:
+
+![Xnip2021-09-26_11-04-41](MySQL Note.assets/Xnip2021-09-26_11-04-41.jpg)
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
