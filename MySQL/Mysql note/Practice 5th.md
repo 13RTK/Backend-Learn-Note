@@ -267,6 +267,75 @@ SQL1
 ) AS t1
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day66
+
+## Tag: UNION ALL
+
+![Xnip2021-09-28_07-28-06](MySQL Note.assets/Xnip2021-09-28_07-28-06.jpg)
+
+
+
+![Xnip2021-09-28_07-28-16](MySQL Note.assets/Xnip2021-09-28_07-28-16.jpg)
+
+题意:
+
+给你一张好友申请通过表，请你计算出其中好友最多的用户id和其好友数
+
+
+
+思路:
+
+- 一个好友申请通过后，双方应该互为好友，但我们计算的时候必须要将一列作为id进行分组，才能计算另一列
+- 所以为了将两列都计算在内，我们需要将表中的申请和通过ID交换后，与原表上下连接，SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+	requester_id AS 'id',
+	accepter_id AS 'friend'
+FROM
+	request_accepted
+UNION all
+SELECT 
+	accepter_id AS 'id',
+	requester_id AS 'friend'
+FROM
+	request_accepted;
+```
+
+
+
+
+
+- 之后再进行常规的分组和排序即可，SQL如下
+
+```mysql
+SELECT
+    id,
+    COUNT(friend) AS 'num'
+FROM (
+    SQL1
+) AS t1
+GROUP BY id
+ORDER BY num DESC
+LIMIT 1;
+```
+
 
 
 
