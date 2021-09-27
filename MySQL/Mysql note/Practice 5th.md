@@ -196,6 +196,7 @@ FROM
 WHERE activity_date BETWEEN '2019-06-28' AND '2019-07-27'
 ```
 
+****
 
 
 
@@ -211,6 +212,60 @@ WHERE activity_date BETWEEN '2019-06-28' AND '2019-07-27'
 
 
 
+
+
+
+
+# Day65
+
+## Tag: DISTINCT, COUNT
+
+![Xnip2021-09-27_07-28-11](MySQL Note.assets/Xnip2021-09-27_07-28-11.jpg)
+
+
+
+![Xnip2021-09-27_07-29-26](MySQL Note.assets/Xnip2021-09-27_07-29-26.jpg)
+
+题意:
+
+给你一张活动表，一张移除表。请你计算出所有被举报的帖子中，平均每天被移除的比例
+
+
+
+
+
+思路:
+
+- 查询被举报的表也就是限制字段extra为'spam'，而被移除的帖子id在移除表中，也就是分子
+- 而对应的分母在活动表中，两者都用COUNT即可计算，不用直接使用AVG是因为表中id可能重复，所以我们还需要使用DISTINCT去重
+- 在计算平均每天的删除比例前，我们还需要计算出每天的删除比例，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.action_date,
+    COUNT(DISTINCT t2.post_id) / COUNT(DISTINCT t1.post_id) AS 'remove_percent'
+FROM
+    Actions AS t1
+LEFT JOIN Removals AS t2 ON t1.post_id = t2.post_id
+WHERE t1.extra = 'spam'
+GROUP BY t1.action_date
+```
+
+
+
+
+
+- 之后再对每天的删除比例求平均值，SQL如下
+
+```mysql
+SELECT
+    ROUND(AVG(remove_percent * 100), 2) AS 'average_daily_percent'
+FROM (
+SQL1
+) AS t1
+```
 
 
 
