@@ -735,7 +735,7 @@ Eg:
 
 # 三、字符集/比较规则
 
-- 字符集: 字符范围的编码规则
+- 字符集: 字符范围的编码规则，一个字符集能有多个比较规则
 - 比较规则: 确定字符集后对字符进行比较的方式(是否区分大小写等等)
 
 
@@ -776,13 +776,370 @@ Eg:
 ### UTF-8
 
 - 最常用的字符编码，兼容ASCII字符集，采用变长编码(编码时使用1~4个字节)
-- 其属于Unicode字符集的一种编码方式
+- 其属于Unicode字符集的一种编码方式，其下还有UTF-16, UTF-32(分别采用2～4和4个字节进行编码)
 
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+## 2. MySQL中支持的字符集/比较规则
+
+
+
+### utf8和utf8mb4
+
+- 常用的字符用1～3个字节就能表示，所以定义了utf8mb3
+- utf8mb3: 只使用1～3个字节表示字符
+- uft8mb4: 使用1～4个字节表示，同utf8一样
+
+
+
+
+
+
+
+
+
+### 查看支持的字符集
+
+syntax:
+
+```mysql
+SHOW (CHARSET/CHARACTER) SET (LIKE 'charset_name');
+```
+
+
+
+Eg:
+
+![Xnip2021-09-27_13-45-40](MySQL Note.assets/Xnip2021-09-27_13-45-40.jpg)
+
+- Default collation: 表示默认的比较规则(ci: case insensitive 即忽略大小写)
+- Maxlen: 表示该字符集表示字符时最多使用的字节数
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 查看比较规则
+
+syntax:
+
+```mysql
+SHOW COLLATION (LIKE 'collation_name');
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-27_13-50-33](MySQL Note.assets/Xnip2021-09-27_13-50-33.jpg)
+
+- 比较规则的命令意义: 字符集 + 语言 + 区分重音/大小写等
+- Default值为Yes的比较规则为该字符集的默认比较规则
+- 后缀含义:
+
+| 后缀 |        释义        |        描述        |
+| :--: | :----------------: | :----------------: |
+| _ai  | accent insensitive |     不区分重音     |
+| _as  |  accent sensitive  |      区分重音      |
+| _ci  |  case insensitive  |    不区分大小写    |
+| _cs  |   case sensitive   |     区分大小写     |
+| _bin |       binary       | 以二进制的方式比较 |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. 使用字符集和比较规则
+
+
+
+### 字符集和比较规则的级别
+
+
+
+#### 1) server
+
+- 系统变量character_set_server和collation_server表示server级别的字符集和比较规则
+
+
+
+查看:
+
+![Xnip2021-09-27_14-01-31](MySQL Note.assets/Xnip2021-09-27_14-01-31.jpg)
+
+
+
+修改这两个变量的方法
+
+- 通过CLI启动项
+- 通过配置文件:
+
+```shell
+[server]
+character_set_server=charset_name
+collation_server=charset_name
+```
+
+
+
+Eg:
+
+![Xnip2021-09-27_14-11-18](MySQL Note.assets/Xnip2021-09-27_14-11-18.jpg)
+
+
+
+
+
+
+
+
+
+#### 2) database
+
+- 创建时未指定则以server为准
+
+
+
+查看当前database的charset和collation(需要先use选中)
+
+```mysql
+SHOW VARIABLES LIKE 'character_set_database'
+SHOW VARIABLES LIKE 'collation_database'
+```
+
+- 这两个变量不能用mysql的SET语句修改，只能通过CLI和配置文件
+
+
+
+- 在创建时指定charset和collation:
+
+```mysql
+CREATE DATABASE IF NOT EXISTS database_name
+CHARACTER SET charset_name
+COLLATE collation_name
+```
+
+
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-27_14-22-45](MySQL Note.assets/Xnip2021-09-27_14-22-45.jpg)
+
+
+
+
+
+
+
+- 修改已经存在的库:
+
+```mysql
+ALTER DATABASE database_name
+CHARACTER SET new_charset
+COLLATE new_collation;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-27_14-29-48](MySQL Note.assets/Xnip2021-09-27_14-29-48.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3) table
+
+- 没有指定则使用其对应database的charset和collation
+- 在创建时指定:
+
+```mysql
+CREATE TABLE table_name(
+column_1 type
+...
+)CHARACTER SET charset_name COLLATE collation_name
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-27_14-58-05](MySQL Note.assets/Xnip2021-09-27_14-58-05.jpg)
+
+
+
+
+
+
+
+- 修改表的字符集:
+
+```mysql
+ALTER TABLE table_name
+CHARACTER SET charset_name
+COLLATE collation_name
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 4) column
+
+- 没有指定时则以table为准
+- 创建时指定
+
+```mysql
+CREATE TABLE table_name(
+column_1 type CHARACTER SET charset_name COLLATE collation_name
+...
+)
+```
+
+
+
+Eg:
+
+![Xnip2021-09-27_15-06-56](MySQL Note.assets/Xnip2021-09-27_15-06-56.jpg)
+
+
+
+
+
+
+
+- 修改列/字段的字符编码和排序规则
+
+```mysql
+ALTER TABLE table_name MODIFY column_name type CHARACTER SET new_charset COLLATE collation;
+```
+
+
+
+
+
+
+
+Eg:
+
+![Xnip2021-09-27_15-10-37](MySQL Note.assets/Xnip2021-09-27_15-10-37.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 5) 只修改charset/collation
+
+- 只修改charset，collate变为该charset默认的collate
+- 只修改collate，charset变为该collate对应的charset
+- 两者会自动对应
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 6) 优先级总结
+
+- charset: column取决于table，table取决于database，database取决于server
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### server与client通信时使用的charset
 
 
 

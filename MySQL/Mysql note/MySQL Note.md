@@ -4086,7 +4086,7 @@ Eg:
 syntax:
 
 ```mysql
-show grant for user_name;
+show grants for user_name;
 ```
 
 
