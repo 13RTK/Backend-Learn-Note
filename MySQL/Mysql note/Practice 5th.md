@@ -336,6 +336,55 @@ ORDER BY num DESC
 LIMIT 1;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day67
+
+## Tag: ORDER BY, LEFT JOIN
+
+![Xnip2021-09-29_07-29-58](MySQL Note.assets/Xnip2021-09-29_07-29-58.jpg)
+
+
+
+![Xnip2021-09-29_07-30-09](MySQL Note.assets/Xnip2021-09-29_07-30-09.jpg)
+
+题意:
+
+给你一张学生信息表，一张部门表，请你查询出其中每个部门的学生数量(没有学生的部门也要显示)，结果按照学生数量降序排列，如果数量相同则按照部门名称的字典序排列
+
+
+
+思路:
+
+- 因为没有学生的部门也需要显示，所以我们需要以部门表最主，需要使用左/右连接，最后的排序无非就是两个条件而已，SQL如下
+
+```mysql
+SELECT
+    t1.dept_name,
+    COUNT(t2.student_id) AS 'student_number'
+FROM
+    department AS t1
+LEFT JOIN student AS t2 ON t1.dept_id = t2.dept_id
+GROUP BY t1.dept_name
+ORDER BY student_number DESC, t1.dept_name;
+```
+
 
 
 
