@@ -1119,7 +1119,7 @@ Eg:
 
 #### 6) 优先级总结
 
-- charset: column取决于table，table取决于database，database取决于server
+- charset: column未指定则取决于table，table未指定则取决于database，database未指定则取决于server
 
 
 
@@ -1139,13 +1139,173 @@ Eg:
 
 
 
-### server与client通信时使用的charset
+### server与client通信时charset的转换
+
+
+
+#### 1) client sent message
+
+- client和server通信过程中规定的数据格式为MySQL通信协议
+- 对于类UNIX系统，其字符编码决定于以下顺序:
+
+```shell
+LC_ALL -> LC_CTYPE -> LANG
+```
+
+
+
+Eg:
+
+![Xnip2021-09-28_09-52-27](MySQL Note.assets/Xnip2021-09-28_09-52-27.jpg)
 
 
 
 
 
 
+
+#### 2) server receive message
+
+- 应该保证client和server的charset相同
+- server接收请求时会根据变量character_set_client来解码，该变量可以通过SET进行修改
+- 如果client发送的数据编码不能用character_set_client来表示(utf8超过了ASCII的范围)，则会报错
+
+
+
+查看/修改 character_set_client:
+
+![Xnip2021-09-28_09-58-07](MySQL Note.assets/Xnip2021-09-28_09-58-07.jpg)
+
+
+
+
+
+
+
+
+
+
+
+#### 3) server process
+
+- 服务器接收请求时以"character_set_client"为准来解码，之后将其转换为character_set_connection对应的编码
+- 在处理时(比较, 匹配等)以session级别的"character_set_connection"和"collation_connection"为准
+- 这两个变量可以通过SET修改
+
+**注意：**如果比较数据列的比较规则/字符集和上述两个var不同，则比较时**以列的为准**
+
+
+
+查看:
+
+![Xnip2021-09-28_21-28-40](MySQL Note.assets/Xnip2021-09-28_21-28-40.jpg)
+
+
+
+
+
+修改:
+
+![Xnip2021-09-28_21-30-09](MySQL Note.assets/Xnip2021-09-28_21-30-09.jpg)
+
+
+
+
+
+
+
+查看列的比较规则
+
+syntax:
+
+```mysql
+SHOW FULL COLUMNS FROM table_name;
+```
+
+
+
+Eg:
+
+![Xnip2021-09-28_21-31-52](MySQL Note.assets/Xnip2021-09-28_21-31-52.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 4) server respond
+
+- server通过character_set_connection编码进行匹配比较后，通过SESSION级别的character_set_results返回结果
+- 其同样可以通过SET来修改
+
+
+
+查看:
+
+![Xnip2021-09-28_21-37-41](MySQL Note.assets/Xnip2021-09-28_21-37-41.jpg)
+
+
+
+
+
+修改:
+
+![Xnip2021-09-28_21-38-37](MySQL Note.assets/Xnip2021-09-28_21-38-37.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 5) client receive respond
+
+- client接收响应后会以其自身的字符编码来显示(UNIX默认以utf8来显示)
+
+
+
+
+
+
+
+
+
+
+
+### 默认情况
+
+- 如果client未指定字符集，则使用client系统的字符集，如果MySQL并不支持该charset，则使用MySQL默认的charset
+- 在MySQL5.7及之前的版本中，默认charset为latin1，之后为utf8mb4
+- 如果使用了dafault_character_set启动项，则忽略client系统的字符编码
+
+
+
+批量修改字符集:
+
+- 通过SET NAMES可以一次修改character_set_client/connection/results三个变量
+
+syntax:
+
+```mysql
+SET NAMES charset_name;
+```
 
 
 
