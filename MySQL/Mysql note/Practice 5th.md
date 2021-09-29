@@ -385,7 +385,85 @@ GROUP BY t1.dept_name
 ORDER BY student_number DESC, t1.dept_name;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day68
+
+## Tag: LEFT JOIN, IFNULL
+
+![Xnip2021-09-30_07-41-09](MySQL Note.assets/Xnip2021-09-30_07-41-09.jpg)
+
+
+
+![Xnip2021-09-30_07-40-49](MySQL Note.assets/Xnip2021-09-30_07-40-49.jpg)
+
+题意:
+
+给你一张产品信息表，请你查询出其中所有产品在2019-08-16时的价格，如果表中没有2019-08-16及之前的价格，则认为之前的价格为10
+
+
+
+
+
+思路:
+
+- 首先不去操心没有价格时的判断，先获取16号有价格数据的产品信息
+- 将日期进行限制，取出最接近目标日期的，就是我们需要的数据，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	product_id,
+	new_price
+FROM
+	Products
+WHERE (product_id, change_date) IN (
+	SELECT
+		product_id,
+		MAX(change_date)
+	FROM
+		Products
+	WHERE change_date <= '2019-08-16'
+	GROUP BY product_id
+		)
+```
+
+
+
+
+
+
+
+- 之后再用原表的id进行连接，对于不符合的数据连接后会出现null值，也就是在目标日期前没有数据的产品
+- 使用IFNULL对于null值进行讨论，将其变为10即可，SQL如下
+
+```mysql
+SELECT
+	t1.product_id,
+	IFNULL(t2.new_price, 10) AS 'price'
+FROM (
+	SELECT
+		DISTINCT product_id
+	FROM
+		Products
+	) AS t1
+LEFT JOIN (
+	SQL1
+	) AS t2 ON t1.product_id = t2.product_id
+```
 
 
 
