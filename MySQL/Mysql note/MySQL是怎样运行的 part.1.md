@@ -1703,5 +1703,523 @@ SHOW TABLE STATUS LIKE 'table_name';
 
 
 
+# 五、InnoDB索引页结构
+
+- page是InnoDB管理存储的基本单位，有多种不同的page存在
+- 存放第四章中记录的page被称为INDEX页
+- 每个页中有多条记录，每条记录的结构对应第四章的结构
+
+
+
+## 1. 索引页结构概述
+
+(了解)
+
+
+
+|    **File Header**     |
+| :--------------------: |
+|    **Page Header**     |
+| **Infimum + Supremum** |
+|    **User Records**    |
+|     **Free Space**     |
+|   **Page Directory**   |
+|    **File Trailer**    |
+
+
+
+
+
+Description:
+
+|        Name        |   Space   |            Description             |
+| :----------------: | :-------: | :--------------------------------: |
+|    File Header     |  38Bytes  |        General Info of page        |
+|    Page Header     |  56Bytes  | Some exclusive info. of index page |
+| Infimum + Supremum |  26Bytes  |        Two virtual records         |
+|    User Records    | Unconfirm |    User storage record content     |
+|     Free Space     | Unconfirm |           Not used Space           |
+|   Page Directory   | Unconfirm |    Relative location of records    |
+|    File Trailer    |  8Bytes   |      Check integrity of page       |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 记录在页中的存储
+
+- 我们添加的数据按照指定的ROW_FORMAT存储在User Record部分
+- 最初生成页时并没有User Record部分，而是插入记录时从Free Space中划分空间
+
+
+
+
+
+
+
+
+
+### 记录中的记录头
+
+
+
+实例:
+
+![Xnip2021-09-30_09-47-22](MySQL Note.assets/Xnip2021-09-30_09-47-22.jpg)
+
+- charset为ASCII，ROW_FORMAT为COMPACT
+
+
+
+记录头的属性:
+
+|     Name     | Byte |                         Description                          |
+| :----------: | :--: | :----------------------------------------------------------: |
+|   预留位1    |  1   |                            No use                            |
+|   预留位2    |  1   |                            No use                            |
+| deleted_flag |  1   |                          is deleted                          |
+| min_rec_flag |  1   | Min item record <br />in the each level' non-left node in B+ tree |
+|   n_owned    |  4   |             The number of records in each group              |
+|   heap_no    |  13  |   The relative location of the current record in page heap   |
+| record_type  |  3   | 0 means common, 1 means non-leaf node in B+ tree<br />2 means Infimum, 3 means Supremum |
+| next_record  |  16  |           The relative position of the next record           |
+
+
+
+
+
+测试数据:
+
+![Xnip2021-09-30_10-27-41](MySQL Note.assets/Xnip2021-09-30_10-27-41.jpg)
+
+
+
+插入的记录在索引页中User Page部分的表示:
+
+
+
+1st:
+
+| deleted_flag | Min_rec_flag | n_owned | heap_no | record_type | next_record | data | data | data | others |
+| :----------: | :----------: | :-----: | :-----: | :---------: | :---------: | ---- | ---- | ---- | ------ |
+|      0       |      0       |    0    |    2    |      0      |     32      | 1    | 100  | aaaa | ...    |
+
+
+
+
+
+2nd:
+
+| deleted_flag | Min_rec_flag | n_owned | heap_no | record_type | next_record | data | data | data | others |
+| :----------: | :----------: | :-----: | :-----: | :---------: | :---------: | ---- | ---- | ---- | ------ |
+|      0       |      0       |    0    |    3    |      0      |     32      | 2    | 200  | bbbb | ...    |
+
+
+
+
+
+3rd:
+
+| deleted_flag | Min_rec_flag | n_owned | heap_no | record_type | next_record | data | data | data | others |
+| :----------: | :----------: | :-----: | :-----: | :---------: | :---------: | ---- | ---- | ---- | ------ |
+|      0       |      0       |    0    |    4    |      0      |     32      | 3    | 300  | cccc | ...    |
+
+
+
+
+
+4th:
+
+| deleted_flag | Min_rec_flag | n_owned | heap_no | record_type | next_record | data | data | data | others |
+| :----------: | :----------: | :-----: | :-----: | :---------: | :---------: | ---- | ---- | ---- | ------ |
+|      0       |      0       |    0    |    5    |      0      |    -111     | 4    | 400  | dddd | ...    |
+
+- **注意：**省略了预留位1, 2
+
+
+
+
+
+
+
+
+
+#### deleted_flag
+
+- 用来标记该记录是否被删除，占用1bit，记录被删除则记为1
+- 没错，删除数据后，记录不会真正的删除，空间也不会被回收。记录之间形成了一条链表，删除记录时则断开该链表即可O(1)
+- 被"删除"的记录会组成一个"垃圾链表"，该链表占用的空间为"可重用空间"
+- 如果有新记录插入，则可能会覆盖掉可重用空间
+
+
+
+
+
+#### min_rec_flag
+
+- 如果是B+树每层非叶子节点中的最小目录项记录，则会添加该标记(暂时做了解)
+
+
+
+
+
+
+
+#### n_owned:
+
+(之后讲解)
+
+
+
+
+
+
+
+#### heap_no
+
+- 所有记录在堆中的相对位置，包含deleted_flag为1的记录(堆即为记录紧靠排列形成的结构)
+- 处于堆中靠前位置的记录heap_no较小
+
+
+
+- 用户插入记录的heap_no从2开始，0和1是InnoDB在每个页中自动添加的两条伪记录(Infimum和Supremum)，这两条记录的heap_no最小
+- **对于完整的记录而言**，比较记录的大小就是比较主键的大小(只是完整的记录)
+- InnoDB规定: 任何用户记录都大于Infimum，都小于Supremum，结构:
+
+|   记录头   |   69 6E 66 69 6D 75 6D 00   |
+| :--------: | :-------------------------: |
+| **记录头** | **73 75 70 72 65 6D 75 6D** |
+
+数据部分固定，表示两个单词
+
+
+
+- 这两条记录单独放在称为"Infimum + Supremum"的部分
+- heap_no在分配后不会改变，即使记录被删除
+
+
+
+
+
+
+
+
+
+#### record_type
+
+(索引部分再讲解)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### next_record
+
+- 表示从当前记录到下一条记录中真实数据的距离，为正值则说明下一条记录在后面，这样形成了链表
+- 如果删除一条记录，则将其next_record值变为0即可，InnoDB始终会根据主键维护一个单向链表
+- 如果插入新记录，则会复用原来被删除记录的存储空间
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. Page Directory
+
+虽然记录被作为链表维护，但查询时并非像普通链表那样一条一条的查询
+
+- InnoDB会将所有的记录(包含Infimum和Supremum但不包含被删除的记录)分作几个组
+- 每组最后一条记录中头信息的n_owned属性表示该组中记录的总数
+- 每组中最后一条记录在page的地址偏移量会被单独提取出来，存储在page中的page Directory部分，该部分中的这些偏移量被称为slot(槽)，每个slot占用2bytes
+- 所以Page中的Page Directory就是由slot组成的
+
+
+
+Eg:
+
+![Xnip2021-09-30_14-18-21](MySQL Note.assets/Xnip2021-09-30_14-18-21.jpg)
+
+
+
+
+
+
+
+- 实例中有四条用户数据，和两条伪数据(Infimum, Supremum)，InnoDB将它们分为两组:
+- 第一组只有infimum，剩余5条记录一组
+- 分组的规定:
+
+1. infimum记录所在分组只能有一条记录(自成一组)
+2. Supremum记录所在分组只能为1～8条记录
+3. 其余分组的记录只能有4～8条
+
+
+
+
+
+### 记录分组步骤
+
+- 初始情况: 
+
+最初只有两条记录，分属两个组，所以只有两个slot
+
+
+
+- 插入数据:
+
+找到比插入数据主键大的最小主键值的slot(地址偏移量)
+
+将该slot对应的n_owned值加一，直到记录数为8个
+
+
+
+- 如果插入的记录等于8：
+
+再次插入时将组中记录分为两组，一组4条，一组5条，新增一个slot
+
+
+
+Eg:
+
+![Xnip2021-09-30_14-27-01](MySQL Note.assets/Xnip2021-09-30_14-27-01.jpg)
+
+- 通过主键寻找记录，其实是通过二分法找到对应的slot，再找对应的记录
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. Page Header
+
+- 该部分为Index页专有
+
+
+
+结构及描述:
+
+|       Name        | Bytes |                         Description                          |
+| :---------------: | :---: | :----------------------------------------------------------: |
+| PAGE_N_DIR_SLOTS  |   2   |           The quantity of slots in page directory            |
+|   PAGE_HEAP_TOP   |   2   |                The min address in free space                 |
+|    PAGE_N_HEAP    |   2   | The first bit means whether the record is compact <br />The left 15 bits means the quantity of record in this heap<br />Include Infimum, Supremum and "deleted" record |
+|     PAGE_FREE     |   2   | All the deleted record will build a linked list by next_record <br />PAGE_FREE stand the offset of the linked list in page |
+|   PAGE_GARBAGE    |   2   |                 The bytes of deleted records                 |
+| PAGE_LAST_INSERT  |   2   |                 The last position to insert                  |
+|  PAGE_DIRECTION   |   2   |                  The direction of inserting                  |
+| PAGE_N_DIRECTION  |   2   |              The number of continuous inserting              |
+|    PAGE_N_RECS    |   2   | The quantity of user records(not include infimum and supremum) |
+|  PAGE_MAX_TRX_ID  |   8   |      The max transaction ID to modify the current page       |
+|    PAGE_LEVEL     |   2   |           The level in B+ tree of the current page           |
+|   PAGE_INDEX_ID   |   8   |                The index of the current page                 |
+| PAGE_BTR_SEG_LEAF |  10   |                             ...                              |
+| PAGE_BTR_SEG_TOP  |  10   |                             ...                              |
+
+
+
+
+
+### PAGE_DIRECTION
+
+- 如果插入记录的主键值大于上一条记录，则该条记录的插入方向为"右边"，反之为"左边"，其状态用PAGE_DIRECTION表示
+
+
+
+
+
+### PAGE_N_DIRECTION
+
+- 如果连续几次插入的方向一致，则InnoDB会记录下插入的数量，该数量用PAGE_N_DIRECTION表示
+- 一旦插入的方向发生变化，则该值清零
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5. File Header
+
+
+
+结构/描述
+
+|               Name                | Bytes |                         Description                          |
+| :-------------------------------: | :---: | :----------------------------------------------------------: |
+|      FILE_PAGE_SPACE_CHKSUM       |   4   | 在4.0.14之前，其用来表示页面所在的表空间ID <br />现在用来表示页的校验和 |
+|         FILE_PAGE_OFFSET          |   4   |                             页号                             |
+|          FILE_PAGE_PREV           |   4   |                         上一页的页号                         |
+|          FILE_PAGE_NEXT           |   4   |                         下一页的页号                         |
+|           FILE_PAGE_LSN           |   8   |          页面被修改时对应的LSN(Log Sequence Number)          |
+|          FILE_PAGE_TYPE           |   2   |                           页的类型                           |
+|        FILE_PAGE_FLUSH_LSN        |   8   |                             ...                              |
+| FILE_PAGE_ARCH_LOG_NO_OR_SPACE_ID |   4   |                             ...                              |
+
+
+
+
+
+### FILE_PAGE_SPACE_OR_CHKSUM
+
+- 其代表当前page的校验和
+- 通过算法用一个短的string代表一个长的string，这个短的string就代表校验和
+- 省去了长字符比较的时间损耗
+
+
+
+
+
+### FILE_PAGE_OFFSET
+
+- 页面的页号，InnoDB通过它来唯一定位一个page
+
+
+
+
+
+
+
+
+
+### FILE_PAGE_TYPE
+
+- page的类型:
+
+|           Name           | Hexadecimal |            Description             |
+| :----------------------: | :---------: | :--------------------------------: |
+| FILE_PAGE_TYPE_ALLOCATED |   0x0000    |              Not used              |
+|    FILE_PAGE_UNDO_LOG    |   0x0002    |           undo log page            |
+|     FILE_PAGE_INODE      |   0x0003    |  The info. of storage paragraphs   |
+| FILE_PAGE_IBUF_FREE_LIST |   0x0004    |     "Change Buffer" free list      |
+|  FILE_PAGE_IBUF_BITMAP   |   0x0005    |   Attribution of "Change Buffer"   |
+|    FILE_PAGE_TYPE_SYS    |   0x0006    |       store some system data       |
+|  FILE_PAGE_TYPE_TRX_SYS  |   0x0007    |   The data of transaction system   |
+|  FILE_PAGE_TYPE_FSP_HDR  |   0x0008    |   The info. of table head space    |
+|   FILE_PAGE_TYPE_XDES    |   0x0009    | Some attributions in storage space |
+|   FILE_PAGE_TYPE_BLOB    |   0x000A    |           overflow page            |
+|     FILE_PAGE_INDEX      |   0x45BF    |             Index Page             |
+
+
+
+
+
+
+
+
+
+
+
+### FILE_PAGE_PREV/FILE_PAGE_NEXT
+
+- 对于溢出的数据，InnoDB会将溢出的记录存储到溢出页中
+- 这两个属性代表该index页上一页和下一页的页号(双向链表)
+- 并不是所有类型的页都有这个属性
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6. File Trailer
+
+- 为了防止页面记录更改后没有及时写到磁盘中，File Trailer中的数据用来检测一个page是否完整
+- 该部分由8bytes组成
+
+
+
+### 前四个bytes
+
+- 代表page的校验和，其与File Header的校验和对应
+- 校验的方法:
+
+先将File Header的检验和写入到磁盘中，待所有记录都写入到磁盘后，再将校验和写入到File Trailler中
+
+如果两个校验和一致，则说明页面刷新成功
+
+
+
+
+
+
+
+### 后四个bytes
+
+- 代表最后修改时对应的LSN后四个bytes，也用于校验page的完整性
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
