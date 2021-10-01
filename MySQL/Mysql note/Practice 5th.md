@@ -465,6 +465,83 @@ LEFT JOIN (
 	) AS t2 ON t1.product_id = t2.product_id
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day69
+
+## Tag: ROUND
+
+![Xnip2021-10-01_11-41-43](MySQL Note.assets/Xnip2021-10-01_11-41-43.jpg)
+
+
+
+![Xnip2021-10-01_11-41-25](MySQL Note.assets/Xnip2021-10-01_11-41-25.jpg)
+
+题意:
+
+给你一张配送表，请你计算出其中即时订单的百分比(即订单日期与用户期望日期相同)
+
+
+
+思路:
+
+- 因为只有一张表，而需求的数据有一个条件限制，所以需要自连接
+- 首先查询出所有即时订单的数量，SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+	COUNT(delivery_id) 
+FROM
+	Delivery
+WHERE order_date = customer_pref_delivery_date
+```
+
+
+
+
+
+- 之后再查询出所有订单的数量，SQL如下
+
+SQL2:
+
+```mysql
+SELECT 
+	COUNT(delivery_id)
+FROM
+	Delivery
+```
+
+
+
+- 最后再将结果相除并用ROUND指定小数位数即可，SQL如下
+
+```mysql
+SELECT
+    ROUND( (SQL1) / (SQL2) * 100 , 2) AS 'immediate_percentage'
+```
+
+
+
 
 
 
