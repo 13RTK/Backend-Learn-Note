@@ -540,7 +540,53 @@ SELECT
     ROUND( (SQL1) / (SQL2) * 100 , 2) AS 'immediate_percentage'
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day70
+
+## Tag: BETWEEN AND
+
+![Xnip2021-10-02_21-28-34](MySQL Note.assets/Xnip2021-10-02_21-28-34.jpg)
+
+
+
+![Xnip2021-10-02_21-28-14](MySQL Note.assets/Xnip2021-10-02_21-28-14.jpg)
+
+题意:
+
+给你一张产品表，一张销售记录表，请你查询出每种产品的平均售价(注意售价会随日期变动)
+
+
+
+思路:
+
+- 由于价格会变动，所以我们使用价格乘以数量时还需要限定时间段，使用BETWEEN AND即可
+- 之后常规的分组，并计算数量即可，SQL如下
+
+```mysql
+SELECT
+    t1.product_id,
+    ROUND(SUM(t2.units * t1.price) / SUM(t2.units), 2) AS 'average_price'
+FROM
+    Prices AS t1
+INNER JOIN UnitsSold AS t2 ON t1.product_id = t2.product_id
+WHERE t2.purchase_date BETWEEN t1.start_date AND t1.end_date
+GROUP BY t1.product_id;
+```
 
 
 
