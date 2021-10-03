@@ -588,7 +588,53 @@ WHERE t2.purchase_date BETWEEN t1.start_date AND t1.end_date
 GROUP BY t1.product_id;
 ```
 
+****
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day71
+
+## Tag: CASE WHEN
+
+![Xnip2021-10-03_11-39-21](MySQL Note.assets/Xnip2021-10-03_11-39-21.jpg)
+
+
+
+![Xnip2021-10-03_11-39-32](MySQL Note.assets/Xnip2021-10-03_11-39-32.jpg)
+
+题意:
+
+给你一张国家信息表，一张天气表，请你查询出每个国家在11月的天气(取决于weather_state的平均值)
+
+
+
+思路:
+
+- 平均值只需分组后用AVG即可，但对应的天气有3个选项，所以我们需要分情况才行，可以使用IF嵌套，还是使用CASE WHEN更简洁一些
+- 对于日期的限定，如果是年/月，个人建议之间使用YAER()或者MONTH()，这样比较直观，也不需要自己去写具体的左右边界日期，SQL如下
+
+```mysql
+SELECT
+    t1.country_name,
+    CASE 
+    WHEN AVG(t2.weather_state) <= 15 THEN 'Cold'
+    WHEN AVG(t2.weather_state) >= 25 THEN 'Hot'
+    ELSE 'Warm'
+    END AS 'weather_type'
+FROM
+    Countries AS t1
+INNER JOIN Weather AS t2 ON t1.country_id = t2.country_id
+WHERE MONTH(t2.day) = 11
+GROUP BY t1.country_name;
+```
 
