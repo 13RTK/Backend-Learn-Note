@@ -638,3 +638,62 @@ WHERE MONTH(t2.day) = 11
 GROUP BY t1.country_name;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day72
+
+## Tag: DISTINCT, ROUND
+
+![Xnip2021-10-04_10-48-50](MySQL Note.assets/Xnip2021-10-04_10-48-50.jpg)
+
+
+
+![Xnip2021-10-04_10-51-43](MySQL Note.assets/Xnip2021-10-04_10-51-43.jpg)
+
+题意:
+
+给你一张用户信息表，一张注册记录表，请你查询出所有赛事的用户注册率
+
+
+
+
+
+思路:
+
+- 分子为每个赛事的报名人数，在注册记录表中，使用COUNT计算即可
+- 分子则为用户表中用户的数量，同样使用COUNT计算即可，SQL如下:
+
+```mysql
+SELECT
+    contest_id,
+    ROUND(COUNT(user_id) / (SELECT COUNT(user_id) FROM Users) * 100, 2) AS 'percentage'
+FROM
+    Register
+GROUP BY contest_id
+ORDER BY percentage DESC, contest_id;
+```
+
+
+
+
+
+
+
+
+
