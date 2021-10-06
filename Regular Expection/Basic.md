@@ -140,8 +140,13 @@ WHERE column_name BINARY REGEXP 'regular expection';
 
 - 如果想要查找".", "|"等在正则表达式中有特殊含义的符号，必须在其前面添加"\\"
 - 在MySQL中还必须以"\\\\"开头，其中一个用于MySQL解释，另一个用于正则解释
+- 重复前面任意字符任意次: *
 
 
+
+*的用法:
+
+![Xnip2021-10-06_13-17-48](../MySQL/Mysql note/MySQL Note.assets/Xnip2021-10-06_13-17-48.jpg)
 
 
 

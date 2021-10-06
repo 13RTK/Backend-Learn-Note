@@ -689,6 +689,175 @@ GROUP BY contest_id
 ORDER BY percentage DESC, contest_id;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day73
+
+## Tag: COUNT OVER()
+
+![Xnip2021-10-05_10-55-06](MySQL Note.assets/Xnip2021-10-05_10-55-06.jpg)
+
+
+
+![Xnip2021-10-05_10-55-28](MySQL Note.assets/Xnip2021-10-05_10-55-28.jpg)
+
+
+
+![Xnip2021-10-05_10-56-41](MySQL Note.assets/Xnip2021-10-05_10-56-41.jpg)
+
+题意:
+
+给你一张员工信息表，请查询出每个员工的id和其对应组内的员工总数
+
+
+
+
+
+
+
+思路:
+
+- 要求对应组内的员工数，常规思路就是通过team_id分组，使用COUNT进行计算，但这样写的话就需要创建一张临时表了，可行但不够优雅
+- 最简单的方式则是直接使用窗口函数CONUT OVER()，SQL如下
+
+```mysql
+SELECT
+    employee_id,
+    COUNT(employee_id) OVER(
+        PARTITION BY team_id
+    ) AS 'team_size'
+FROM
+    Employee;
+```
+
+- 这样在一个字段中就解决了分组和求和的操作，不需要连接表
+
+
+
+
+
+
+- 但这样的操作仅限于MySQL8.0或者MariaDB等支持窗口函数的高版本才行，如果和我一样在用5.7呢？
+- 那么我们借鉴这样的思路，同样通过一个字段自连接来解决问题，SQL如下
+
+```mysql
+SELECT
+    t2.employee_id,
+    (
+        SELECT
+            COUNT(employee_id)
+        FROM
+            Employee AS t1
+        WHERE t1.team_id = t2.team_id
+    ) AS 'team_size'
+FROM
+    Employee AS t2;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day74
+
+## Tag: REGEXP, *
+
+![Xnip2021-10-06_13-18-27](MySQL Note.assets/Xnip2021-10-06_13-18-27.jpg)
+
+
+
+![Xnip2021-10-06_13-18-37](MySQL Note.assets/Xnip2021-10-06_13-18-37.jpg)
+
+
+
+![Xnip2021-10-06_13-17-48](MySQL Note.assets/Xnip2021-10-06_13-17-48.jpg)
+
+题意:
+
+给你一张用户信息表，请你查询出邮箱地址符合条件的用户的所有信息，邮箱地址条件:
+
+以字母开头，邮箱前缀为字母，数字，"-"，"_"，"."，"/"，后缀为"@leetcode.com"
+
+
+
+
+
+思路:
+
+- 该题目明显考察的是正则表达式，我们一点一点的处理
+- 首先是开头，正则表达式中使用"^"来表示开头，题目要求开头为字母(大小写)，所以我们使用[]包裹可以表示匹配其中的一个
+- 在[]中使用-表示匹配这个范围内的，所以开头如下:
+
+```mysql
+^[a-zA-Z]
+```
+
+
+
+- 除了开头，前缀剩余的部分还应该匹配数字，和其他特殊符号，由于这些特殊符号在正则表达式中会被解释，所以我们要在它们前面使用\来转义，此时正则为:
+
+```
+^[a-zA-Z][a-zA-Z0-9\_\-\.]
+```
+
+
+
+- 这样写只是匹配了前两个位置而已，前缀剩余部分的规则与第二个位置相同，此时我们使用*即可将前一个任意字符匹配任意次，正则如下
+
+```
+^[a-zA-Z][a-zA-Z0-9\_\-\.]*
+```
+
+
+
+- 最后我们匹配一下邮箱后缀，正则表达式用$来表示结尾，其中邮箱的"."也需要转义，所以最终正则为:
+
+```
+^[a-zA-Z][a-zA-Z0-9\_\.\-]*@leetcode\.com$
+```
+
+
+
+
+
+- 将该正则结合到MySQL的WHERE字句中，最终SQL如下:
+
+```mysql
+SELECT
+    *
+FROM
+    Users
+WHERE mail REGEXP '^[a-zA-Z][a-zA-Z0-9\_\.\-]*@leetcode\.com$'
+```
+
 
 
 
