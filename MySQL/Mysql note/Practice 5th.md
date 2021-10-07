@@ -858,6 +858,64 @@ FROM
 WHERE mail REGEXP '^[a-zA-Z][a-zA-Z0-9\_\.\-]*@leetcode\.com$'
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day75
+
+## Tag: IFNULL
+
+![Xnip2021-10-07_11-47-59](MySQL Note.assets/Xnip2021-10-07_11-47-59.jpg)
+
+
+
+![Xnip2021-10-07_11-47-16](MySQL Note.assets/Xnip2021-10-07_11-47-16.jpg)
+
+题意:
+
+- 给你一张广告信息表，请你根据给出的公式计算广告的点击率
+
+
+
+
+
+
+
+思路:
+
+- 由公式可知有两种情况，我们先不管为0的特殊情况，正常来说就是计算点击数 / (点击数 + 观看数) * 100，对应到SQL中就是计算action字段为'Clicked'和'Viewed'的情况
+- 因为匹配的结果为0和1，而COUNT只区分null，所以这里需要使用SUM
+- 如果分母为0，则公式结果为null，此时再使用IFNULL来区分即可，所以SQL如下
+
+```mysql
+SELECT
+    ad_id,
+    ROUND(IFNULL(SUM(action = 'Clicked') / (SUM(action = 'Clicked') + SUM(action = 'Viewed')) * 100, 0), 2) AS 'ctr'
+FROM
+    Ads
+GROUP BY ad_id
+ORDER BY ctr DESC, ad_id;
+```
+
+
+
 
 
 
