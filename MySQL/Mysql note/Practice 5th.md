@@ -914,9 +914,69 @@ GROUP BY ad_id
 ORDER BY ctr DESC, ad_id;
 ```
 
+****
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day76
+
+## Tag: HAVING
+
+![Xnip2021-10-08_08-58-27](MySQL Note.assets/Xnip2021-10-08_08-58-27.jpg)
+
+
+
+![Xnip2021-10-08_08-58-54](MySQL Note.assets/Xnip2021-10-08_08-58-54.jpg)
+
+题意:
+
+给你一张产品信息表，一张订单表，请你查询出在2020年2月下单数量不低于100的产品的名称和数量
+
+
+
+思路:
+
+- 计算数量很简单，一个SUM就解决了，又因为所需信息在两张表中，所以需要连接
+- 对于日期的限制个人建议使用YEAR和MONTH，这样更加直观，至此我们已经解决了大半，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.product_name,
+    SUM(t2.unit) AS 'unit'
+FROM
+    Products AS t1
+INNER JOIN Orders AS t2 ON t1.product_id = t2.product_id
+WHERE YEAR(t2.order_date) = '2020'
+AND MONTH(t2.order_date) = '02'
+GROUP BY t1.product_name
+```
+
+
+
+- 上述操作已经进行了分组，但我们还需要限制unit ≥ 100所以在分组后进行限制就需要HAVING了，SQL如下
+
+```mysql
+SQL1
+HAVING unit >= 100;
+```
 
 
 
