@@ -978,6 +978,61 @@ SQL1
 HAVING unit >= 100;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day77
+
+## Tag: String, Concat, substring
+
+![Xnip2021-10-09_07-01-32](MySQL Note.assets/Xnip2021-10-09_07-01-32.jpg)
+
+
+
+![](MySQL Note.assets/74ED3E7D-917A-4079-9A6B-A5DB2C5165DA.png)
+
+题意:
+
+给你一张用户信息表，请你将其中用户姓名的开头字母全部转换为大写字母，其余字符全部小写
+
+
+
+
+
+
+
+思路:
+
+- 首先确定转换字符为大小写的函数为Upper()和Lower()，下一步就是取出对应的字符了
+- 取首字母就是取最右边一个，所以使用RIGHT即可，取剩下的字符则需要使用substring，且参数为2即可
+- 最后将字符截取和大小写转换函数结合在一起即可，SQL如下
+
+```mysql
+SELECT
+    user_id,
+    CONCAT(Upper(LEFT(name, 1)), lower(substring(name, 2))) AS 'name'
+FROM
+    Users
+ORDER BY user_id;
+```
+
+
+
+
+
+
+
 
 
 
