@@ -1015,7 +1015,7 @@ HAVING unit >= 100;
 思路:
 
 - 首先确定转换字符为大小写的函数为Upper()和Lower()，下一步就是取出对应的字符了
-- 取首字母就是取最右边一个，所以使用RIGHT即可，取剩下的字符则需要使用substring，且参数为2即可
+- 取首字母就是取最左边一个，所以使用LEFT即可，取剩下的字符则需要使用substring，且参数为2即可
 - 最后将字符截取和大小写转换函数结合在一起即可，SQL如下
 
 ```mysql
@@ -1027,7 +1027,58 @@ FROM
 ORDER BY user_id;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day78
+
+## Tag: NULL
+
+![Xnip2021-10-10_08-44-05](MySQL Note.assets/Xnip2021-10-10_08-44-05.jpg)
+
+
+
+![A3DA8B7D-AC53-4E63-B242-2B4DA42EAA11](MySQL Note.assets/A3DA8B7D-AC53-4E63-B242-2B4DA42EAA11.png)
+
+题意:
+
+给你一张学生信息表，一张学院表，请你查询出所有学院信息不存在的学生
+
+
+
+思路:
+
+- 所谓不存在即学生对应的department_id在学院表中不存在，要表现出来的话可以将其与学生表进行连接
+- 以学生表为主后，如果其对应的department_id不存在，则结果为null，我们只需要筛选出学院名为null的即可，SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t1.name
+FROM
+    Students AS t1
+LEFT JOIN Departments AS t2 ON t1.department_id = t2.id
+WHERE t2.name IS NULL;
+```
 
 
 
