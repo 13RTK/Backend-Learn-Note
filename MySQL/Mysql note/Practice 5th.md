@@ -1080,11 +1080,50 @@ LEFT JOIN Departments AS t2 ON t1.department_id = t2.id
 WHERE t2.name IS NULL;
 ```
 
+****
 
 
 
 
 
+
+
+
+
+
+
+
+
+# Day79
+
+## Tag: LEFT JOIN
+
+![Xnip2021-10-11_07-18-55](MySQL Note.assets/Xnip2021-10-11_07-18-55.jpg)
+
+
+
+![Xnip2021-10-11_07-20-31](MySQL Note.assets/Xnip2021-10-11_07-20-31.jpg)
+
+题意:
+
+给你一张员工信息表，一张唯一识别码表，请你查询出其中每个员工对应的识别码，没有的员工显示null
+
+
+
+
+
+思路:
+
+- 很明显，要以员工表为主，使用左右连接后，没有对应识别码的自然为null，SQL如下
+
+```mysql
+SELECT
+    t2.unique_id AS 'unique_id',
+    t1.name
+FROM
+    Employees AS t1
+LEFT JOIN EmployeeUNI AS t2 ON t1.id = t2.id;
+```
 
 
 
