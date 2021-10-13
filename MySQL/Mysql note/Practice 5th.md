@@ -1125,7 +1125,144 @@ FROM
 LEFT JOIN EmployeeUNI AS t2 ON t1.id = t2.id;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day80
+
+## Tag: Regular Expression, LIKE
+
+![Xnip2021-10-12_08-07-47](MySQL Note.assets/Xnip2021-10-12_08-07-47.jpg)
+
+
+
+![Xnip2021-10-12_08-03-56](MySQL Note.assets/Xnip2021-10-12_08-03-56.jpg)
+
+
+
+![Xnip2021-10-12_08-07-31](MySQL Note.assets/Xnip2021-10-12_08-07-31.jpg)
+
+题意:
+
+给你一张患者信息表，请你查出其中患有1类糖尿病的患者信息(condition中包含DIAB1)
+
+
+
+思路:
+
+- 由于condition字段中每种病都由space分隔，所以不能简单的使用LIKE '%DIAB1%'，而是需要考虑该病症在开头和结尾的情况
+- 对应LIKE如下
+
+```mysql
+SELECT
+    patient_id,
+    patient_name,
+    conditions
+FROM
+    Patients
+WHERE conditions LIKE '% DIAB1'
+OR conditions LIKE 'DIAB1%';
+```
+
+
+
+- 当然也可以使用正则
+
+```mysql
+SELECT
+    patient_id,
+    patient_name,
+    conditions
+FROM
+    Patients
+WHERE conditions REGEXP '^DIAB1|\\sDIAB1'
+```
+
+- 其中"\\s"对应任意空白字符
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day81
+
+## Tag: UNION
+
+![Xnip2021-10-13_07-13-35](MySQL Note.assets/Xnip2021-10-13_07-13-35.jpg)
+
+
+
+![Xnip2021-10-13_07-13-19](MySQL Note.assets/Xnip2021-10-13_07-13-19.jpg)
+
+题意:
+
+给你一张用户会话表，请你根据时长，查询出对应访问时间的用户数量
+
+
+
+思路:
+
+- 根据result表可以得知，字段bin中的内容是自定义的字符串，无法从原表中获取，所以需要手动写入
+- 又因为统计过程中需要变换字符串，所以我们需要根据duration的情况来讨论，可以使用CASE WHEN，但为了直观，这里可以使用UNION，SQL如下
+
+```mysql
+SELECT
+    '[0-5>' AS bin,
+    COUNT(DISTINCT session_id) AS 'total'
+FROM
+    Sessions
+WHERE duration BETWEEN 0 AND 5 * 60
+UNION
+SELECT
+    '[5-10>' AS bin,
+    COUNT(DISTINCT session_id) AS 'total'
+FROM
+    Sessions
+WHERE duration BETWEEN 5 * 60 AND 10 * 60
+UNION
+SELECT
+    '[10-15>' AS bin,
+    COUNT(DISTINCT session_id) AS 'total'
+FROM
+    Sessions
+WHERE duration BETWEEN 10 * 60 AND 15 *60
+UNION
+SELECT
+    '15 or more' AS bin,
+    COUNT(DISTINCT session_id) AS 'total'
+FROM
+    Sessions
+WHERE duration >= 15 * 60;
+```
 
 
 

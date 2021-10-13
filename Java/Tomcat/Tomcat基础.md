@@ -174,3 +174,36 @@ Eg:
 
 
 
+
+
+## 3. 发布自己的网站
+
+
+
+- Tomcat网站的默认存放位置: webapps(可通过conf/server.xml文件修改)。默认会访问ROOT文件夹中的index.jsp
+- 我们通过在webapps目录下创建一个文件夹，并创建对应的index.jsp或者index.html即可通过路径直接访问
+
+```mysql
+-- webapps
+	- ROOT
+		- WEB-INF
+			- web.xml
+		- index.jsp
+	- JavaWeb_01_war
+		- WEB-INF
+			- web.xml
+		- index.html
+```
+
+
+
+![Xnip2021-10-11_20-43-11](Tomcat Base/Xnip2021-10-11_20-43-11.jpg)
+
+
+
+![Xnip2021-10-11_20-44-11](Tomcat Base/Xnip2021-10-11_20-44-11.jpg)
+
+
+
+
+
