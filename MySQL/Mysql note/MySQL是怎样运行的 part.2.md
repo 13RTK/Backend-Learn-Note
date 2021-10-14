@@ -1124,7 +1124,7 @@ InnoDB的设计者提出了**表空间或文件空间**的概念(table space/fil
 
 **一个表空间可以被划分为多个页**
 
-表数据就存放在表空间内对应的页中，表空间有几种类型:
+**表数据就存放在表空间内对应的页中**，表空间有几种类型:
 
 
 
@@ -1304,6 +1304,425 @@ Eg:
 - sys: 通过view的方式把information_schema和performance_schema结合起来，方便开发者了解server的性能信息
 
 ****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 九、InnoDB表空间
+
+
+
+
+
+## 9.1 复习
+
+
+
+### 9.1.1 页的类型
+
+- 每个B+索引节点为一个页(index_page)，该类型全称为FIL_PAGE_INDEX
+
+
+
+常用的页面类型
+
+![Xnip2021-10-14_14-16-47](MySQL Note.assets/Xnip2021-10-14_14-16-47.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 9.1.2 页面的通用部分
+
+- index_page有7个部分，其中的File Header和File Trailer部分是通用的
+
+通用页结构:
+
+![Xnip2021-10-14_14-20-08](MySQL Note.assets/Xnip2021-10-14_14-20-08.jpg)
+
+- File Header: 记录page的通用信息
+- File Trailer: 校验page是否完整，**保持数据在内存处理到写入磁盘后的内容一致**
+
+
+
+File Header的组成:
+
+![Xnip2021-10-14_14-22-47](MySQL Note.assets/Xnip2021-10-14_14-22-47.jpg)
+
+重点:
+
+- 表空间(table space)内**每个page都有一个页号**，即**FIL_PAGE_OFFSET**。
+
+该表示**页号的部分占用4个字节**，一共32bits，所以**一个table space中可以表示2^32个page**，按照默认16KB大小来算，一个table space可以支持64TB的数据，页号从0开始
+
+
+
+- **FIL_PAGE_INDEX类型**的页**可以组成链表。**
+
+由File Header中的FIL_PAGE_PREV和FIL_PAGE_NEXT部分存储上一页和下一页的页号(上下页之间页号可以不连续，即物理位置可以不相邻)，可以将所有该类型的页组成双向链表(**一般类型的页面没有这两个部分**)
+
+
+
+- **FIL_PAGE_TYPE表示页面的类型**
+
+对于类型为FIL_PAGE_INDEX的页面，该FIL_PAGE_TYPE字段值即为0x45BF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 9.2 独立表空间的结构
+
+- 由上一章可知:
+- 在var "datadir"中，为每个database都创建了一个对应的同名目录(除了information_schema库)
+- 在database对应目录中，有一个db.opt文件，其中为每个table都创建了一个对应的同名目录
+- 对于InnoDB表，对于表目录中，有一个与表同名的.frm文件表示table的结构，一个与表同名的.ibd文件存储table的数据
+
+
+
+
+
+### 9.2.1 table space中的区
+
+- 区(extent): **连续64个page就是一个区(extent)，一个区默认占用1MB的空间**
+- 而每256个extent作为一组
+
+Table Space:
+
+![Xnip2021-10-14_14-41-01](MySQL Note.assets/Xnip2021-10-14_14-41-01.jpg)
+
+
+
+
+
+- 其中第一组中开头区的page类型是固定的，而**其他组开头区中的page则是相同的**，**但与第一组不同**
+
+![Xnip2021-10-14_14-47-00](MySQL Note.assets/Xnip2021-10-14_14-47-00.jpg)
+
+由图可知:
+
+- **第一组中开头区的前三页类型固定**，分别为:
+  - FSP_HDR: 登记**整个表空间的整体属性**，以及**本组所有区extent的属性**，**整个table space只有一个FSR_HDR类型的page!**
+  - IBUF_BITMAP: 存储有关Change Buffer的信息
+  - INODE: 存储了许多INODE Entry结构的Page
+
+- 除了第一组(0 ～ 255个extent)，**其余各组开头区的前两个page类型固定**，分别为:
+  - XDES(extent descriptor): **记录本组中所有区extent的属性**，其作用同FSP_HDR类似，只不过后者还额外记录了table space的属性
+  - IBUF_BITMAP: 存储有关Change Buffer的信息
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 9.2.2 table space中的段
+
+- 为什么需要区extent:
+
+按照之前的做法，将所有的inde_page通过File Header中的FIL_PAGE_PREV和FIL_PAGE_NEXT字段连接起来形成双向链表，这样做的话不需要页与页之间在物理空间上连续
+
+但这样做有一个问题: 如果查询获取的对应页物理不连续，且有可能在磁盘的不同位置，那么**在通过磁盘访问时就会出现很多随机I/O！**
+
+(不连续其实可以运行，但会影响性能)
+
+当表中数据较多时，直接**以区为单位分配空间，分配的空间就是物理连续的，从而消除了随机I/O**，但这不是全部(有大量的空间浪费)
+
+
+
+
+
+- 为什么需要段segment:
+
+因为我们在扫描B+树时最终只是在扫描叶子结点中的记录，而**将记录放入分配的区中时，需要区分叶子结点和非叶子结点**(目录项记录)
+
+InnoDB为了对B+树叶子结点和非叶子结点进行区分，让**叶子结点有自己的区，非叶子结点也有自己的区**，**存放叶子结点的所有区算是一个段，非叶子结点的区集合也算一个段**
+
+
+
+
+
+- 碎片区fragment extent:
+
+对于**一个InnoDB聚簇索引，其会生成两个段(叶子结点和非叶子结点)**，因为一个完整的extent大小为1MB，如果table中数据很少，**直接分配两个区则会占用2MB，会造成严重的浪费！**
+
+为了避免区的浪费，InnoDB设计者提出了碎片区的概念(fragment extent)
+
+碎片区: 其中的部分页可以属于段a，另一部分页可以属于段b，还有部分page可以不属于任何segment，**碎片区整体不属于任何段，其直属于table space**
+
+
+
+
+- 此后为segment分配存储空间的策略:
+  - 刚开始向table插入数据时，**段中的存储空间以fragment extent中的单个page为单位获取**
+  - 当当segment中所占用的page数量超过32个碎片区页面后，就会用一个完整的extent来分配存储空间(之前占用的碎片区页面不会被复制到这个新分配的完整extent中)
+
+- 目前段的定义: 一些零散页和一些完整区的集合
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 9.2.3 区的分类
+
+- 空闲区: 其中没有任何页面被占用
+- 有剩余空闲页的碎片区: 其中有可被分配的空闲页
+- 没有空闲页的碎片区: 没有可被分配的空闲页
+- 附属某个段的区: 之前讲过，当segment中数据量较大时，会以一个完整的extent为单位存储数据
+
+这四个类型的区也称为区的四种状态(state):
+
+![Xnip2021-10-14_15-41-36](MySQL Note.assets/Xnip2021-10-14_15-41-36.jpg)
+
+**注意：**其中**为FREE, FREE_FRAG, FULL_FRAG状态的区直属于表空间**，而FSEG属于某个段
+
+关系:
+
+```shell
+-- table space
+  -- segment
+  	-- FSEG			// 附属段的区
+  -- FREE
+  -- FREE_FRAG
+  -- FULL_FRAG
+```
+
+
+
+
+
+
+
+- XDES Entry的引入:
+
+为了管理这些区，InnoDB设计者**为每个区都设计了一个XDES Entry结构**(Extent Descriptor Entry)，**其记录了区的一些属性**
+
+结构图:
+
+![Xnip2021-10-14_15-52-42](MySQL Note.assets/Xnip2021-10-14_15-52-42.jpg)
+
+各部分定义:
+
+- Segment ID: 其表示**该区附属的段**(如果该区已经被分配给了对应的段，不然无意义)，段id唯一
+- 其中包含四个结构统称为List Node: 通过该部分可以将若干XDES Entry结构**串成一个链表**
+  - Prev Node Page Number和Prev Node Offset组合是指向前一个XDES Entry结构的指针
+  - Next Node Page Number和next Node Offset组合是指向后一个XDES Entry结构的指针
+
+(作用之后介绍)
+
+- State(4 bytes): 表明对应extent的状态，也就是之前介绍的四种状态
+- Page State Bitmap(16 bytes): 该部分共128bits，因为一个extent对应64个page，所以每个页对应2bits，其中第1个bit表示对应页是否空闲(第2位作用未定)
+
+
+
+
+
+
+
+
+
+#### 1) XDES Entry链表
+
+
+
+现在回顾向table中插入数据的过程:
+
+- 当**segement中数据少时**，首先查看**table space中是否有状态为FREE_FRAG的extent**
+- 有则**从该extent中取一个零散页将数据插入即可**
+- 没有则**从table space中申请一个状态为FREE的extent**，并将**该extent的状态变为FREE_FRAG**，之后重复上述步骤，从中取一个零散页将数据插入，**之后每次都从这个状态为FREE_FRAG的extent中取零散页**
+- 且**不同的segment需要零散页时都从该extent中取**，直到该页面中的空闲页面用完(状态变为FULL_FRAG)
+
+
+
+现在出现了一个问题:
+
+- 要实现以上步骤，需要我们明确extent的状态，而这个数据存储在区对应的XDES Entry结构中
+- 难道为了知道extent的状态，我们需要遍历所有的XDES Entry结构？
+- 此时就是XDES Entry结构中的List Node部分发挥作用的时候了！
+
+
+
+- 通过List Node可以做3件事:
+  - 将所有State为FREE的extent对应的XDES Entry结构连接成一个链表，称为FREE链表
+  - 将所有State为FREE_FRAG的extent对应的XDES Entry结构连接成一个链表，称为FREE_FRAG链表
+  - 将所有State为FULL_FRAG的extent对应的XDES Entry结构连接成一个链表，称为FULL_FRAG链表
+
+**注意：**这些三种状态的extent直属表空间
+
+
+
+此时通过这三个链表可以获取extent的状态:
+
+- 从需要FREE_FRAG状态extent对应链表中获取头结点，通过该结点对应的extent获取零散页并插入数据
+- 没有空闲页面则修改State为FULL_FRAG，没有节点则从FREE链表中区一个节点移动到FREE_FRAG链表，并修改State取零散页即可
+
+- 最后如果Segment中的数据占满了32个零散页，则直接申请完整的extent即可
+
+
+
+这里又出现了问题: 我们怎么知道被占用的extent属于哪个segment呢？
+
+- XDES Entry结构中有一个Segment ID字段，所以要遍历一遍？
+- 这里我们同样用链表的方法来解决:
+- **为每个segment中的extent对应的XDES Entry建立三个链表(附属某个段)**:
+  - FREE链表: **在同一个段中，所有页都是空闲页的extent**对应的XDES Entry结构构建成该链表
+  - NOT_NULL链表: **在同一个段中，有空闲页的extent**对应的XDES Entry结构构建成该链表
+  - FULL链表: **在同一个段中，没有空闲页的extent**对应的XDES Entry结构构建成该链表
+
+**注意：**每个segment都有这三个对应的链表
+
+
+
+例子:
+
+如果一个table中有2个索引，则对应4个段，4个段对应12个链表，再加上直属表空间的三种状态的链表，**所以该table的表空间需要维护15个链表**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 2) 链表的基节点
+
+
+
+问题: 之前我们在一张表空间中需要维护多个链表(直属table space和附属segment的)，但如何找到这些链表/头结点呢？
+
+- 为了解决该问题，InnoDB中为每个链表都创建了一个名为List Base Node的结构，其包含链表的头节点、尾节点和节点数
+
+结构如下:
+
+![Xnip2021-10-14_16-50-04](MySQL Note.assets/Xnip2021-10-14_16-50-04.jpg)
+
+各个结构如下:
+
+- List Length: 节点数
+- First Node Page Number和First Node Offset: 表示链表头节点在表空间中的位置
+- Last Node Page Number和Last Node Offset: 表示链表尾节点在表空间中的位置
+
+**注：**一般会把**每个链表对应的List Base Node结构放在表空间中的固定位置**，**这样就容易定位了**
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3) 小结
+
+- table space由若干extent组成，而每个extent都对应一个XDES Entry结构
+- 直属于table space的XDES Entry结构分为FREE, FREE_FRAG, FULL_FRAG三个链表
+- 每个段中有若干碎片区和完整区，每个段中的extetn对应的XDES Entry结构都构成FREE, NOT_FULL, FULL三个链表
+- 以上每个链表都对应一个List Base Node结构，该结构定义了链表的头节点，尾节点和节点数
+- 链表的存在让extent的管理更容易了
+
+
+
+
+
+
+
+### 9.2.4 段的结构
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
