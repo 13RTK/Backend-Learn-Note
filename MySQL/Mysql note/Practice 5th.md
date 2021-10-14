@@ -1264,5 +1264,70 @@ FROM
 WHERE duration >= 15 * 60;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day82
+
+## Tag: WHERE
+
+![Xnip2021-10-14_07-44-48](MySQL Note.assets/Xnip2021-10-14_07-44-48.jpg)
+
+
+
+![Xnip2021-10-14_07-44-30](MySQL Note.assets/Xnip2021-10-14_07-44-30.jpg)
+
+题意:
+
+给你一张问题表，请你查询出其中likes比例低于60%的id
+
+
+
+
+
+思路:
+
+- likes比例使用likes / (likes + dislikes)即可，将其作为WHERE子句的条件就行了，SQL如下
+
+```mysql
+SELECT
+    problem_id
+FROM
+    Problems
+WHERE likes / (dislikes + likes) < 0.6
+ORDER BY problem_id;
+```
+
+
+
+
+
+
+
+
+
 
 
