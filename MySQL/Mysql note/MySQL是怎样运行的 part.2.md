@@ -1745,6 +1745,14 @@ InnoDB为了对B+树叶子结点和非叶子结点进行区分，让**叶子结�
 
 
 
+
+
+
+
+
+
+
+
 #### 1) FSP_HDR
 
 - 9.2.1简短提到过，其是table space中第一个extent的第一个page，页号为0，对应page类型为FSP_HDR(全称FIL_PAGE_TYPE_FSP_HDR)
@@ -1777,8 +1785,499 @@ File Header和File Trailer为所有Page的通用部分，而Empty Space部分没
 
 字段解释:
 
-- List Base Node for FREE/FREE_FRAG/FULL_FRAG: 分别是**三种extent对应XDES Entry结构形成的三个链表的基节点**，其位置固定在File Space Header部分中，所以可以容易的定位到
-- 
+- List Base Node for FREE/FREE_FRAG/FULL_FRAG: 分别是**三种extent对应XDES Entry结构形成的三个链表的基节点**，其位置固定在File Space Header部分中，所以可以容易的定位到(解决了第一个问题)
+- FRAG_N_USED: **FREE_FRAG链表中**已经使用的页面数
+- FREE Limit: **从该字段之后表示的页号的extent都没有被使用**，且尚未加入到FREE链表中
+
+
+
+Description for FREE Limit:
+
+为什么引入FREE Limit字段？
+
+- 表空间最初都有一个默认大小，其对应具体的磁盘文件，如果当数据超过默认大小时，则对应磁盘文件会自增长，其带来了两个问题:
+
+  1. **初始化时**，可以直接分配一个非常大的磁盘文件，然后直接初始化(创建extent的XDES Entry结构，创建Segment的INODE Entry结构和对应的链表等等)，但**这个文件中有大量空闲空间**，对应到表空间中，**则有大量状态为FREE的extent**。
+     - 我们**可以选择将所有的空闲extent对应的XDES Entry 结构添加到FREE链表中**，**也可以先只添加一部分，等FREE链表中对应的XDES Entry不够时再添加剩余的XDES Entry结构**
+
+  2. 因为磁盘文件一次自增长的空间可以非常大，**所以在自增长时**，同样可以选择将空闲extent对应的XDES Entry结构都添加到FREE链表中，也可以只添加一部分，等FREE链表中对应的XDES Entry不够时再添加剩余的XDES Entry结构
+
+- InnoDB设计者的做法就是后者，**等到需要的时候再将XDES Entry结构添加到FREE链表中**，而区分添加和未添加到FREE链表的方法就是通过FREE Limit对应的页号
+
+
+
+
+
+
+
+- Next Unused Segment ID: 未被分配的最小Segment ID
+
+每个索引都对应两个Segment，所以每次创建一个新的索引都需要我们创建两个Segment，**而Segment ID必须是唯一的**，而如何获取未被分配的唯一ID呢？通过遍历获取ID吗？为了解决这个问题，**InnoDB设计者就引入了Next Unused Segment ID来快速获取一个新的唯一ID，每次分配后都递增该字段**
+
+
+
+- Space Flags: 存储了表空间的属性
+
+结构如下:
+
+![Xnip2021-10-15_13-59-42](MySQL Note.assets/Xnip2021-10-15_13-59-42.jpg)
+
+(不同版本属性有差异，细节不深究)
+
+
+
+
+
+- List Base Node for SEG_INODES_FULL List和List Base Node for SEG_INODES_FREE List: 
+
+每个segment都对应一个INODE Entry结构，该结构会存放到一个INODE类型的页中，多个段则对应多个INODE Entry结构，则一个INODE类型页可能放不下，则需要多个INODE类型页，这些INODE类型的Page会形成两个链表:
+
+- SEG_INODES_FULL: 该链表中的INODE类型页都被INODE Entry结构充满，没有空闲空间存放其他INODE Entry
+- SEG_INODES_FREE: 该链表中INODE类型页都有空余空间存放INODE Entry结构
+
+(INODE类型页之后介绍)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 2) XDES
+
+- 该类型页面用来存放XDES Entry结构(40 Bytes)，当table space中对应的extent很多时，其对应的XDES Entry结构也很多，一张XDES页放不下。所以将255个extent分为一组，**每组开头第一个页记录该组中所有extent对应的XDES Entry结构**
+- 第一组开头第一个页比较特殊，其还记录着**表空间的一些整体属性**(FSP_HDR类型)
+- 其**除了没有File Space Header部分外，其余部分都和FSP_HDR相同**
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3) IBUF_BITMAP
+
+- 每个**分组第二个page的类型都是IBUF_BITMAP**，该类型页**记录了一些关于Change Buffer类型的东西**
+
+
+
+为什么引入该字段?
+
+- 由于**索引对应的页面不连续**(需要修改的数据**所在页面没有加载到内存中**)，**读取磁盘会形成随机I/O**，所以**为了不影响性能，则将修改操作先缓存到Change Buffer中**
+- 等**之后需要修改的页面被加载到内存后**，则再修改合并到对应的页面
+- IBUF: Insert buffer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 4) INODE
+
+- 该类型页面专用于存储INODE Entry页面
+
+结构图及描述:
+
+![Xnip2021-10-15_14-30-55](MySQL Note.assets/Xnip2021-10-15_14-30-55.jpg)
+
+
+
+![Xnip2021-10-15_14-31-06](MySQL Note.assets/Xnip2021-10-15_14-31-06.jpg)
+
+- INODE Entry: 存储所有的INODE Entry结构
+- List Node for INODE Page List:
+
+一旦一个表空间中存在的segment超过85，一个INODE页面无法存储全部INODE Entry结构，就需要多个INODE类型页面，InnoDB设计者将这些INODE页面串成两个不同的链表:
+
+1. SEG_INODES_FULL: 没有空闲空间的INODE页面形成
+2. SEG_INODES_FREE: 有空闲空间的INODE页面形成
+
+**注意：**这两个链表的根节点存储在FSP_HDR的File Space Header中(固定位置)
+
+
+
+到这里存储一个INODE Entry结构的过程为:
+
+- 先查看SEG_INODES_FREE链表是否为空。不为空则从中获取一个节点，根据此获取一个INODE类型的页，将该INODE Entry结构放入其中即可。如果该页面没有剩余空间了(存储了一个INODE Entry结构后)，则将该INODE页放入SEG_INODES_FULL链表中
+- 如果SEG_INODES_FREE链表为空，直接中直属表空间的FREE_FRAG链表申请一个页面，并改为INODE类型，将该页放入SEG_INODES_FREE链表中即可
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 9.2.6 Segment Header的作用
+
+问题:
+
+- 创建索引时都会创建段，每个段对应一个INODE Entry结构，但我们怎么知道哪个segment对应哪个INODE Entry结构呢？
+
+
+
+在index_page类型页中，有一个Page Header部分:
+
+|       Name        | Byte |                Description                 |
+| :---------------: | :--: | :----------------------------------------: |
+| PAGE_BTR_SEG_LEAF |  10  |  B+树叶子节点段的头部信息(仅在B+树的根页)  |
+| PAGE_BTR_SEG_TOP  |  10  | B+树叶非子节点段的头部信息(仅在B+树的根页) |
+
+- 这两个字段都占用10个字节，但它们两个其实都对应一个名为Segment Header的结构:
+
+![Xnip2021-10-15_15-01-08](MySQL Note.assets/Xnip2021-10-15_15-01-08.jpg)
+
+各部分定义:
+
+![Xnip2021-10-15_15-03-32](MySQL Note.assets/Xnip2021-10-15_15-03-32.jpg)
+
+- 所以对于PAGE_BTR_SEG_LEAF: 其记录**叶子结点段对应INODE Entry结构的地址**位于表空间中**具体页面的具体偏移量**
+- 对于PAGE_BTR_SEG_TOP: 其记录**非叶子结点段对应INODE Entry结构的地址**位于表空间中**具体页面的具体偏移量**
+- 一个索引只需两个段，所以只需要**在索引根页面中存储两个Segment Header结构**即可(叶子节点和非叶子节点)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 9.2.7 真实表空间对应的文件大小
+
+- 对于一个InnoDB表，其对应.ibd文件大小默认为96KB(反之很小)，但.ibd文件是自扩展的
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 9.3 系统表空间
+
+- 系统表空间与独立表空间基本类型，只不过多了一些与整个系统相关的信息
+- 系统表空间最重要，是所有表空间的带头大哥，表空间ID为0
+
+
+
+
+
+### 9.3.1 系统表空间的整体结构
+
+- 系统表空间明显的不同之处: 系统表空间开头记录了许多整个系统属性页面:
+
+![Xnip2021-10-15_15-21-05](MySQL Note.assets/Xnip2021-10-15_15-21-05.jpg)
+
+- 其中前三个页面同独立表空间相同，但页号3～7不同:
+
+![Xnip2021-10-15_15-23-09](MySQL Note.assets/Xnip2021-10-15_15-23-09.jpg)
+
+*了解: 系统表空间的extent1和extent2两个区被称为Doublewrite Buffer(双写缓冲区)
+
+
+
+
+
+
+
+
+
+
+
+#### InnoDB数据字典
+
+导入:
+
+- 平时使用INSERT插入记录都是用户数据，MySQL只是一个保管数据的软件，并提供CRUD接口
+- 当插入一条数据时:
+- 先校验插入语句对应表是否存在，以及插入的列和表中的列是否符合(类型，长度限制)
+- 如果上面一步没有问题，需要知道该表对应的聚簇索引和二级索引对应的根页面在哪个表空间，在其中哪个页面里，之后再把记录插入索引
+- 但MySQL其实还保存了许多额外的信息:
+  - 某个表从属于哪个表空间，表内列的数量
+  - 表对应每列的数据类型
+  - 表内索引的数量，每个索引对应的字段，索引对应的根页面所在表空间的页面页号
+  - 表内的外键以及对应的列
+  - 表空间对应文件系统的路径
+
+这些是自动引入的额外数据，称为"元数据"，记录这些元数据的为一些内部系统表(internal system table):
+
+![Xnip2021-10-15_15-47-41](MySQL Note.assets/Xnip2021-10-15_15-47-41.jpg)
+
+![Xnip2021-10-15_15-47-50](MySQL Note.assets/Xnip2021-10-15_15-47-50.jpg)
+
+- 这些系统表也被称为**数据字典**，它们都以B+树的形式保存在系统表空间中
+- 其中前四个(TABLES/COLUMNS/INDEXES/FIELDS)被称为基本系统表，非常重要:
+
+
+
+
+
+1. SYS_TABLES
+
+该表的列:
+
+![Xnip2021-10-15_15-51-16](MySQL Note.assets/Xnip2021-10-15_15-51-16.jpg)
+
+其中有两个索引:
+
+- NAME主键聚簇索引
+- ID二级索引
+
+
+
+
+
+
+
+2. SYS_COLUMNS
+
+该表的列:
+
+![Xnip2021-10-15_15-53-23](MySQL Note.assets/Xnip2021-10-15_15-53-23.jpg)
+
+![Xnip2021-10-15_15-54-17](MySQL Note.assets/Xnip2021-10-15_15-54-17.jpg)
+
+其中有一个索引:
+
+- 以TABLE_ID和POS为主键的聚簇索引
+
+
+
+
+
+
+
+3. SYS_INDEXES表
+
+该表的列:
+
+![Xnip2021-10-15_15-56-26](MySQL Note.assets/Xnip2021-10-15_15-56-26.jpg)
+
+其中有一个索引:
+
+- 以TABLE_ID和ID为主键的聚簇索引
+
+
+
+
+
+
+
+
+
+
+
+4. SYS_FIELD
+
+该表的列:
+
+![Xnip2021-10-15_15-58-48](MySQL Note.assets/Xnip2021-10-15_15-58-48.jpg)
+
+其中只有一个索引:
+
+- 以INDEX_ID和POS为主键的聚簇索引
+
+
+
+
+
+
+
+
+
+5. Data Dictionary Header
+
+有了上述四个基础系统表，则能够获取**其他系统表以及用户自定义的表**的所有元数据了
+
+到此为止，如果想要查看SYS_TABLESPACES系统表中存储了那些表空间和对应的属性，则执行如下操作:
+
+- **通过表名**在SYS_TABLES中定位具体的记录，从而**获取对应的TABLE_ID**
+- **通过TABLE_ID**在SYS_COLUMNS中**获取所有列的信息**
+- **通过TABLE_ID**在SYS_INDEXES中**获取所有索引信息(INDEX_ID)**，从而可以**获取索引对应B+树中根页面在表空间中对应的页面**
+- **通过INDEX_ID**在SYS_FIELDS中**获取所有索引列的信息**
+
+
+
+问题:
+
+通过这四个基础系统表可以获取几乎所有信息，但**这四个表到哪里获取呢？**
+
+InnoDB设计者通过硬编码: 使用一个**页号为7，类型为SYS的页面**来存储这4个表的聚簇索引和二级索引对应B+树的位置(根页面信息)，换句话说，其记录了Data Dictionary Header(数据字典的头部信息)
+
+此外该页号为7的页面还记录了一些InnoDB存储引擎的全局属性，结构:
+
+![Xnip2021-10-15_16-13-16](MySQL Note.assets/Xnip2021-10-15_16-13-16.jpg)
+
+- 各部分描述:
+
+![Xnip2021-10-15_16-14-13](MySQL Note.assets/Xnip2021-10-15_16-14-13.jpg)
+
+- 其中有一个Segment Header部分，说明InnoDB设计者将有关数据字典的信息作为一个段来分配存储空间，目前Data Dictionary Header信息很少，所以该段只有一个碎片页，也就是这个页号为7的页
+
+
+
+
+
+
+
+
+
+Data Dictionary Header的各个部分:
+
+- Max Row ID: 
+
+如果表中没有显式指定主键，且没有不为null的UNIQUE键，**则InnoDB会默认生成一个row_id列为主键**(其值不能重复)，为了生成这个值，InnoDB提供了Max Row ID这个字段
+
+**不管哪个表，只要有row_id这个列**，在插入新数据时都会使用Max Row ID对应的值，之后把Max Row ID + 1，**所以Max Row ID是全局共享的**
+
+
+
+- Max Table ID:
+
+在InnoDB存储引擎中，每个表都有对应的唯一ID，每新建一个表，其值都对应该Max Table ID值
+
+
+
+
+
+- Max Index ID:
+
+同上
+
+
+
+- Max Space ID:
+
+同上
+
+
+
+
+
+- Mix ID Low: 没用
+
+
+
+- Root of SYS_TABLES clust index: 
+
+表示SYS_TABLES表聚簇索引的根页面页号
+
+
+
+- Root of SYS_TABLES_IDS sec index: 
+
+表示SYS_TABLES表为ID列所建二级索引的根页面页号
+
+
+
+- Root of SYS_COLUMNS clust index: 
+
+表示SYS_COLUMNS表聚簇索引的根页面页号
+
+
+
+- Root of SYS_INDEXES clust index: 
+
+表示SYS_INDEXES表聚簇索引的根页面页号
+
+
+
+- Root of SYS_FIELDS clust index: 
+
+表示SYS_FIELDS表聚簇索引的根页面页号
+
+
+
+
+
+
+
+
+
+
+
+
+
+6. information_schema 系统数据库
+
+**注意：**以上文件用户都不能直接访问。
+
+为了方便用户分析问题，InnoDB设计者在information_schema库中提供了INNODB_SYS开头的表:
+
+![Xnip2021-10-15_16-31-42](MySQL Note.assets/Xnip2021-10-15_16-31-42.jpg)
+
+- 这些表并不是真正的内部系统表
+- 在存储引擎启动时会从系统表中读取，然后将数据填充到这些INNODB_SYS开头的表中，仅供参考
 
 
 
