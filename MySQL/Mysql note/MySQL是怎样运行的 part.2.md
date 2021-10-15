@@ -1599,9 +1599,9 @@ InnoDB为了对B+树叶子结点和非叶子结点进行区分，让**叶子结�
 
 现在出现了一个问题:
 
-- 要实现以上步骤，需要我们明确extent的状态，而这个数据存储在区对应的XDES Entry结构中
-- 难道为了知道extent的状态，我们需要遍历所有的XDES Entry结构？
-- 此时就是XDES Entry结构中的List Node部分发挥作用的时候了！
+- 要实现以上步骤，**需要我们明确extent的状态**，而**这个数据存储在区对应的XDES Entry结构中**
+- 难道为了知道extent的状态，我们**需要遍历所有的XDES Entry结构？**
+- 此时就是XDES Entry结构中的**List Node部分发挥作用的时候了！**
 
 
 
@@ -1623,7 +1623,7 @@ InnoDB为了对B+树叶子结点和非叶子结点进行区分，让**叶子结�
 
 
 
-这里又出现了问题: 我们怎么知道被占用的extent属于哪个segment呢？
+这里又出现了问题: 我们**怎么知道被占用的extent属于哪个segment呢？/哪个segment中有32个页呢**
 
 - XDES Entry结构中有一个Segment ID字段，所以要遍历一遍？
 - 这里我们同样用链表的方法来解决:
@@ -1660,7 +1660,7 @@ InnoDB为了对B+树叶子结点和非叶子结点进行区分，让**叶子结�
 
 
 
-问题: 之前我们在一张表空间中需要维护多个链表(直属table space和附属segment的)，但如何找到这些链表/头结点呢？
+问题: 之前我们在一张表空间中需要维护多个链表(直属table space和附属segment的)，**但如何找到这些链表/头结点呢？**
 
 - 为了解决该问题，InnoDB中为每个链表都创建了一个名为List Base Node的结构，其包含链表的头节点、尾节点和节点数
 
@@ -1704,6 +1704,20 @@ InnoDB为了对B+树叶子结点和非叶子结点进行区分，让**叶子结�
 
 ### 9.2.4 段的结构
 
+- 段segment**只是一个逻辑上的概念**，**不对应连续的物理区域**，其只是**一些零散页和一些完整区的集合**
+- 就像为了管理extent而定义的XDES Entry结构一样，InnoDB设计者也**为每个段定义了一个INODE Entry结构来记录段中的属性**
+
+结构:
+
+![Xnip2021-10-14_20-48-29](MySQL Note.assets/Xnip2021-10-14_20-48-29.jpg)
+
+各部分含义:
+
+- Segment ID: 该INODE Entry结构对应的段ID
+- NOT_FULL_N_USED: NOT_FULL链表中使用的页面数量(NOT_FULL链表: 同一个段中有空闲页面的区对应的XDES Entry结构形成)
+- List Base Node: 可通过该部分直接找FREE, NOT_FULL, FULL链表的头尾节点
+- Magic Number: 用来标记INODE Entry结构是否被初始化(填入了各个字段的值)，值为97,937,874则说明已经初始化了(规定而已不必纠结)
+- Fragment Array Entry: 该结构对应一个零散页，表示零散页的页号
 
 
 
@@ -1717,24 +1731,54 @@ InnoDB为了对B+树叶子结点和非叶子结点进行区分，让**叶子结�
 
 
 
+### 9.2.5 不同的页面类型
+
+问题:
+
+- 每个extent对应的XDES Entry存储在table space的哪个位置？(FSP_HDR部分解答)
+- 直属table space的FREE, FREE_FRAG, FULL_FRAG链表对应的根节点在table space的哪个位置？
+- 每个segment对应的INODE Entry结构存储在table space的哪个位置？
 
 
 
+这需要我们从每个extent开头的类型相同的page说起
 
 
 
+#### 1) FSP_HDR
+
+- 9.2.1简短提到过，其是table space中第一个extent的第一个page，页号为0，对应page类型为FSP_HDR(全称FIL_PAGE_TYPE_FSP_HDR)
+- 其存储了table space的一些整体属性和第一个组中255个extent对应的XDES Entry结构
+
+结构如图:
+
+![Xnip2021-10-14_21-10-26](MySQL Note.assets/Xnip2021-10-14_21-10-26.jpg)
 
 
 
+FSP_HDR类型页各部分结构的含义:
+
+![Xnip2021-10-14_21-13-22](MySQL Note.assets/Xnip2021-10-14_21-13-22.jpg)
+
+File Header和File Trailer为所有Page的通用部分，而Empty Space部分没有实际含义，只需要重点说明File Space Header和XDES Entry部分
 
 
 
+- File Header: 
+  - 结构:
+
+![](MySQL Note.assets/Xnip2021-10-14_21-18-01.jpg)
+
+- File Space Header结构属性描述:
+
+![Xnip2021-10-14_21-22-32](MySQL Note.assets/Xnip2021-10-14_21-22-32.jpg)
 
 
 
+字段解释:
 
-
-
+- List Base Node for FREE/FREE_FRAG/FULL_FRAG: 分别是**三种extent对应XDES Entry结构形成的三个链表的基节点**，其位置固定在File Space Header部分中，所以可以容易的定位到
+- 
 
 
 

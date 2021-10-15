@@ -1321,7 +1321,61 @@ WHERE likes / (dislikes + likes) < 0.6
 ORDER BY problem_id;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day83
+
+## Tag: GROUP_CONCAT
+
+![Xnip2021-10-15_09-17-00](MySQL Note.assets/Xnip2021-10-15_09-17-00.jpg)
+
+
+
+![Xnip2021-10-15_09-18-06](MySQL Note.assets/Xnip2021-10-15_09-18-06.jpg)
+
+
+
+![Xnip2021-10-15_09-16-40](MySQL Note.assets/Xnip2021-10-15_09-16-40.jpg)
+
+题意:
+
+给你一张销售表，请你按日期查询出每天销售的数量和对应的产品，产品名列表要按照字典序排列，且用"，"分隔
+
+
+
+
+
+思路:
+
+- 按日期就是分组，统计销量就是用COUNT，而对应的产品列表则需要使用GROUP_CONCAT，其会默认使用","分隔数据
+- 但产品列表怎么排序呢？通过MySQL官方文档中对GROUP_CONCAT的描述可知，在其中嵌套使用ORDER BY即可，且还可以指定分隔符(默认为",")，所以最终SQL如下
+
+```mysql
+SELECT
+    sell_date,
+    COUNT(DISTINCT product) AS 'num_sold',
+    GROUP_CONCAT(
+        DISTINCT product
+        ORDER BY product
+        ) AS 'products'
+FROM
+    Activities
+GROUP BY sell_date;
+```
 
 
 
