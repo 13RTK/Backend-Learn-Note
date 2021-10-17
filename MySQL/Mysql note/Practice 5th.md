@@ -1377,9 +1377,113 @@ FROM
 GROUP BY sell_date;
 ```
 
+****
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day84
+
+## Tag: MONTH, INNER JOIN
+
+![Xnip2021-10-16_09-51-06](MySQL Note.assets/Xnip2021-10-16_09-51-06.jpg)
+
+
+
+![Xnip2021-10-16_09-50-44](MySQL Note.assets/Xnip2021-10-16_09-50-44.jpg)
+
+题意:
+
+给你一张电视台放送表，一张节目内容表，请你查询出其中在2020年6月期间播放的适用儿童的电影
+
+
+
+
+
+思路:
+
+- 根据条件一个一个来，我们需要查询的是电影的名称，其在内容表中，但放送时间在另一张表中，自然需要连接
+- 限制日期使用MONTH和YEAR即可(测试用例没有考虑年份)，剩下两个条件就是简单的限制字段值，SQL如下
+
+```mysql
+SELECT
+    DISTINCT t2.title
+FROM
+    TVProgram AS t1,
+    Content AS t2
+WHERE t1.content_id = t2.content_id
+AND MONTH(t1.program_date) = '6'
+AND t2.Kids_content = 'Y'
+AND t2.content_type = 'Movies'
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day85
+
+## Tag: TRIM, LOWER
+
+![Xnip2021-10-17_12-49-00](MySQL Note.assets/Xnip2021-10-17_12-49-00.jpg)
+
+
+
+![Xnip2021-10-17_12-48-26](MySQL Note.assets/Xnip2021-10-17_12-48-26.jpg)
+
+题意:
+
+给你一张销售记录表，请你将其中的数据按照产品名和月份进行数量统计，并去除原表中产品名的空格，且将产品名转换为小写
+
+
+
+
+
+
+
+思路:
+
+- 首先处理产品名，取出空格可以使用TRIM()，转换为小写则使用LOWER()即可
+- 按月份可以简单的用LEFT从原表中取前7个字符，也可以使用DATE_FORMAT
+- 最后数量统计使用COUNT即可，需要注意的是，分组不能简单的用原表中的产品名，而是处理后的产品名，月份也是一样，所以要在GROUP BY中使用完整的表达式，SQL如下:
+
+```mysql
+SELECT
+    Lower(TRIM(product_name)) AS 'product_name',
+    DATE_FORMAT(sale_date, '%Y-%m') AS 'sale_date',
+    COUNT(sale_id) AS 'total'
+FROM
+    Sales 
+GROUP BY Lower(TRIM(product_name)), DATE_FORMAT(sale_date, '%Y-%m')
+ORDER BY product_name;
+```
 
 
 
