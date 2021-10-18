@@ -1485,7 +1485,61 @@ GROUP BY Lower(TRIM(product_name)), DATE_FORMAT(sale_date, '%Y-%m')
 ORDER BY product_name;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day86
+
+## Tag: SUM
+
+![Xnip2021-10-18_15-58-46](MySQL Note.assets/Xnip2021-10-18_15-58-46.jpg)
+
+
+
+![Xnip2021-10-18_15-58-25](MySQL Note.assets/Xnip2021-10-18_15-58-25.jpg)
+
+题意:
+
+给你一张仓库信息表，再给你一张产品信息表，请你根据这两张表计算出每个仓库的存货量
+
+
+
+
+
+
+
+思路:
+
+- 首先明确存货量的定义: 所有商品所占的容积，所以需要计算出每个商品的单个容量再乘以数量，最后将所有商品相加即可
+- SQL如下
+
+```mysql
+SELECT
+    t1.name AS 'WAREHOUSE_NAME',
+    SUM(t1.units * t2.Width * t2.Length * t2.Height) AS 'VOLUME'
+FROM
+    Warehouse AS t1,
+    Products AS t2
+WHERE t1.product_id = t2.product_id
+GROUP BY t1.name;
+```
 
 
 
