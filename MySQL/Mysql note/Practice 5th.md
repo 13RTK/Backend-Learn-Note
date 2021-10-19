@@ -1541,5 +1541,90 @@ WHERE t1.product_id = t2.product_id
 GROUP BY t1.name;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day87
+
+## Tag: UNION, IS NULL
+
+![Xnip2021-10-19_07-17-52](MySQL Note.assets/Xnip2021-10-19_07-17-52.jpg)
+
+
+
+![Xnip2021-10-19_07-17-33](MySQL Note.assets/Xnip2021-10-19_07-17-33.jpg)
+
+题意:
+
+给你一张员工信息表，一张工资表，请你找出其中缺失姓名或工资信息的员工id
+
+
+
+
+
+
+
+思路:
+
+- 因为姓名和工资在两张不同的表中，所以如果使用左右连接的话一次只能以一张表为准，也就是说我们一次只能查询出其中一个条件
+
+既然一次只能查询出一个，那我们干脆查询两次，之后将结果用UNION连接起来即可，SQL如下
+
+```mysql
+SELECT
+    t2.employee_id
+FROM
+    Employees AS t1
+RIGHT JOIN Salaries AS t2 ON t1.employee_id = t2.employee_id
+WHERE t1.name IS NULL
+UNION
+SELECT
+    t2.employee_id
+FROM
+    Salaries AS t1
+RIGHT JOIN Employees AS t2 ON t1.employee_id = t2.employee_id
+WHERE t1.salary IS NULL
+ORDER BY employee_id;
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
