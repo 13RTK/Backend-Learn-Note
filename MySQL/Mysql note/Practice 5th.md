@@ -1606,6 +1606,7 @@ WHERE t1.salary IS NULL
 ORDER BY employee_id;
 ```
 
+****
 
 
 
@@ -1615,6 +1616,49 @@ ORDER BY employee_id;
 
 
 
+
+
+
+
+
+
+
+
+# Day88
+
+## Tag: IFNULL, SUM
+
+![Xnip2021-10-20_07-25-27](MySQL Note.assets/Xnip2021-10-20_07-25-27.jpg)
+
+
+
+![Xnip2021-10-20_07-24-44](MySQL Note.assets/Xnip2021-10-20_07-24-44.jpg)
+
+题意:
+
+给你一张商场的顾客访问表，和一张订单表，请你查询出访问表中所有未消费过的顾客的id，并计算出他们访问的次数
+
+
+
+
+
+
+
+思路:
+
+- 所谓未消费过就是其id出现在了访问表中，但没有出现在订单表中，所以以访问表为基础进行连接后，其中订单id为null的用户就是查询的答案
+- 之后想要计算出访问次数，则只需要限定订单id为null即可，并统计transaction_id或者customer_id即可，SQL如下
+
+```mysql
+SELECT
+    t1.customer_id,
+    COUNT(t1.customer_id) AS 'count_no_trans'
+FROM
+    Visits AS t1
+LEFT JOIN Transactions AS t2 ON t1.visit_id = t2.visit_id
+WHERE t2.transaction_id IS NULL
+GROUP BY t1.customer_id
+```
 
 
 
