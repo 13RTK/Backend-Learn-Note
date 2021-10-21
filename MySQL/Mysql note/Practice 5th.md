@@ -1660,9 +1660,66 @@ WHERE t2.transaction_id IS NULL
 GROUP BY t1.customer_id
 ```
 
+****
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day89
+
+## Tag: HAVING
+
+![Xnip2021-10-21_07-08-41](MySQL Note.assets/Xnip2021-10-21_07-08-41.jpg)
+
+
+
+![Xnip2021-10-21_07-09-21](MySQL Note.assets/Xnip2021-10-21_07-09-21.jpg)
+
+题意:
+
+给你一张用户信息表，再给你一张交易记录表，请你计算出其中余额大于10000的所有用户的姓名与余额信息
+
+
+
+
+
+
+
+思路:
+
+- 首先姓名在用户表中，而余额计算需要使用交易记录表中的amount字段的值，所以需要连接两张表
+- 而余额计算需要按照用户区别，所以需要先分组后筛选，所以只能用HAVING，SQL如下
+
+```mysql
+SELECT
+    t1.name,
+    SUM(t2.amount) AS 'balance'
+FROM
+    Users AS t1,
+    Transactions AS t2
+WHERE t1.account = t2.account
+GROUP BY t1.name
+HAVING balance > 10000;
+```
 
 
 
