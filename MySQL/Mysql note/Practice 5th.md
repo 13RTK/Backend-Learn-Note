@@ -1721,6 +1721,84 @@ GROUP BY t1.name
 HAVING balance > 10000;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day90
+
+## Tag: IFNULL
+
+![Xnip2021-10-22_07-34-21](MySQL Note.assets/Xnip2021-10-22_07-34-21.jpg)
+
+
+
+![Xnip2021-10-22_07-34-02](MySQL Note.assets/Xnip2021-10-22_07-34-02.jpg)
+
+题意:
+
+给你一张净值表，一张查询表，请你查询出查询表中每条记录对应的净值
+
+
+
+
+
+
+
+思路:
+
+- 根据题目，明显需要以查询表为驱动表，需要进行外连接
+- 而题目中又说明对于未出现在驱动表中的记录也以依然需要添加到结果集中，且对应的净值为0
+- 在连接查询中未被被驱动表匹配的记录会默认为null，所以我们需要将null转换为数字0，此时使用IFNULL即可，SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t1.year,
+    IFNULL(t2.npv, 0) AS 'npv'
+FROM
+    Queries AS t1
+LEFT JOIN NPV AS t2 ON t1.id = t2.id
+AND t1.year = t2.year
+GROUP BY t1.id, t1.year;
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
