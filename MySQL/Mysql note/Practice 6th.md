@@ -74,7 +74,48 @@ AND TIMESTAMPDIFF(SECOND, t1.time_stamp, t2.time_stamp) <= 24 * 60 * 60;
 
 ![Xnip2021-10-22_11-37-24](MySQL Note.assets/Xnip2021-10-22_11-37-24.jpg)
 
+题意:
 
+给你一张体验信息表，请你查询出三种平台上三种体验的尝试次数
+
+
+
+
+
+思路:
+
+- 该题目就是分组的问题，但在计算次数之前，需要我们重组三个平台和三种体验
+- 所以需要我们手动写出三个平台的名称和三种体验的名称，并构成笛卡尔积，最后再连接上次数
+- 其中左边的笛卡尔积为驱动表，对应未在被驱动表中匹配的记录，也需要统计为0，所以需要外连接，SQL如下
+
+```mysql
+SELECT
+    t1.platform,
+    t2.experiment_name,
+    COUNT(t3.platform) AS 'num_experiments'
+FROM (
+SELECT
+    'Android' AS 'platform'
+UNION
+SELECT
+    'IOS' AS 'platform'
+UNION
+SELECT
+    'Web' AS 'platform'
+) AS t1
+INNER JOIN (
+    SELECT
+        'Reading' AS 'experiment_name'
+    UNION
+    SELECT
+        'Sports' AS 'experiment_name'
+    UNION
+    SELECT
+        'Programming' AS 'experiment_name'
+) AS t2
+LEFT JOIN Experiments AS t3 USING(platform, experiment_name)
+GROUP BY t1.platform, t2.experiment_name;
+```
 
 
 
