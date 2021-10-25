@@ -117,6 +117,64 @@ LEFT JOIN Experiments AS t3 USING(platform, experiment_name)
 GROUP BY t1.platform, t2.experiment_name;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day93
+
+## Tag: IFNULL, HAVING
+
+![Xnip2021-10-25_08-24-53](MySQL Note.assets/Xnip2021-10-25_08-24-53.jpg)
+
+
+
+![Xnip2021-10-25_08-25-36](MySQL Note.assets/Xnip2021-10-25_08-25-36.jpg)
+
+题意:
+
+给你一张图书信息表，再给你一张订单表，请你查询出过去一年中订单数不足10的书籍信息(不考虑上架不满1个月的书籍)，今天的日期为2019-06-23
+
+
+
+
+
+思路:
+
+- 根据示例来看，结果需要以图书表为驱动表，其中在被驱动表(订单表)中未被匹配的记录则需要从null变为0
+- 因为计算订单数时只考虑一年以内的，所以在连接时就可以限制被驱动表中的订单时间
+- 在总体数据中再限制上架时间大于等于一个月
+- 最后在分组后，使用HAVING统计订单数并限制即可，SQL如下
+
+```mysql
+SELECT
+    t2.book_id,
+    t2.name
+FROM
+    Orders AS t1
+RIGHT JOIN Books AS t2 ON t1.book_id = t2.book_id
+AND t1.dispatch_date >= '2018-06-23'
+WHERE t2.available_from >= 30
+GROUP BY t1.book_id
+HAVING SUM(IFNULL(t1.quantity, 0)) < 10;
+```
+
 
 
 
