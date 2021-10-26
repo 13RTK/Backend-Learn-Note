@@ -175,7 +175,104 @@ GROUP BY t1.book_id
 HAVING SUM(IFNULL(t1.quantity, 0)) < 10;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day94
+
+## Tag: HAVING
+
+![Xnip2021-10-26_07-13-07](MySQL Note.assets/Xnip2021-10-26_07-13-07.jpg)
+
+
+
+![Xnip2021-10-26_07-12-46](MySQL Note.assets/Xnip2021-10-26_07-12-46.jpg)
+
+
+
+![Xnip2021-10-26_07-15-11](MySQL Note.assets/Xnip2021-10-26_07-15-11.jpg)
+
+题意:
+
+给你一张员工信息表，请你查询出其中有至少5名下属经理的名字
+
+
+
+
+
+
+
+思路1:
+
+- 首先我们可以直接获取经理的Id，并通过计算经理id出现的次数筛选出其中下属数大于5的经理，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	ManagerId
+FROM
+	Employee
+GROUP BY ManagerId
+HAVING (COUNT(ManagerId)) >= 5;
+```
+
+
+
+- 之后再将其作为临时表，与原表进行内连接即可，SQL如下
+
+```mysql
+SELECT
+	t2.Name
+FROM (
+SQL1
+) AS t1
+INNER JOIN Employee AS t2 ON t1.ManagerId = t2.Id;
+```
+
+
+
+
+
+
+
+
+
+思路2:
+
+- 其实我们可以直接将两张表进行内连接，我们需要查询的无非是MangerId对应Id的名字
+- 所以将原表进行内连接，对应Id后以经理Id进行分组，并计算并限制分组后ManagerId的数量即可，SQL如下
+
+```mysql
+SELECT
+	t1.Name
+FROM
+	Employee AS t1
+INNER JOIN Employee AS t2 ON t1.Id = t2.ManagerId
+GROUP BY t1.Id
+HAVING (COUNT(t2.ManagerId)) >= 5;
+```
 
 
 

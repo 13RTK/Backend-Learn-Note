@@ -166,8 +166,8 @@ exam:
 
 ![Xnip2021-03-06_13-16-54](Java adv/Xnip2021-03-06_13-16-54.jpg)
 
-- 赋值时将其基本类型包装为对应的包装类
-- 使用时将其拆箱
+- **赋值时**将其基本类型包装为对应的包装类
+- **使用时将其拆箱**
 
 ****
 
@@ -347,7 +347,7 @@ randomNum.method();
 - nextInt(int bound): 生成一个int类型的整数，**范围在0~bound之间**
 - nextDouble(): 生成一个double类型的浮点数，**范围在0~1之间**           // (在Random类中，没有指定nextDouble返回值范围的重载方法)
 
-**注意**：想要生成指定范围的随机的double数值，需要使用Random的子类: ThreadLocalRandom
+**注意**：想要**生成指定范围的随机的double数值**，需要使用**Random的子类: ThreadLocalRandom**
 
 - nextLong(): 生成一个long类型的整数，范围在long类型数据范围之内
 
@@ -379,7 +379,7 @@ exam:
 
 
 
-- 默认的构造方法: 没有参数，使用本机的时间戳生成随机数
+- 默认的构造方法: 没有参数，使用**本机的时间戳生成随机数**
 
 ```java
 Random()
@@ -389,7 +389,7 @@ Random()
 
 
 
-- 带有参数的构造方法: 带有参数，使用指定的种子生产随机数
+- 带有参数的构造方法: **带有参数，使用指定的种子生产随机数**
 
 ```java
 Random(long seed)
@@ -425,7 +425,7 @@ Random(long seed)
 double receiver = ThreadLocalRandom.current().nextDouble();
 ```
 
-- "ThreadLocalRandom()"构造方法为private，**不能直接调用**
+- "ThreadLocalRandom()"**构造方法为private**，**不能直接调用**
 - 该类中的"current()"方法可以**返回一个ThreadLocalRandom对象**，可以**用来调用方法**
 - 使用时无需创建对象
 
@@ -496,7 +496,7 @@ Date date = new Date();
 
 
 
-- Date(long date): 以输入的时间戳生成的时间(long类型)，创建一个Date对象          // **使用时需要乘以1000**，因为其表示方法为毫秒
+- Date(long date): 以**输入的时间戳**生成的时间(long类型)，创建一个Date对象          // **使用时需要乘以1000**，因为其表示方法为毫秒
 
 - after(Date when): 比较与参数时间的先后关系，在后则返回true，在前则返回false
 - before(Date when): 比较与参数时间的先后关系，在后则返回false，在前则返回true
@@ -572,7 +572,7 @@ DateFormat format = new SimpleDateFormat();
 
 - SimpleDateFormat(): 构造一个对象，**并设置为默认时间格式**
 - SimpleDateFormat(String pattern): 以指定格式构造一个对象
-- SimpleDateFormat(String pattern, Locale locale): 以指定格式构造一个对象，**并指定地区**
+- SimpleDateFormat(String pattern, Locale locale): **以指定格式**构造一个对象，**并指定地区**
 - format(Date date, StringBuilder toAppendTo, FieldPosition pos): 接受一个Date对象，**以其存储的格式输出时间**，返回一个StringBuffer对象
 - parse(String text, ParsePosition pos): 接受一个字符串，并**以其格式返回给一个Date对象**           // 重写了DateFormat的抽象方法
 
@@ -836,7 +836,7 @@ src: 被复制的数组(源数组)
 
 srcPos: 被复制数组的开始位置
 
-dest: 复制的目标数组
+dest: 复制到的目标数组
 
 destPos: 复制的目标数组的起始位置
 
@@ -850,7 +850,7 @@ exam:
 
 ![Xnip2021-03-09_12-15-18](Java adv/Xnip2021-03-09_12-15-18.jpg)
 
-**注意：**这里使用了"Array"类里的"toString"方法输出数组
+**注意：**这里使用了"Arrays"类里的"toString"方法输出数组
 
 ****
 
@@ -1536,8 +1536,6 @@ exam:
 ![Xnip2021-03-14_16-50-26](Java adv/Xnip2021-03-14_16-50-26.jpg)
 
 - 自建一个类，继承Exception类(也可以选择继承RunTimeException等其他类)，'继承Exception类可以在编译时给出提示，而不是像RunTimeException一样在运行时才给出异常'
-
-
 
 
 - 为继承的字段，快速创建constractor

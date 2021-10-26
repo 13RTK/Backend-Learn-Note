@@ -11,7 +11,7 @@
 Classification:
 
 1. Member inner class(Created in a class)
-2. Local inner class(Include anonymous class) (Created in a method)
+2. Local inner class(Include anonymous class) (**Created in a method**)
 
 
 
@@ -67,7 +67,7 @@ exam:
 
 
 
-- The externa-class can invoke internal var/method by create **a internal-class object in external-class method**
+- The external-class can invoke internal var/method by create **a internal-class object in external-class method**
 - Internal-class can invoke external content freely
 - Can directly create a internal-class object than invoke what you want
 
@@ -175,9 +175,9 @@ public class OuterClass() {
 
 
 
-- Create a object in local method to use local-inner-class
-- It only can be used in the method
-- The local inner can't use modifier(default)
+- Create a object **in local method to use local-inner-class**
+- It **only can be used in the method**
+- The **local inner can't use modifier(default)**
 
 
 
@@ -199,7 +199,7 @@ exam:
 
 
 
-- The invoked local var only can be a "final" value(Never change)
+- **The invoked local var only can be a "final" value(Never change)**
 - Since java8, can don't use "final" to modify the local var(But must be sure the var is a constant)
 
 
@@ -342,10 +342,10 @@ Anonymous-inner-class and anonymous -object:
 
 ## 1) toString
 
-- If you print a object, it has same result with "toString" method
-- The default "toString" method belong "Object" class
-- The default "toString" method will print the object's address value
-- "Object" is every class's super class
+- If you print a object, **it has same result with "toString" method**
+- The **default "toString" method belong "Object" class**
+- The default "toString" method will print the object's **address value**
+- "Object" is **every class's super class**
 
 
 
@@ -475,9 +475,9 @@ After override, this two object are same:
 
 **Attention**
 
-- Can't use a "null" object to directly invoke equals
+- **Can't use a "null" object** to directly invoke equals
 
-- It will throw "NullPointerException
+- It **will throw "NullPointerException"**
 
   ****
 

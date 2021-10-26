@@ -1052,7 +1052,7 @@ Chinese Overview:
 **Attention**
 
 - The "==" operator will compare the address value
-- The [equal] method will compare the content of the string
+- The [equal] method will compare the content of the string(if are override)
 
 
 
@@ -1520,7 +1520,7 @@ exam:
 Principle
 
 ```java
-public byte[] getBtye() {
+public byte[] getBtyes() {
   
 }
 ```
@@ -1534,7 +1534,7 @@ Syntax:
 ```java
 String str1 = "Hello";
 
-byte[] receiver = str1.getBtye();
+byte[] receiver = str1.getBtyes();
 ```
 
 
@@ -2198,7 +2198,7 @@ exam:
 
 **Attention**
 
-If don assign any value to member variables, they will be initialized to default values(Same rule with array)
+If didn't assign any value to member variables, they will be initialized to default values(Same rule with array)
 
 
 
@@ -2220,7 +2220,7 @@ Chinese ver.
 
 
 
-method only can run in stack(enter stack), if method run over, it will out stack(the order like bullet, the lastest enter one will out at first)
+method only can run in stack(enter stack), if method run over, it will out stack(the order like bullet, the lastest enter one will pop at first)
 
 
 
@@ -2236,7 +2236,7 @@ Chinese ver.
 
 
 
-The parameter was transmitted to method just is a address value.
+The parameter was transmitted to method just as a address value.
 
 
 
@@ -2262,7 +2262,7 @@ Chinese ver.
 
 
 
-The return value just a address value of object.
+The return value just as an address value of object.
 
 
 
@@ -2449,8 +2449,8 @@ exam3:
 
 - The name of constructor must the same with class_name
 - The constructor method don't need return type/value and void keyword
-- If you don't write any constructor method, the complier will make a constructor(null parameters) by default
-- If you write a constructor method, the compiler will not make a default one
+- If you don't write any constructor method, the complier will make a constructor(non arguments) by default
+- If you write a constructor method, the compiler will not make a default non-arguments one
 - The constructor method also can overload
 
 
@@ -2476,7 +2476,7 @@ A standard class be called by "Java Bean"
 
 
 1. All the member variables need to use private keyword
-2. All the member variables need a pair of getter/setter methods
+2. Each the member variable needs a pair of getter/setter methods
 3. Need to write a null parameters constructor method
 4. Need to write a full parameters constructor method
 
@@ -2664,7 +2664,7 @@ In memory, the static content will **be created first**, than create the non-sta
 
 - In static method, can't use "this" keyword
 
-"this"keyword means object which invoke the method, but static method **don't need object**, so it **can't be found** in static method.
+"this"keyword means object which invoke the method, but static method **doesn't need object**, so it **can't be found** in static method.
 
 
 
@@ -2697,7 +2697,7 @@ Chinese overview:
 
 
 - The static content are stored in method area
-- In method area, there was a "static zone" to store static variable
+- In method area, there was a "static zone" for store static variable
 
 
 
@@ -2934,7 +2934,7 @@ ArrayList<type> object = new ArrayList<>();
 
 **Attention**
 
-- The type in <> is generics, it limit the ArrayList object's data type.
+- The type in <> is generics, it limits the ArrayList object's data type.
 - The <> or generics only can be the quote type, can use basic type(int, double etc.)
 
 
@@ -3878,9 +3878,7 @@ Principle
 
 ```java
 public abstract class Animal() {
-  public abstract void method() {
-    
-  }
+  public abstract void method();
 }
 ```
 
@@ -3898,7 +3896,7 @@ public abstract class Animal() {
 
 
 
-1. Can't create a abstractive class'object
+1. Can't create an abstractive class'object
 2. Must create a sub-class to inheritant abstractive class
 3. Sub-class must implement all the abstractive methods in abstractive class
 4. If a sub-class don't want to implement all the abstract class methods, it can be a abstract class
@@ -4008,7 +4006,7 @@ In java9:
 
 - All the version of java, can define abstract method
 - The "implement class" must override(implement) all the abstract methods in interface
-- If the "implement class" hadn't implement all the abstract methods, it must be a abstract class
+- If the "implement class" hadn't implement all the abstract methods, **it must be a abstract class**
 
 
 
@@ -4232,7 +4230,7 @@ public static final type constant_name = data;
 
 
 - Can omit "public static final", but the effect is same
-- Must use uppercase for constant separate by underline
+- Must use uppercase for constant and separate by underline
 - Can be invoke in implement-class by interface-name(just like static variable in a class)
 
 
@@ -4257,7 +4255,7 @@ Format: "public abstract" can be omitted
 
 - Since java8, can define default method in interface(Default method can't invoke by implement class)
 
-Format: "public default" can be omitted
+Format: "public" can be omitted
 
 - Since java8, can define static method in interface(Static method can invoked by implement class)
 - Since java9, can define private method(private method only can be invoked by interface itself)
@@ -4274,7 +4272,7 @@ Format: "public default" can be omitted
 
 
 
-- The interface haven't constructor and static block
+- The interface haven't **constructor and static block**
 
 exam:
 
@@ -4310,7 +4308,7 @@ exam:
 
 
 
-- The implement-class must override all the abstract method, if don't override, it must be a abstract method
+- The implement-class must override all the abstract method, **if don't override all, it must be a abstract method**
 
 exam:
 
@@ -4326,7 +4324,7 @@ exam:
 
 
 
-- If the interfaces have repeat default method, must override in implement-class
+- If the interfaces **have repeat default method, must override in implement-class**
 
 exam:
 
@@ -4340,7 +4338,7 @@ exam:
 
 
 
-- If the super-class has same method with interface, the sub-class/implement-class use super-method first, and don't need to override interface's abstract method
+- If the **super-class has same method with interface**, the sub-class/implement-class **use super-method first, and don't need to override interface's abstract method**
 
 exam:
 
@@ -4367,7 +4365,7 @@ exam:
 
 
 1. If the super-interfaces have repeat abstract method, it's right
-2. If the super-interfaces have repeat default method, the sub-interface need to override the default method(With "default" keyword)
+2. If the super-interfaces **have repeat default method, the sub-interface need to override the default method**(With "default" keyword)
 
 
 
@@ -4490,7 +4488,7 @@ interface object_name = new implement_class();
 
 **Attention**
 
-- Even use super/interface on the left, but the created object is belong sub-class/implement-class
+- Even use super/interface on the left, but **the created object is belong sub-class/implement-class**
 
 
 
@@ -4558,8 +4556,8 @@ exam2:
 **Little summary**
 
 - The compiler will set it as a sub object
-- While you use it, it only can use as a super object
-- The regular usage is use it to invoke a override method in sub-class(if not override, it will invoke super class)
+- While you use it, **it only can use as a super object**
+- The regular usage is use it to **invoke a override method in sub-class(if not override, it will invoke super class)**
 
 
 
@@ -4770,7 +4768,7 @@ Can use "final" with "abstract"  // A abstract class **must be implemented all t
 - Stop inherit(Can't have sub-class)
 - Stop method override(Can't override by sub-class)
 - Stop change value(Can't modify by sub-class)
-- Can extends from other simple class
+- Can't extends from other simple class
 
 
 
@@ -4826,7 +4824,7 @@ exam:
 
 - For quote type:
 
-Can't change the address value stored, but can change the value in the object
+**Can't change the address value stored**, but can change the value in the object
 
 
 
@@ -4951,5 +4949,4 @@ exam:
 | Local inner  |   NO   |    NO     |    YES    |   NO    |
 
 ****
-
 
