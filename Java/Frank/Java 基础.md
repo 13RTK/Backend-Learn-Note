@@ -262,8 +262,8 @@ exam:
 - int length(): 返回字符串的长度
 - String replace(char oldChar, char newChar): 指定一个需要被替换的字符，并**更新为新的字符**
 - String replace(CharSequence target, CharSequence replacement): **指定被替换的内容，更新为参数二**
-- String subString(int beginIndex): 从指定的位置开始，**将剩余的字符**返回为一个新的子字符串
-- String subString(int beginIndex, int endIndex): 同上，但**可以指定结束位置**
+- String substring(int beginIndex): 从指定的位置开始，**将剩余的字符**返回为一个新的子字符串
+- String substring(int beginIndex, int endIndex): 同上，但**可以指定结束位置**
 
 
 

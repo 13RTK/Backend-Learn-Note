@@ -120,13 +120,29 @@ drop database `database_name`;
 
 
 
-## 5.查看创建库时使用的语句及字符编码
+
+
+
+
+
+
+
+
+## 5.查看创建库时及字符编码使用的语句
 
 SQL语句：
 
 ```sql
 show create database database_name;
 ```
+
+
+
+
+
+
+
+
 
 
 
@@ -138,6 +154,14 @@ SQL语句：
 ```sql
 create database if not exists `database_name` charset=编码格式;
 ```
+
+
+
+
+
+
+
+
 
 
 
@@ -199,7 +223,19 @@ show tables;
 
 
 
+
+
+
+
+
+
+
+
+
+
 ### 2、创建表
+
+
 
 #### 1)常规方法
 
@@ -258,7 +294,7 @@ engine=innodb：MySQL的默认引擎
 
 
 
-**将已存在表的字段添加到新创建的表中**
+**将已存在表的字段数据添加到新创建的表中**
 
 ```mysql
 create table if not exists table_name select column1, column2... from exists_table_name
@@ -286,6 +322,12 @@ desc table_name;
 
 
 
+
+
+
+
+
+
 ### 4、删除表
 
 SQL语句
@@ -296,13 +338,19 @@ drop table if exists table_name_1, table_name_2, ...;
 
 
 
+
+
+
+
+
+
 ### 5、修改表
 
 
 
+
+
 #### 1)修改表名
-
-
 
 SQL语句
 
@@ -312,17 +360,17 @@ alter table table_name rename to table_new_name;
 
 
 
+
+
 #### 2)修改字段(column)
 
 
 
 ##### 一、添加字段(add column)
 
-
-
 SQL语句
 
-**默认方法：会默认添加到最后一行**
+**会默认添加到最后一行**
 
 ```sql
 alter table table_name add column column_type() default 'The default info.' comment 'The value' after column_name;
@@ -352,9 +400,9 @@ alter table table_name add column column_type() first;
 
 
 
+
+
 ##### 二、删除字段(drop column)
-
-
 
 SQL语句
 
@@ -364,9 +412,11 @@ alter table table_name drop column;
 
 
 
+
+
+
+
 ##### 三、修改字段信息
-
-
 
 SQL语句
 
@@ -2443,7 +2493,7 @@ exam:
 
 **了解**
 
-- 不能对视图创建索引，也不能关联触发器Trigger
+- 不能对视图**创建索引**，**也不能关联触发器Trigger**
 
 
 
@@ -2757,7 +2807,7 @@ ROLLBACK TO (point_name);
 
 - A: Atomicity             原子性：事务是一个不能再分隔的单元，事务中的操作要么都发生，要么都不发生
 - C: Consistency        一致性：事务前后数据完整性保持一致
-- I:   Isolation              独立性：事务之间相互隔离
+- I:  Isolation              独立性：事务之间相互隔离
 - D: Durabiliy              持久性：确认后不能修改
 
 ****
@@ -3304,7 +3354,7 @@ MD5:
 
 # 十七、全文本搜索
 
-- 常用的引擎中，只有MyISAM支持，Innodb并不支持
+- 常用的引擎中，只有MyISAM支持，Innodb并不支持(**5.7已经支持了**)
 - 在效果上看起来与LIKE模糊查询与正则表达式相同，后两个在查询时有三个缺点:
 - 它们都会尝试匹配所有的行
 - 它们在匹配多个词时，只有第一个匹配后才能匹配剩下的，不能对匹配规则进行定义(添加和/或等关系)
@@ -3315,7 +3365,7 @@ MD5:
 所以全文本搜索的特点如下:
 
 1. 使用时不需要查看每一行，不需要分别处理每个词
-2. 在使用时仅在创建索引的指定列中进行搜索
+2. 在使用时**仅在创建索引的指定列中进行搜索**
 3. 查询结果可以反映出匹配的频率，出现次序等等
 
 
@@ -3335,7 +3385,7 @@ MD5:
 
 ## 1. 建立索引列
 
-- 由于全文本搜索只对创建索引的列进行搜索，所以需要在创建表的时候指定索引列
+- 由于全文本搜索只对创建索引的列进行搜索，**所以需要在创建表的时候指定索引列**
 
 Syntax:
 
@@ -3404,7 +3454,7 @@ Eg:
 *注：*
 
 1. Match()和Against()是一起使用的，两者结合起来会形成一个字段
-2. 如果查询Match() Against()字段，则会查询出每个字段的匹配度(而非查询出匹配的字段)
+2. 如果将Match() Against()作为查询列表字段，则会查询出每个字段的匹配度(而非查询出匹配的字段)
 
 
 

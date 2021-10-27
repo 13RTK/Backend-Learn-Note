@@ -225,7 +225,7 @@ exam:
 
 - 编写CRUD方法
 
-  **注：**除了查询需要"executeQuery()"方法，其余都使用"executeUpdate()"方法
+  **注：**除了**查询需要"executeQuery()"方法**，其余**都使用"executeUpdate()"方法**
 
 
 
@@ -256,7 +256,7 @@ exam:
 
 - 在阶段一的基础上，舍弃Statement对象，使用PreparedStatement对象
 - 放弃原有拼接字符串的方式，在sql字符串对象中**将用户输入的数据用?代替**
-- 修改后的好处: preparedStatement对象**可以预先加载SQL语句，防止SQL注入**；用"?"代替后，SQL语句字符串可以写得简洁
+- 修改后的好处: PreparedStatement对象**可以预先加载SQL语句，防止SQL注入**；用"?"代替后，SQL语句字符串可以写得简洁
 
 
 

@@ -274,7 +274,69 @@ GROUP BY t1.Id
 HAVING (COUNT(t2.ManagerId)) >= 5;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day95
+
+## Tag: LIMIT, INNER JOIN
+
+![Xnip2021-10-27_13-26-25](MySQL Note.assets/Xnip2021-10-27_13-26-25.jpg)
+
+
+
+![Xnip2021-10-27_13-25-58](MySQL Note.assets/Xnip2021-10-27_13-25-58.jpg)
+
+题意:
+
+给你一张候选人信息表，一张投票记录表，请你查询出最终当选者的信息
+
+
+
+
+
+思路:
+
+- 当选者即为票数最多的候选人，由于候选人的信息在Candidate表中，而需要统计的票数在Vote表中，所以需要连接两张表才行
+- 首先查询出票数最多的候选人ID，使用COUNT进行分组，将查询结果按照票数进行排序，最后第一条数据就是当选人的信息，使用LIMIT只查询第一条即可，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	CandidateId,
+	COUNT(CandidateId) AS 'number'
+FROM
+	Vote
+GROUP BY CandidateId
+ORDER BY number DESC
+LIMIT 1;
+```
+
+
+
+- 最后再将该临时表与候选人信息表连接起来即可，SQL如下
+
+```mysql
+SELECT
+	t1.Name
+FROM
+	Candidate AS t1
+INNER JOIN (
+SQL1
+) AS t2 ON t1.id = t2.CandidateId;
+```
 
 
 
