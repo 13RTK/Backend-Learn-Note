@@ -338,5 +338,76 @@ SQL1
 ) AS t2 ON t1.id = t2.CandidateId;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day96
+
+## Tag: LIMIT
+
+![Xnip2021-10-28_07-14-36](MySQL Note.assets/Xnip2021-10-28_07-14-36.jpg)
+
+
+
+![Xnip2021-10-28_07-13-38](MySQL Note.assets/Xnip2021-10-28_07-13-38.jpg)
+
+题意:
+
+给你一张调查日志表，请你计算出其中回答率最高的问题id
+
+
+
+
+
+思路:
+
+- 观察表的结构可以看到，所有回答的记录中，action列的值都为answer，而回答率最高其实也就是回答数量最多
+- 所以我们只需要分组计算每个问题的回答率，并取出其中的最大值即可
+- 一次分组后只能求出所有回答id对应的回答次数，但我们可以对结果进行倒序排序，之后第一条数据就是我们想要的，使用LIMIT取第一条即可，SQL如下
+
+```mysql
+SELECT
+    question_id AS 'survey_log'
+FROM
+    SurveyLog
+WHERE action = 'answer'
+GROUP BY question_id
+ORDER BY COUNT(action) DESC
+LIMIT 1;
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
