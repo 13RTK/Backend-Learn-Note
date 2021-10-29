@@ -387,6 +387,72 @@ ORDER BY COUNT(action) DESC
 LIMIT 1;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day97
+
+## Tag: HAVING
+
+![Xnip2021-10-29_07-12-38](MySQL Note.assets/Xnip2021-10-29_07-12-38.jpg)
+
+
+
+![Xnip2021-10-29_07-11-15](MySQL Note.assets/Xnip2021-10-29_07-11-15.jpg)
+
+题意:
+
+给你一张商品信息表，一张交易记录表，请你计算出购买个数大于20，而单个商品质量小于50的所有商品信息
+
+
+
+
+
+
+
+思路:
+
+- 因为查询列表中需要我们统计购买个数，所以需要使用SUM，并分组
+- 而商品的信息和交易记录在两张不同的表中，所以还需要连接两张表才行
+- 连接时我们可以先筛选出质量小于50的商品
+- 之后我们需要在分组的基础上限制商品的数量，此时使用HAVING即可，最后再根据要求排序，SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t1.name,
+    t1.weight,
+    SUM(t2.count) AS 'total'
+FROM
+    goods AS t1
+INNER JOIN trans AS t2 ON t1.id = t2.goods_id
+WHERE t1.weight < 50
+GROUP BY t1.id
+HAVING total > 20
+ORDER BY t1.id;
+```
+
+
+
+
+
+
+
 
 
 
