@@ -447,6 +447,7 @@ HAVING total > 20
 ORDER BY t1.id;
 ```
 
+****
 
 
 
@@ -454,6 +455,47 @@ ORDER BY t1.id;
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day98
+
+## Tag: IF
+
+![Xnip2021-10-30_13-05-51](MySQL Note.assets/Xnip2021-10-30_13-05-51.jpg)
+
+
+
+![Xnip2021-10-30_13-05-08](MySQL Note.assets/Xnip2021-10-30_13-05-08.jpg)
+
+题意:
+
+给你一张销售表，请你查询出每天苹果和橘子的销售数量差
+
+
+
+
+
+思路:
+
+- 因为苹果和橘子的记录可以通过字段fruit来判断，所以我们使用IF来区别是该加还是减数量即可，SQL如下
+
+```mysql
+SELECT
+    sale_date,
+    SUM(IF(fruit = 'apples', sold_num, -sold_num)) AS 'diff'
+FROM
+    Sales
+GROUP BY sale_date
+ORDER BY sale_date
+```
 
 
 
