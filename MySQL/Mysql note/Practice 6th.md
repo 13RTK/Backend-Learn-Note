@@ -497,6 +497,7 @@ GROUP BY sale_date
 ORDER BY sale_date
 ```
 
+****
 
 
 
@@ -512,6 +513,79 @@ ORDER BY sale_date
 
 
 
+
+
+# Day99
+
+## Tag: UNION, Temperary Table
+
+![Xnip2021-10-31_10-36-24](MySQL Note.assets/Xnip2021-10-31_10-36-24.jpg)
+
+
+
+![Xnip2021-10-31_10-33-42](MySQL Note.assets/Xnip2021-10-31_10-33-42.jpg)
+
+题意:
+
+给你一张电影信息表，一张用户信息表，一张电影评分记录表，请你查询出其中评论电影最多的用户名(如果有评论数相同的则按照用户名字典序取靠前的)，并查询出2020年2月中平均评分最高的电影(如有同分则按照电影名字典序取靠前的)
+
+
+
+
+
+思路:
+
+- 题目中要求我们查询出两种数据，最终还要在一个结果集中，所以很明显需要写两个SQL再用UNION连接起来
+- 先写第一个，题目要找评论数最多的用户名，然而用户名在用户表中，而评论的信息在评分表中，所以需要内连接两张表
+- 为了找到最值，我们需要根据用户来分组计算对应的评论数并排序，其中排序除了按照评论数倒序排列外，还需要按照用户名升序排列(字典序)，最后排列出的第一条数据就是我们想要的用户名，用LIMIT取第一个即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.name AS 'results'
+FROM
+    Users AS t1
+INNER JOIN MovieRating AS t2 ON t1.user_id = t2.user_id
+GROUP BY t1.name
+ORDER BY COUNT(t2.rating) DESC, t1.name
+LIMIT 1
+```
+
+
+
+
+
+- 搞定了第一条，接下来需要搞定平均评分最高的电影，其中求平均评分使用AVG即可，限制日期则使用YEAR和MONTH函数即可
+- 注意电影名和评分信息不在同一张表中，所以仍旧需要内连接，最终排列也需要加上对电影名进行升序排列(字典序)
+- 最后用LIMIT取第一条记录即可，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	t1.title AS 'results'
+FROM
+	Movies AS t1
+INNER JOIN MovieRating AS t2 ON t1.movie_id = t2.movie_id
+WHERE YEAR(t2.created_at) = 2020 AND MONTH(t2.created_at) = 2
+GROUP BY t1.title
+ORDER BY AVG(t2.rating) DESC, t1.title
+LIMIT 1
+```
+
+
+
+
+
+- 最后的最后，我们需要将这两张表上下连接起来，注意这两张表都是查询出的临时表，所以查询列表中的字段别名需要一致，且两张表都需要添加括号以表示一张表，SQL如下
+
+
+```mysql
+(SQL1)
+UNION
+(SQL2)
+```
 
 
 
