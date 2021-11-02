@@ -640,6 +640,68 @@ FROM
 INNER JOIN point2D AS t2 ON t1.x != t2.x OR t1.y != t2.y
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day101
+
+## Tag: IF, IN
+
+![Xnip2021-11-02_07-13-57](MySQL Note.assets/Xnip2021-11-02_07-13-57.jpg)
+
+
+
+![Xnip2021-11-02_07-11-05](MySQL Note.assets/Xnip2021-11-02_07-11-05.jpg)
+
+题意:
+
+给你一张二叉树节点表，请你通过查询得出其中每个节点的类型(p_id为该节点对应的父节点)
+
+
+
+
+
+
+
+
+
+思路:
+
+- 该题目其实就是一个判断的过程
+- 如果一个节点为根节点，则其对应的父节点p_id为null，我们使用IF之间进行逻辑判断即可
+- 之后就行需要判断剩下的节点为内节点还是叶子节点了，其实在p_id列中的节点不是根节点就是内节点，而之前我们已经判断了根节点，所以我们只需要判读剩余节点是否在p_id中即可，SQL如下
+
+```mysql
+SELECT
+	id,
+	IF(p_id IS NULL, 'Root', IF(id IN (SELECT p_id FROM Tree), 'Inner', 'Leaf')) AS 'Type'
+FROM
+	Tree;
+```
+
+
+
+
+
+
+
 
 
 
