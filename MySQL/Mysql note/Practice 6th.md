@@ -696,6 +696,64 @@ FROM
 	Tree;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day102
+
+## Tag: IN
+
+![Xnip2021-11-03_07-02-26](MySQL Note.assets/Xnip2021-11-03_07-02-26.jpg)
+
+
+
+![Xnip2021-11-03_07-02-00](MySQL Note.assets/Xnip2021-11-03_07-02-00.jpg)
+
+题意:
+
+给你一张关注信息表，请你找出其中的二级关注者，并计算他们各自的关注者数量(二级关注者指的是至少关注了一个人的同时也至少被一个人关注)
+
+
+
+
+
+
+
+思路:
+
+- 在题目给我们的表中，其实就有关注者和被关注者的关系，所以满足二级关注者的人一定是这两列的交集，我们单独查出一列，再用IN来限制另一列即可
+- 最后记得分组和排序，SQL如下
+
+```mysql
+SELECT
+    DISTINCT followee AS 'follower',
+    COUNT(follower) AS 'num'
+FROM
+    Follow
+WHERE followee IN (SELECT follower FROM Follow)
+GROUP BY followee
+ORDER BY followee;
+```
+
+
+
+
+
+
+
 
 
 
