@@ -748,6 +748,7 @@ GROUP BY followee
 ORDER BY followee;
 ```
 
+****
 
 
 
@@ -755,6 +756,70 @@ ORDER BY followee;
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day103
+
+## Tag: () IN
+
+![Xnip2021-11-04_07-10-31](MySQL Note.assets/Xnip2021-11-04_07-10-31.jpg)
+
+
+
+![Xnip2021-11-04_07-09-59](MySQL Note.assets/Xnip2021-11-04_07-09-59.jpg)
+
+题意:
+
+给你一张学生的成绩登记表，请你查询出每个学生分数最高的那门课程和对应的分数(如果有同分课程，则只考虑course_id小的那门)
+
+
+
+
+
+
+
+思路:
+
+- 因为题意要求我们获取最高成绩的同时还需要获取course_id较小的那门课程，所以需要我们使用一次MAX再使用一次MIN
+- 但这两条语句不可能同时写在一起，所以我们需要将这两个条件分开来
+- 先获取每个学生对应的最高分数，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	student_id,
+	MAX(grade) AS 'grade'
+FROM
+	Enrollments
+GROUP BY student_id
+```
+
+
+
+- 之后再获取最小的course_id，再用上面的临时表限制其中的student_id和grade即可，SQL如下
+
+
+```mysql
+SELECT
+    t1.student_id,
+    MIN(t1.course_id) AS 'course_id',
+    t1.grade
+FROM Enrollments AS t1
+WHERE (t1.student_id, t1.grade) IN (
+    SQL1
+) 
+GROUP BY t1.student_id
+ORDER BY t1.student_id;
+```
 
 
 
