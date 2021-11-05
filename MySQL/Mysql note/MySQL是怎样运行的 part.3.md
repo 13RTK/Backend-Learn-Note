@@ -1641,7 +1641,209 @@ Eg:
 
 ![Xnip2021-11-04_09-47-28](MySQL Note.assets/Xnip2021-11-04_09-47-28.jpg)
 
+各个列的作用:
 
+![Xnip2021-11-04_10-13-22](MySQL Note.assets/Xnip2021-11-04_10-13-22.jpg)
+
+- 该表的主键为(database_name, table_name, index_name, stat_name)，stat_name代表统计项的名称
+
+关于表single_table的索引统计数据:
+
+![Xnip2021-11-04_10-17-05](MySQL Note.assets/Xnip2021-11-04_10-17-05.jpg)
+
+
+
+查看该数据的方式:
+
+1. 先查看index_name列，该列**说明该记录是哪个索引对应的统计信息**，可以查看到各个索引所占的记录条数
+
+2. 对于同一个索引的记录(index_name相同)，**stat_name表示索引的统计项名称**，**stat_value表示该索引在该统计项上的值**
+
+   索引的统计项:
+
+   - n_left_pages: 表示该索引的**叶子节点实际占用的页面数**
+   - size: 该**索引共占用的页面数**(包含分配给叶子/非叶子节点段但未使用的页面)
+   - n_diff_pfxNN: 对应索引列不重复的值: 其中的NN代表索引列的序号
+     - 如在索引idx_key_part中，列key_par1就对应n_diff_pfx01
+
+3. 计算某些索引列中包含多少个不重复值时，需要对叶子节点页面进行采样。而sample_size就指定了采样的页面数
+
+- 如果采样的页面数大于索引的叶子结点数，则需要采样所有的叶子节点页面
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 13.2.3 定期更新统计数据
+
+- 当表中的数据发生变化时，统计数据也会相应的变化
+
+
+
+两种更新统计数据的方法:
+
+
+
+1. 开启innodb_stats_auto_recalc
+
+- 系统变量innodb_stats_auto_recalc决定了服务器是否重新计算统计数据，默认为ON
+- 如果**发生变动的记录数超过了表大小的10%，且该变量已开启，则服务器会重算一次统计数据**，并自动更新innodb_table_stats和innodb_index_stats表
+- 该**自动重新计算统计数据的过程是异步的，所以达到条件后不会马上自动重新，会有延迟**
+
+Eg:
+
+![Xnip2021-11-04_10-39-04](MySQL Note.assets/Xnip2021-11-04_10-39-04.jpg)
+
+
+
+我们也可以单独控制一张表是否自动重新计算统计数据:
+
+Syntax:
+
+```mysql
+CREATE TABLE table_name (
+...
+)STATS_AUTO_RECALC = 1/0;
+
+ALTER TABLE table_name STATS_AUTO_RECALC = 1/0
+```
+
+
+
+![Xnip2021-11-04_10-42-06](MySQL Note.assets/Xnip2021-11-04_10-42-06.jpg)
+
+![Xnip2021-11-04_10-43-04](MySQL Note.assets/Xnip2021-11-04_10-43-04.jpg)
+
+
+
+
+
+
+
+
+
+2. 手动调用ANALYZE TABLE来更新统计信息
+
+syntax:
+
+```mysql
+ANALYZE TABLE table_name;
+```
+
+Eg:
+
+![Xnip2021-11-04_10-46-34](MySQL Note.assets/Xnip2021-11-04_10-46-34.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 13.2.4 手动更新innodb_table_stats和innodb_index_stats表
+
+- 我们可以像普通表那样手动更新其中的值:
+
+```mysql
+UPDATE table_name 
+	SET column = value 
+	WHERE table_name = 'table_name';
+```
+
+
+
+- 更新后需要重新加载:
+
+```mysql
+FLUSH TABLE table_name;
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 13.3 基于内存的非永久性统计数据
+
+- 当我们把innodb_stats_persistent设置为OFF后，创建的表的统计数据就都是非永久的了
+- 或者我们可以在创建/修改表示将STATS_PERSISTENT设置为0
+
+
+
+采样页面:
+
+- 非永久性的统计数据采样的页面数由系统变量innodb_stats_transient_sample_pages来控制，默认值为8
+
+Eg:
+
+![Xnip2021-11-04_10-53-49](MySQL Note.assets/Xnip2021-11-04_10-53-49.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 13.4 innodb_stats_method的使用
+
+- 索引列中不重复值/唯一值的数量很重要，通过其可以计算出一个值平均重复多少次，其有两个应用场景:
+
+  1. 单表扫描中单点扫描区间太多:
+
+  此时不会使用index dive，而是依赖统计数据中一个值平均的重复次数来计算单点扫描区间对应的记录数量
+
+  2. 设计两表等值匹配的连接条件时，该连接条件对应的被驱动表中的列上有索引，则可以使用ref访问方法来查询被驱动表
+
+  在生成统计数据时，只能依赖统计数据来计算单点扫描对应的记录数
+
+
+
+### 特殊情况
+
+如果索引列中出现null值时，统计不重复值时会有问题:
+
+- 有的人认为NULL代表一个不确定的值，每个NULL都是独立的
+- 有的人认为NULL代表没有，是重复的
+- 有的人认为NULL完全没意义，不应该计算进来
+
+为了避免这个分歧，MySQL提供了一个名为"innodb_stats_method"的系统变量，其有三个候选值:
+
+- nulls_equal(默认值): 认为所有的NULL值都相同，记为1次
+- nulls_unequal: 认为所有的NULL值是不相等的
+- nulls_ignored: 直接忽略掉NULL
 
 
 

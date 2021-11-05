@@ -821,6 +821,57 @@ GROUP BY t1.student_id
 ORDER BY t1.student_id;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day104
+
+## Tag: DAY, MONTH
+
+![Xnip2021-11-05_07-08-57](MySQL Note.assets/Xnip2021-11-05_07-08-57.jpg)
+
+
+
+
+
+![Xnip2021-11-05_07-09-13](MySQL Note.assets/Xnip2021-11-05_07-09-13.jpg)
+
+题意:
+
+给你一张题目练习表，请你查询出8月份每天用户练习的题目数量
+
+
+
+思路:
+
+- 该题目的难点其实就是对日期的限制，题目要求查询2021年8月的数据，所以我们使用MONTH就可以取出日期值中的月份并进行限定
+- 结果集中日期的格式只需要日，所以我们使用DAY就可以取出日期值中的日(测试用例有问题，并没有非2021年的数据)，SQL如下
+
+```mysql
+SELECT
+    DAY(date),
+    COUNT(question_id) AS 'question_cnt'
+FROM
+    question_practice_detail
+WHERE MONTH(date) = 8
+GROUP BY date;
+```
+
 
 
 
