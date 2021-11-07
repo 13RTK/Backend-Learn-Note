@@ -622,5 +622,32 @@ Eg:
 
 
 
+## 7) SUBSTRING_INDEX
+
+- 以特定的分隔符隔开后，获取对应索引位置的字符
+
+Syntax:
+
+```mysql
+SUBSTRING_INDEX(source_str, delimiter, index);
+```
+
+- 如果index为正，则从左边开始，为负则从右边开始
+
+
+Eg:
+
+![Xnip2021-11-07_14-37-01](MySQL Note.assets/Xnip2021-11-07_14-37-01.jpg)
+
+
+
+![Xnip2021-11-07_14-33-45](MySQL Note.assets/Xnip2021-11-07_14-33-45.jpg)
+
+
+
+
+
+
+
 
 

@@ -872,6 +872,202 @@ WHERE MONTH(date) = 8
 GROUP BY date;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day105
+
+## Tag: LEFT JOIN, COUNT
+
+![Xnip2021-11-06_13-43-12](MySQL Note.assets/Xnip2021-11-06_13-43-12.jpg)
+
+题意:
+
+给你一张用户刷题记录表，请你查询出其中用户第二天还会刷题的平均概率
+
+
+
+
+
+
+
+
+
+思路:
+
+- 从题目来看，很明显只需要计算出第二天做题的记录数，再除以对应第一天做题的记录数即可，这两天的记录只需要限制日期关系并保持device_id相同即可
+- 因为只有一张表，所以需要连接，那么问题就来了，该用内连接还是外连接？
+- 如果使用内连接，则那些不存在第二天做题记录的数据则不会被统计到，做除法后的结果为1，因为自连接后的结果全是第二天做题记录存在的数据，分子和分母相同
+- 因此，我们只能使用外连接，且作为分母的表要作为驱动表，最后限制两表的device_id相同，且日期相差一天(使用DATEDIFF)，SQL如下:
+
+```mysql
+SELECT
+    COUNT(t2.date) / COUNT(t1.date) AS 'avg_cnt'
+FROM
+    question_practice_detail AS t1
+LEFT JOIN question_practice_detail AS t2 ON t1.device_id = t2.device_id
+AND DATEDIFF(t2.date, t1.date) = 1;
+```
+
+
+
+- 看起来没问题，但提交后发现不对，仔细观察一下数据，发现原表中有一些数据是重复的，所以我们需要去重
+- 直接在上述SQL的查询列表中加入DISTINCT吗？不行，因为查询列表中的值是两张表连接后的值了，我们需要在连接前去重，所以要分别先对两张表去重，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		DISTINCT device_id,
+		date
+	FROM
+		question_practice_detail
+```
+
+
+
+- 最后再连接两张表即可，SQL如下
+
+```mysql
+SELECT
+	COUNT(t2.device_id) / COUNT(t1.device_id) AS 'avg_cnt'
+FROM (
+	SQL1
+		) AS t1
+LEFT JOIN (
+	SQL1
+		) AS t2 ON t1.device_id = t2.device_id
+AND DATEDIFF(t2.date, t1.date) = 1;
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day106
+
+## Tag: SUBSTRING_INDEX
+
+![Xnip2021-11-07_14-25-31](MySQL Note.assets/Xnip2021-11-07_14-25-31.jpg)
+
+
+
+![Xnip2021-11-07_14-28-58](MySQL Note.assets/Xnip2021-11-07_14-28-58.jpg)
+
+
+
+![Xnip2021-11-07_14-43-04](MySQL Note.assets/Xnip2021-11-07_14-43-04.jpg)
+
+
+
+![Xnip2021-11-07_14-32-14](MySQL Note.assets/Xnip2021-11-07_14-32-14.jpg)
+
+
+
+![Xnip2021-11-07_14-33-45](MySQL Note.assets/Xnip2021-11-07_14-33-45.jpg)
+
+题意:
+
+给你一张参赛申请的记录表，请你查询出其中男性和女性各自的人数
+
+
+
+
+
+
+
+思路1:
+
+- 判断性别的根据其实就是profile字段中最后一组字符串，所以我们只需要取出最后一组字符串进行判断即可
+- 由于位于最后，我们可以取出最后的6个字符，使用RIGHT即可，判断其是否为"female"，最后分组统计即可，SQL如下
+
+```mysql
+SELECT
+	IF(RIGHT(profile, 6) = 'female', "female", 'male') AS 'gender',
+	COUNT(profile) AS 'number'
+FROM
+	user_submit
+GROUP BY gender;
+```
+
+
+
+
+
+思路2:
+
+- 观察profile字段，其中的每项数据都用","隔开了，而这样就刚好能使用一个名为"SUBSTRING_INDEX"的函数，具体语法看图，所以SQL如下
+
+```mysql
+SELECT
+	SUBSTRING_INDEX(profile, ',', -1) AS 'gender',
+	COUNT(profile) AS 'number'
+FROM
+	user_submit
+GROUP BY gender;
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
