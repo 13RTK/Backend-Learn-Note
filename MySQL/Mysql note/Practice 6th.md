@@ -1046,6 +1046,65 @@ FROM
 GROUP BY gender;
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day107
+
+## Tag: SUBSTRING_INDEX
+
+![Xnip2021-11-08_07-06-36](MySQL Note.assets/Xnip2021-11-08_07-06-36.jpg)
+
+
+
+![Xnip2021-11-08_07-08-08](MySQL Note.assets/Xnip2021-11-08_07-08-08.jpg)
+
+题意:
+
+给你一张用户申请表，请你查询出各个年龄中申请人的数量
+
+
+
+
+
+
+
+思路:
+
+- 该题目很明显需要按照年龄分组统计，但问题就是如果从profile中获取年龄
+- 如果使用SUBSTRING_INDEX，取参数-2的话，获取的就是最后的两个字符串
+- 在该基础上，我们其实可以再次使用SUBSTRING_INDEX，取参数1，这样就取出了年龄字段，SQL如下
+
+```mysql
+SELECT
+    SUBSTRING_INDEX(SUBSTRING_INDEX(profile, ',', -2), ',', 1) AS 'age',
+    COUNT(profile) AS 'number'
+FROM
+    user_submit
+GROUP BY age;
+```
+
+
+
 
 
 
