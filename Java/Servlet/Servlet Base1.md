@@ -345,6 +345,129 @@
 
 
 
+流程图:
+
+![Xnip2021-11-08_09-05-38](Servlet/Xnip2021-11-08_09-05-38.jpg)
+
+
+
+对应类的关系:
+
+![Xnip2021-11-08_09-15-01](Servlet/Xnip2021-11-08_09-15-01.jpg)
+
+
+
+步骤一:
+
+- 获取ServletContext对象，传入属性
+
+![Xnip2021-11-08_09-22-55](Servlet/Xnip2021-11-08_09-22-55.jpg)
+
+
+
+
+
+步骤二:
+
+- 通过ServletContext对象，通过getAttribute方法获取对应的属性
+- 将属性打印出来
+
+![Xnip2021-11-08_09-24-15](Servlet/Xnip2021-11-08_09-24-15.jpg)
+
+
+
+
+
+步骤三:
+
+- 在web.xml中注册对应的虚拟路径映射
+
+![Xnip2021-11-08_09-25-55](Servlet/Xnip2021-11-08_09-25-55.jpg)
+
+
+
+
+
+
+
+步骤四:
+
+- 在Tomcat中部署对应的项目
+- 注意要将不必要的项目步骤删除，不然每次启动都会重新构建所有的项目
+
+![Xnip2021-11-08_09-26-51](Servlet/Xnip2021-11-08_09-26-51.jpg)
+
+
+
+步骤五:
+
+- 先进入Servlet01，该程序传入一个属性到ServletContext对象
+- 再进入Servlet02，该程序从ServletContext中获取对应的属性并打印
+
+![Xnip2021-11-08_09-28-54](Servlet/Xnip2021-11-08_09-28-54.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 获取初始化参数
+
+- 通过ServletContext对象可以设置/获取到该web应用的初始化参数
+- 设置/获取的参数都来自于web应用的配置(web.xml)
+
+![Xnip2021-11-08_21-04-08](Servlet/Xnip2021-11-08_21-04-08.jpg)
+
+
+
+- 通过ServletContext对象使用getInitParameter方法，获取参数对应的配置名的值
+
+
+![Xnip2021-11-08_21-06-36](Servlet/Xnip2021-11-08_21-06-36.jpg)
+
+
+
+
+
+
+
+
+
+
+
+### 3. 请求转发
+
+- 通过ServletContext对象调用getRequestDispatcher()方法，传入转发到的虚拟路径，返回值为一个RequestDispatcher对象
+- 之后通过该RequestDispatcher对象调用forward()方法进行转发即可
+
+![Xnip2021-11-08_21-42-50](Servlet/Xnip2021-11-08_21-42-50.jpg)
+
+- 记得在web.xml中注册虚拟路径
+- 转发时路径不会改变，状态码依然为200
+
+![Xnip2021-11-08_21-49-01](Servlet/Xnip2021-11-08_21-49-01.jpg)
+
+
+
+
+
+与重定向的区别:
+
+![Xnip2021-11-08_21-56-55](Servlet/Xnip2021-11-08_21-56-55.jpg)
+
+
+
 
 
 

@@ -1103,6 +1103,7 @@ FROM
 GROUP BY age;
 ```
 
+****
 
 
 
@@ -1112,6 +1113,82 @@ GROUP BY age;
 
 
 
+
+
+
+
+# Day108
+
+## Tag: WHERE IN
+
+![Xnip2021-11-09_07-09-28](MySQL Note.assets/Xnip2021-11-09_07-09-28.jpg)
+
+
+
+![Xnip2021-11-09_07-11-07](MySQL Note.assets/Xnip2021-11-09_07-11-07.jpg)
+
+题意:
+
+给你一张用户信息表，请你查询出每个学校中gpa最低的用户信息
+
+
+
+
+
+
+
+思路:
+
+- 查询列表中有三个字段: device_id, university, 最小gpa
+- 其中想要获取最小gpa只能通过根据学校分组的方式，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	university,
+	MIN(gpa) AS 'gpa'
+FROM
+	user_profile
+GROUP BY university
+```
+
+
+
+
+
+- 这样一来我们就差device_id了，根据上表的信息，我们只需要限定univerisity和gpa字段即可，SQL如下
+
+
+```mysql
+SELECT
+    device_id,
+    university,
+    gpa
+FROM 
+    user_profile
+WHERE (university, gpa) IN
+(
+    SQL1
+    )
+ORDER BY university
+```
+
+- 注意不能直接这样写:
+
+```mysql
+SELECT
+    device_id,
+    university,
+    MIN(gpa) AS 'gpa'
+FROM
+    user_profile
+GROUP BY university
+ORDER BY university;
+```
+
+- 因为学生和学校是多对一的关系，所以在对应上会出现问题
+- 什么？为啥最后要排序？别问，问就是题目太拉没说清楚，得自己翻评论pwq
 
 
 
