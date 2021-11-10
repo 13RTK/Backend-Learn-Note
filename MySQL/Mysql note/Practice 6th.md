@@ -1190,6 +1190,89 @@ ORDER BY university;
 - 因为学生和学校是多对一的关系，所以在对应上会出现问题
 - 什么？为啥最后要排序？别问，问就是题目太拉没说清楚，得自己翻评论pwq
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day109
+
+## Tag: IF, SUM, LEFT JOIN
+
+![Xnip2021-11-10_10-41-34](MySQL Note.assets/Xnip2021-11-10_10-41-34.jpg)
+
+
+
+![Xnip2021-11-10_10-41-49](MySQL Note.assets/Xnip2021-11-10_10-41-49.jpg)
+
+题意:
+
+给你一张用户信息表，一张练习记录表，请你查询出每个复旦大学用户在8月份的总答题数和回答正确的题目数量
+
+
+
+
+
+思路:
+
+- 我们需要限定的条件为月份和学校，月份可以直接使用MONTH，然而答题记录和用户信息在两张表中，所以我们需要连接两张表
+- 又因为我们需要查询出所有的用户信息，所以用户信息表要作为驱动表，先尝试连接一下，SQL如下
+
+```mysql
+SELECT
+    t1.device_id,
+    t1.university,
+    t2.question_id AS 'question_cnt',
+    t2.result AS 'right_question_cnt'
+FROM
+    user_profile AS t1
+LEFT JOIN question_practice_detail AS t2 ON t1.device_id = t2.device_id
+AND MONTH(t2.date) = 8 
+WHERE t1.university = '复旦大学'
+```
+
+
+
+- 此时我们发现部分用户的question_id和result为null(该用户在8月份没有对应的答题记录)
+- 所以我们需要将这些为null的记录处理为0，而存在记录的用户则需要判断其result来计算正确的答题数
+- 因为COUNT自动忽略null，所以我们使用COUNT计算总答题数即可，而result则只需要使用IF来判断其是否为right即可
+- 注意不能使用COUNT来计算result，因为COUNT只计算记录的条数而不在乎结果，所以我们要使用SUM才行，最终SQL如下
+
+```mysql
+SELECT
+    t1.device_id,
+    t1.university,
+    COUNT(t2.question_id) AS 'question_cnt',
+    SUM(IF(t2.result = 'right', 1, 0)) AS 'right_question_cnt'
+FROM
+    user_profile AS t1
+LEFT JOIN question_practice_detail AS t2 ON t1.device_id = t2.device_id
+AND MONTH(t2.date) = 8 
+WHERE t1.university = '复旦大学'
+GROUP BY t1.device_id, t1.university
+```
+
+
+
+
+
 
 
 
