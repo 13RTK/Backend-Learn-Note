@@ -1269,6 +1269,7 @@ WHERE t1.university = '复旦大学'
 GROUP BY t1.device_id, t1.university
 ```
 
+****
 
 
 
@@ -1284,6 +1285,68 @@ GROUP BY t1.device_id, t1.university
 
 
 
+
+
+
+
+
+
+# Day110
+
+## Tag: AVG, INNER JOIN
+
+![Xnip2021-11-11_07-03-22](MySQL Note.assets/Xnip2021-11-11_07-03-22.jpg)
+
+
+
+![Xnip2021-11-11_07-05-55](MySQL Note.assets/Xnip2021-11-11_07-05-55.jpg)
+
+题意:
+
+给你一张用户信息表，一张练习记录表，一张练习详情表，请你查询出所有浙江大学用户在不同难度题目下答题的正确率
+
+
+
+
+
+思路:
+
+- 首先，我们需要计算不同难度下的正确率，所以需要按照难度的来分组，从题目示例来看，查询出的结果集需要以练习记录表作为参考，所以我们需要将练习详情表和记录表进行连接，这里使用内连接即可
+- 为了限定学校，我们还需要连接上用户信息
+- 在计算正确率时有两种方法，要么手动写出分子和分母，要么直接使用AVG，使用前者SQL如下
+
+```mysql
+SELECT
+    t2.difficult_level,
+    SUM(IF(t1.result = 'right', 1, 0)) / COUNT(t1.result) AS 'correct_rate'
+FROM
+    question_practice_detail AS t1
+INNER JOIN question_detail AS t2 ON t1.question_id = t2.question_id
+INNER JOIN user_profile AS t3 ON t1.device_id = t3.device_id
+WHERE t3.university = '浙江大学'
+GROUP BY t2.difficult_level
+ORDER BY correct_rate
+```
+
+
+
+
+
+- 使用后者则SQL如下
+
+
+```mysql
+SELECT
+    t2.difficult_level,
+    AVG(IF(t1.result = 'right', 1, 0)) AS 'correct_rate'
+FROM
+    question_practice_detail AS t1
+INNER JOIN question_detail AS t2 ON t1.question_id = t2.question_id
+INNER JOIN user_profile AS t3 ON t1.device_id = t3.device_id
+WHERE t3.university = '浙江大学'
+GROUP BY t2.difficult_level
+ORDER BY correct_rate
+```
 
 
 

@@ -754,7 +754,7 @@ Eg:
 
 ### ISO 8859-1
 
-- 共收录256个字符(2^8/256)，在ASCII的基础上添加了128个西欧常用的字符，可以使用一个字节来编码表示，别名为"Latin1"
+- 共收录256个字符(2^8/256)，在ASCII的基础上添加了128个西欧常用的字符，可以使用一个字节来编码表示，**别名为"Latin1"**
 - 其为MySQL5.7及其之前版本的默认字符集
 
 
@@ -813,7 +813,7 @@ Eg:
 syntax:
 
 ```mysql
-SHOW (CHARSET/CHARACTER) SET (LIKE 'charset_name');
+SHOW CHARSET SET (LIKE 'charset_name');
 ```
 
 
@@ -906,7 +906,7 @@ Eg:
 修改这两个变量的方法
 
 - 通过CLI启动项
-- 通过配置文件:
+- 通过配置文件(Path: /etc/my.cnf):
 
 ```shell
 [server]
@@ -931,6 +931,7 @@ Eg:
 #### 2) database
 
 - 创建时未指定则以server为准
+- 该变量**用来指定一个database的默认字符集和比较规则**
 
 
 
@@ -985,6 +986,16 @@ Eg:
 
 
 
+- 同时修改字符编码和比较规则
+
+```mysql
+ALTER DATABASE database_name CHARSET = charset_name COLLATE = collation_name;
+```
+
+Eg:
+
+![Xnip2021-11-10_14-29-08](MySQL Note.assets/Xnip2021-11-10_14-29-08.jpg)
+
 
 
 
@@ -998,6 +1009,7 @@ Eg:
 #### 3) table
 
 - 没有指定则使用其对应database的charset和collation
+- 用来**指定新创建表的默认字符集和比较规则**
 - 在创建时指定:
 
 ```mysql
@@ -1099,9 +1111,9 @@ Eg:
 
 #### 5) 只修改charset/collation
 
-- 只修改charset，collate变为该charset默认的collate
-- 只修改collate，charset变为该collate对应的charset
-- 两者会自动对应
+- **只修改charset，collate变为该charset默认的collate**
+- **只修改collate，charset变为该collate对应的charset**
+- **两者会自动对应**
 
 
 
@@ -1118,6 +1130,7 @@ Eg:
 #### 6) 优先级总结
 
 - charset: column未指定则取决于table，table未指定则取决于database，database未指定则取决于server
+- collation: 同上
 
 
 
@@ -1144,6 +1157,7 @@ Eg:
 #### 1) client sent message
 
 - client和server通信过程中规定的数据格式为MySQL通信协议
+- 该编码由client的系统决定
 - 对于类UNIX系统，其字符编码决定于以下顺序:
 
 ```shell
@@ -1186,11 +1200,11 @@ Eg:
 
 #### 3) server process
 
-- 服务器接收请求时以"character_set_client"为准来解码，之后将其转换为character_set_connection对应的编码
-- 在处理时(比较, 匹配等)以session级别的"character_set_connection"和"collation_connection"为准
+- 服务器接收请求时以"character_set_client"为准来解码，之后**将其转换为character_set_connection对应的编码**
+- 在处理时(比较, 匹配等)**以session级别的"character_set_connection"和"collation_connection"为准**
 - 这两个变量可以通过SET修改
 
-**注意：**如果比较数据列的比较规则/字符集和上述两个var不同，则比较时**以列的为准**
+**注意：**如果**比较数据列的比较规则/字符集和上述两个var不同**，则比较时**以列的为准**
 
 
 
@@ -1240,7 +1254,7 @@ Eg:
 
 
 
-#### 4) server respond
+#### 4) server response
 
 - server通过character_set_connection编码进行匹配比较后，通过SESSION级别的character_set_results返回结果
 - 其同样可以通过SET来修改
@@ -1273,7 +1287,7 @@ Eg:
 
 
 
-#### 5) client receive respond
+#### 5) client receive response
 
 - client接收响应后会以其自身的字符编码来显示(UNIX默认以utf8来显示)
 
@@ -1290,14 +1304,14 @@ Eg:
 ### 默认情况
 
 - 如果client未指定字符集，则使用client系统的字符集，如果MySQL并不支持该charset，则使用MySQL默认的charset
-- 在MySQL5.7及之前的版本中，默认charset为latin1，之后为utf8mb4
+- **在MySQL5.7及之前的版本中，默认charset为latin1**，之后为utf8mb4
 - 如果使用了dafault_character_set启动项，则忽略client系统的字符编码
 
 
 
 批量修改字符集:
 
-- 通过SET NAMES可以一次修改character_set_client/connection/results三个变量
+- 通过SET NAMES可以**一次修改character_set_client/connection/results三个变量**
 
 syntax:
 
@@ -1329,8 +1343,8 @@ SET NAMES charset_name;
 
 # 四、InnoDB存储结构
 
-- 从MySQL5.5.5开始，InnoDB作为MySQL的默认存储引擎
-- InnoDB在处理数据时会将Disk里的数据加载到memory里，每次读取和写入的单位为页，其默认大小为16KB
+- **从MySQL5.5.5开始，InnoDB作为MySQL的默认存储引擎**
+- InnoDB**在处理数据时会将Disk里的数据加载到memory里**，每次**读取和写入的单位为页，其默认大小为16KB**
 - 变量"innodb_page_size"表明了innodb存储引擎每页的大小，**该变量无法在运行过程中修改**
 
 查看页的大小:
@@ -1347,7 +1361,7 @@ SET NAMES charset_name;
 
 ## 1. InnoDB行格式
 
-- 我们写入的每条数据作为一条记录，记录在表中的存放形式由行格式决定
+- 我们写入的每条数据作为一条记录，**记录在表中的存放形式由行格式决定**
 - 目前的四种行格式: COMPACT, REDUNDANT, DYNAMIC, COMPRESSED
 - 指定/修改行格式:
 
@@ -1402,7 +1416,7 @@ SHOW TABLE STATUS LIKE 'table_name';
 | :--------------: | :--------: | :--------: | :-----: | :--: | :-----: |
 | 变长字段长度列表 | NULL值列表 | 记录头信息 | 列1的值 | ...  | 列n的值 |
 
-- 前三列为记录的额外信息，其余为记录的真实数据
+- **前三列为记录的额外信息**，其余为记录的真实数据
 
 
 
@@ -1418,12 +1432,12 @@ SHOW TABLE STATUS LIKE 'table_name';
 
 ##### 1. 变长字段长度列表
 
-- 由于一些变长的数据类型存储数据的字节数不固定，所以需要存储字段所占用的实际字节数(不然server会懵逼的)
-- 由此可知，存储变长字段会占用两部分空间: 数据占用的字节数，数据内容。且分别位于一条记录的两个部分中
-- 该列表存储的变长字段字节数，会按照列顺序的逆序进行存放
-- InnoDB在读取数据前会先查看表结构，如果变长字段允许存储的最大字节数(W * M)都小于255，则其数据长度用一个字节表示
-- 该列表不存储为NULL的数据
-- 如果表中所有的列都没使用变长数据类型，或者所有的变长数据列的值都为null，则该列表不存在
+- 由于**一些变长的数据类型存储数据的字节数不固定**，所以需**要存储字段所占用的实际字节数**(不然server会懵逼的)
+- 由此可知，**存储变长字段会占用两部分空间**: **数据占用的字节数，数据内容**。且**分别位于一条记录的两个部分中**
+- 该列表存储的变长字段字节数，**会按照列顺序的逆序进行存放**
+- InnoDB**在读取数据前会先查看表结构**，如果变长字段允许存储的最大字节数(W * M)都小于255，则其数据长度用一个字节表示
+- 该列表**不存储为NULL的数据**
+- 如果表中**所有的列都没使用变长数据类型，或者所有的变长数据列的值都为null，则该列表不存在**
 
 
 
@@ -1452,18 +1466,18 @@ SHOW TABLE STATUS LIKE 'table_name';
 
 对于内容较长的字段:
 
-- 如果W * M ≤ 255，则只用一个字节表示变长数据占用的字节数
+- 如果W * M ≤ 255(该字段最大存储字节数)，则只用一个字节(2^8)表示变长数据占用的字节数
 - 否则分情况:
-- L ≤ 127，则使用1个字节
+- L ≤ 127，则使用1个字节(2^7)
 - 否则使用两个字节
 
 
 
 说明:
 
-- W为字符集规定的表示字符时所用最长的字节数
-- M为该类型中存储字符的最大数量，即varchar(10)中的10
-- L为数据实际占用的字节数
+- W为**字符集规定的表示单个字符能用最长的字节数**(ASCII为1，utf8mb为4)
+- M为该类型中**存储字符的最大数量**，即varchar(10)中的10
+- L为**数据实际占用的字节数**
 
 
 
@@ -1487,11 +1501,11 @@ SHOW TABLE STATUS LIKE 'table_name';
 
 ##### 2. NULL值列表
 
-- 该列表记录所有值为NULL的列(在一条记录中)
-- 如果列为primary key或者被NOT NULL修饰，则NULL值列表不计入
-- 同变长字段长度列表相同，如果所有的列中都没有值为NULL的，则该列表不存在
-- 该列表同样通过列顺序的逆序存储，每个列都用一个二进制位存储。该位为1，则该列的值为null，为0则反之
-- 该列表必须使用整数个字节位表示，不足则高位补0
+- 该列表**记录所有值为NULL的列**(在一条记录中)
+- 如果**列为primary key或者被NOT NULL修饰，则NULL值列表不计入**(不计入不为null的列)
+- 同变长字段长度列表相同，**如果所有的列中都没有值为NULL的，则该列表不存在**
+- 该列表同样通过列顺序的逆序存储，每个列都用一个二进制位存储。**该位为1，则该列的值为null，为0则反之**
+- 该**列表必须使用整数个字节位表示，不足则高位补0**
 - 如果表中可以为null的列有9个，则使用2个字节表示
 
 
@@ -1511,6 +1525,8 @@ SHOW TABLE STATUS LIKE 'table_name';
 
 |  3   | 0000 0110 | ...  | ...  | ...  | ...  |
 | :--: | :-------: | :--: | :--: | :--: | :--: |
+
+（aaaa, null, null）
 
 
 
