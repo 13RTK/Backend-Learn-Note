@@ -1348,6 +1348,74 @@ GROUP BY t2.difficult_level
 ORDER BY correct_rate
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day111
+
+## Tag: DISTINCT
+
+![Xnip2021-11-12_07-37-30](MySQL Note.assets/Xnip2021-11-12_07-37-30.jpg)
+
+
+
+![Xnip2021-11-12_07-41-11](MySQL Note.assets/Xnip2021-11-12_07-41-11.jpg)
+
+题意:
+
+给你一张题目练习记录表，请你查询出2021年8月份练习题目的用户数，和练习的总次数
+
+
+
+
+
+思路:
+
+- 练习的用户数其实就是device_id，所以直接使用COUNT即可，但需要注意的是，一个用户在8月可能多次答题
+- 所以我们还需要使用DISTINCT去重，而练习的次数则直接通过统计result即可，最后限制日期通过日期函数即可，SQL如下
+
+```mysql
+SELECT
+    COUNT(DISTINCT device_id) AS 'did_cnt',
+    COUNT(result) AS 'question_cnt'
+FROM
+    question_practice_detail
+WHERE MONTH(date) = 8 AND YEAR(date) = 2021
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
