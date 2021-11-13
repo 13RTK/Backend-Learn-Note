@@ -1400,6 +1400,7 @@ FROM
 WHERE MONTH(date) = 8 AND YEAR(date) = 2021
 ```
 
+****
 
 
 
@@ -1417,6 +1418,145 @@ WHERE MONTH(date) = 8 AND YEAR(date) = 2021
 
 
 
+
+
+
+
+
+
+# Day112
+
+## Tag: UNION, MAX/MIN
+
+![Xnip2021-11-13_10-41-01](MySQL Note.assets/Xnip2021-11-13_10-41-01.jpg)
+
+
+
+![Xnip2021-11-13_10-43-29](MySQL Note.assets/Xnip2021-11-13_10-43-29.jpg)
+
+
+
+![Xnip2021-11-13_10-52-47](MySQL Note.assets/Xnip2021-11-13_10-52-47.jpg)
+
+
+
+![Xnip2021-11-13_11-15-21](MySQL Note.assets/Xnip2021-11-13_11-15-21.jpg)
+
+
+
+
+
+![Xnip2021-11-13_11-30-24](MySQL Note.assets/Xnip2021-11-13_11-30-24.jpg)
+
+
+
+![Xnip2021-11-13_11-30-47](MySQL Note.assets/Xnip2021-11-13_11-30-47.jpg)
+
+题意:
+
+给你一张考题记录表，一张考试信息表，请你查询出所有用户在SQL项目中高难度题目的截断平均分
+
+
+
+
+
+
+
+
+
+思路1(自己的naive方法):
+
+- 首先截断的意思就是在统计时去除最高分和最低分，所以我们只需要查询出最值后限制score字段就行了，使用NOT IN即可(注意，我们只限制了score一个字段，所以对应的子查询也只能有一个字段，所以必须为列子查询)
+- 因为子查询必须为列子查询，所以我们只能单独查询出最值后再上下连接，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	MIN(t1.score)
+FROM
+	exam_record AS t1
+INNER JOIN examination_info AS t2 ON t1.exam_id = t2.exam_id
+AND t2.tag = 'SQL' AND t2.difficulty = 'hard'
+UNION
+SELECT
+	MAX(t1.score)
+FROM
+	exam_record AS t1
+INNER JOIN examination_info AS t2 ON t1.exam_id = t2.exam_id
+AND t2.tag = 'SQL' AND t2.difficulty = 'hard'
+```
+
+
+
+
+
+- 有了最值后，我们只需要在计算平均值时排除即可，最终SQL如下
+
+
+```mysql
+SELECT
+	t1.tag,
+	t1.difficulty,
+	ROUND(AVG(t2.score), 1) AS 'clip_avg_score'
+FROM
+	examination_info AS t1
+INNER JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id
+AND t1.tag = 'SQL' AND t1.difficulty = 'hard'
+WHERE t2.score NOT IN (
+	SQL1
+);
+	
+```
+
+
+
+
+
+
+
+
+
+优化1:
+
+- 使用EXPLAIN查看一下预计的查询计划，发现大量的SELECT对应的Extra都为Using Where，说明这些查询都需要回表后在server层进行判断，而被驱动表使用了join buffer，也就是基于块的嵌套循环算法，最后的UNION则需要使用临时表
+- 优化这条SQL语句的思路如下:
+    - 在多次查询的字段上添加索引，加快搜索非主键字段的速度，将UNION改为UNION ALL避免使用临时表去重
+
+- 修改后再次使用EXPLAIN，此时查询优化器生成的执行计划使用了我们创建的索引，最后的联合查询不会用到临时表了
+
+
+
+
+
+
+
+
+
+思路2:
+
+- 这道题目解题很简单，但按照我们的写法来查询其实很浪费性能，所以还有优化的空间吗？
+- 其实我们可以直接用分数的总和减去最值来表示截断，最后分母只需要减2即可，所以SQL如下
+
+```mysql
+SELECT
+    t1.tag,
+    t1.difficulty,
+    ROUND((SUM(t2.score) - MAX(t2.score) - MIN(t2.score)) / (COUNT(t2.score) - 2), 1) AS 'clip_avg_score'
+FROM
+    examination_info AS t1
+INNER JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id
+WHERE t1.tag = 'SQL' AND t1.difficulty = 'hard';
+```
+
+
+
+
+
+优化2:
+
+- 再次使用EXPLAIN，发现只有两条记录，且id相同，因为我们的SQL语句中只有一个SELECT，所以是内连接
+- 这时优化就很简单了，只需要添加索引即可
 
 
 
