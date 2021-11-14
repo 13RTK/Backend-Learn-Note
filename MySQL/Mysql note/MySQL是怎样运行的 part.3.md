@@ -3378,6 +3378,7 @@ WHERE key1 = 'a';
 
 - 先尝试与外层查询合并，再尝试将派生表物化后执行
 
+****
 
 
 
@@ -3403,10 +3404,151 @@ WHERE key1 = 'a';
 
 
 
+# 十五、EXPLAIN详解
+
+- 查询优化器在优化一条查询语句之后，会生成一个执行计划，其展示了执行查询的具体方式(多表的连接顺序，单表访问方法等等)
+- 我们可以使用EDXPLAIN语句查看某个SQL的具体执行计划
+- 了解EXPLAIN语句的输入项后，就能有针对性的提升SQL的性能了
+- SELECT和DELETE, INSERT, REPLACE和UPDATE前面都可以加上EXPLAIN来查看执行计划，这里只说SELECT
+
+
+
+EXPLAIN各个输出列的作用:
+
+|  column_name  |                 description                  |
+| :-----------: | :------------------------------------------: |
+|      id       |         每个SELECT关键字都对应一个id         |
+|  select_type  |    SELECT对应查询的类型(联合/子查询等等)     |
+|     table     |                     表名                     |
+|  partitions   |                匹配的分区信息                |
+|     type      |                单表的访问方法                |
+| possible_keys |              可能用到的所有索引              |
+|      key      |                实际使用的索引                |
+|    key_len    |              实际使用索引的长度              |
+|      ref      |  当索引列等值查询时，进行等值查询匹配列信息  |
+|     rows      |             估计需要读取的记录数             |
+|   filtered    | 预计需要读取的记录中，过滤后的数据所占的比例 |
+|     Extra     |                   额外信息                   |
 
 
 
 
+
+Eg table: single_table
+
+
+
+有两个构造相同的表: s1, s2
+
+
+
+
+
+
+
+
+
+
+
+## 15.1 各列详解
+
+
+
+### 15.1.1 table
+
+- 该列代表该表的表名
+
+
+
+Eg:
+
+![Xnip2021-11-14_18-11-23](MySQL Note.assets/Xnip2021-11-14_18-11-23.jpg)
+
+
+
+
+
+
+
+### 15.1.2 id
+
+- 查询语句中每出现一个SELECT关键字，则在EXPLAIN中都有一个唯一个id
+- 在连接查询中，一个SELECT后的FROM可以跟多个表，所以在连接查询的执行计划中，每张表都会对应一个记录，但这些记录的id相同(在同一个id下)
+
+Eg:
+
+```mysql
+EXPLAIN SELECT * FROM s1 INNER JOIN s2;
+```
+
+![Xnip2021-11-14_18-43-57](MySQL Note.assets/Xnip2021-11-14_18-43-57.jpg)
+
+
+
+- 在连接查询的执行计划中，每张表都对应一条记录，这些记录的id相同(在同一个SELECT下)
+- 出现在前面的就是驱动表，在后面的就是被驱动表
+
+
+
+
+
+
+
+- 在涉及多个SELECT的子查询中，每个SELECT都对应一个唯一的id
+
+Eg:
+
+```mysql
+EXPLAIN SELECT * FROM s1 WHERE key1 IN (SELECT key1 FROM s2) OR key3 = 'a';
+```
+
+![Xnip2021-11-14_18-47-10](MySQL Note.assets/Xnip2021-11-14_18-47-10.jpg)
+
+- s1表在外层查询中，所以其id为1；s2表在子查询中，其id为2
+
+
+
+
+
+- **注意:**查询优化器可能将设计子查询的语句重写，从而转化为了连接查询(半连接)
+
+Eg:
+
+```mysql
+EXPLAIN SELECT * FROM s1 WHERE key1 IN (SELECT key3 FROM s2 WHERE common_field = 'a');
+```
+
+![Xnip2021-11-14_20-30-07](MySQL Note.assets/Xnip2021-11-14_20-30-07.jpg)
+
+- 这里就转化为了连接，并将s2物化了
+
+
+
+
+
+
+
+- 联合查询
+
+```mysql
+EXPLAIN SELECT * FROM s1 UNION SELECT * FROM s2;
+```
+
+![Xnip2021-11-14_20-32-50](MySQL Note.assets/Xnip2021-11-14_20-32-50.jpg)
+
+- 其中第三条记录为一个临时表(名为<unioin1, 2>)，因为UNION会将id为1和2的查询结果集合并起来并去重
+- 其id为null说明其为临时表
+- 如果改为UNION ALL则不需要去重，也就不需要临时表了
+
+Eg:
+
+![Xnip2021-11-14_20-35-41](MySQL Note.assets/Xnip2021-11-14_20-35-41.jpg)
+
+
+
+
+
+**注意：**在MySQL5.6及之前的版本中，UNION ALL也可能使用临时表
 
 
 
