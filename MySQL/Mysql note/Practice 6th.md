@@ -1558,6 +1558,108 @@ WHERE t1.tag = 'SQL' AND t1.difficulty = 'hard';
 - 再次使用EXPLAIN，发现只有两条记录，且id相同，因为我们的SQL语句中只有一个SELECT，所以是内连接
 - 这时优化就很简单了，只需要添加索引即可
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day113
+
+## Tag: Sub Query
+
+![Xnip2021-11-14_13-48-05](MySQL Note.assets/Xnip2021-11-14_13-48-05.jpg)
+
+
+
+![Xnip2021-11-14_13-49-09](MySQL Note.assets/Xnip2021-11-14_13-49-09.jpg)
+
+
+
+![Xnip2021-11-14_13-49-36](MySQL Note.assets/Xnip2021-11-14_13-49-36.jpg)
+
+题意:
+
+给你一张试卷作答记录表，一张试卷信息表，请你查询出其中SQL科目中不小于平均成绩的最小分数
+
+
+
+
+
+思路:
+
+- 首先要做的肯定就是要先查询出平均值了，唯一的限制条件只是科目而已，所以我们简单的连接后使用AVG函数即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    AVG(t1.score)
+FROM
+    exam_record AS t1
+INNER JOIN examination_info AS t2 ON t1.exam_id = t2.exam_id
+WHERE t2.tag = 'SQL'
+```
+
+
+
+- 之后我们只需要正常的获取SQL科目的分数，并以上述SQL作为WHERE中的子查询条件即可
+- 最后再对获取的所有分数进行升序排序，并取第一条记录即可，SQL如下
+
+```mysql
+SELECT
+    t1.score
+FROM
+    exam_record AS t1
+INNER JOIN examination_info AS t2 ON t1.exam_id = t2.exam_id
+WHERE t1.score >= (
+	SQL1
+    )
+AND t2.tag = 'SQL'
+ORDER BY t1.score
+LIMIT 1
+```
+
+
+
+
+
+优化:
+
+- 通过EXPLAIN可以看到，查询计划多次使用了临时表，且因为对应字段没有索引，所以还要使用文件排序，而且还需要回表
+- 添加索引的话只能解决子查询中的连接问题，但还是会使用临时表和文件排序，因此我们需要优化SQL
+- 获取其中的最小值除了排序后取第一条记录外，其实可以直接使用MIN，这样一来就不需要文件排序和临时表了，极大的节约了资源！
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
