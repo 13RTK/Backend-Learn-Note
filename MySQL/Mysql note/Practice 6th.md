@@ -1648,9 +1648,83 @@ LIMIT 1
 - 添加索引的话只能解决子查询中的连接问题，但还是会使用临时表和文件排序，因此我们需要优化SQL
 - 获取其中的最小值除了排序后取第一条记录外，其实可以直接使用MIN，这样一来就不需要文件排序和临时表了，极大的节约了资源！
 
+****
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day114
+
+## Tag: COUNT多字段
+
+![Xnip2021-11-15_07-37-53](MySQL Note.assets/Xnip2021-11-15_07-37-53.jpg)
+
+
+
+![Xnip2021-11-15_07-40-43](MySQL Note.assets/Xnip2021-11-15_07-40-43.jpg)
+
+题意:
+
+给你一张作答记录表，请你查询出2021年中每月每个用户作答的平均次数和活跃天数(活跃天数指当天有交卷行为)
+
+
+
+
+
+
+
+
+
+
+
+思路:
+
+- 首先是限制条件，限制年份可以使用YEAR函数，而限制活跃天数则限定submit_time不为null即可
+- 在示例的查询列表中，我们需要将日期重新输出为新的格式，所以需要使用DATE_FORMAT
+- 而在统计平均天数的时候就需要注意了，分母很简单，统计不重复的用户id即可
+- 但分子需要注意: 同一天但不同id的情况下不能算作一天，所以我们不能简单的统计不重复的天数
+- 而是同时统计不重复的不同id不同日期的天数，所以SQL如下
+
+```mysql
+SELECT
+    DATE_FORMAT(submit_time, "%Y%m") AS 'month',
+    ROUND(COUNT(DISTINCT uid, DATE_FORMAT(submit_time, '%Y%m%d')) / COUNT(DISTINCT uid), 2) AS 'avg_active_days',
+    COUNT(DISTINCT uid) AS 'mau'
+FROM
+    exam_record
+WHERE submit_time IS NOT NULL
+AND YEAR(submit_time) = 2021
+GROUP BY month;
+```
+
+
+
+
+
+优化:
+
+- 优化空间不大，可以在uid和submit_time上面建立联合索引
 
 
 
