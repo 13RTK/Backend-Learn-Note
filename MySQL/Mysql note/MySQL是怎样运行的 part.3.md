@@ -3568,6 +3568,517 @@ Eg:
 
 
 
+### 15.1.3 Select_type
+
+- Select_type表明了每个SELECT代表的小查询扮演的角色
+
+
+
+Select_type的值
+
+|         Name         |                         Description                          |
+| :------------------: | :----------------------------------------------------------: |
+|        SIMPLE        |         Simple SELECT(not using UNION or subqueries)         |
+|       PRIMARY        |                       Outermost SELECT                       |
+|        UNION         |         Second or later SELECT statement in a UNION          |
+|     UNION RESULT     |                      Result of a UNION                       |
+|       SUBQUERY       |                   First SELECT in subquery                   |
+|  DEPENDENT SUBQUERY  |      Frist SELECT in subquery, dependent on outer query      |
+|       DERIVED        |                        Derived table                         |
+|     MATERIALIZED     |                    Materialized subquery                     |
+| UNCACHEABLE SUBQUERY | A subquery for which the result cannot be cached and <br />must be re-evaluated for each row of the outer query |
+|  UNCACHEABLE UNION   | The second or later select in a UNION that belongs to an <br />uncacheable subquery |
+|                      |                                                              |
+
+
+
+
+
+#### 1) SIMPLE
+
+- **不包含子查询或者UNION的查询**都算SIMPLE，连接查询也是
+
+
+
+
+
+
+
+#### 2) PRIMARY
+
+- 在一个**包含UNION、UNION ALL或者子查询的大查询**来说，其由多个小查询组成
+- **最左边/外层的小查询**select_type的值为PRIMARY
+
+![Xnip2021-11-15_09-09-48](MySQL Note.assets/Xnip2021-11-15_09-09-48.jpg)
+
+
+
+
+
+
+
+#### 3) UNION
+
+- **一个包含UNION、UNION ALL的大查询**是由几个小查询组成的，**处了最左边的小查询以外，其余的都是UNION**
+
+
+
+
+
+
+
+#### 4) UNION RESULT
+
+- 在UNION中需要使用临时表来去重，**该临时表的Select_type为UNION RESULT**
+
+
+
+
+
+
+
+#### 5) SUBQUERY
+
+- 包含**子查询的查询语句不能转化为半连接，且其为不相关子查询**，最后查询优化器决定采用**将该子查询物化的方式来执行**
+- 则该**子查询的第一个SELECT关键字对应查询的Select_type为SUBQUERY**
+
+Eg: 
+
+![Xnip2021-11-15_09-21-06](MySQL Note.assets/Xnip2021-11-15_09-21-06.jpg)
+
+
+
+
+
+
+
+#### 6) DEPENDENT SUBQUERY
+
+- 包含**子查询的语句不能被转为对应的半查询，且最终被查询优化器转换为相关子查询的形式**，则**该子查询的第一个SELECT查询对应的Select type为DEPENDENT SUBQUERY**
+
+Eg SQL:
+
+![Xnip2021-11-15_09-28-49](MySQL Note.assets/Xnip2021-11-15_09-28-49.jpg)
+
+
+
+
+
+
+
+#### 7) DEPENDENT UNION
+
+- **在包含UNION或者UNION ALL的大查询中**，如果**各个小查询都依赖外层查询**，则**除了最左边的小查询之外**(在这些UNION小查询中)，**其余小查询的Select_type为DEPENDENT UNION**
+
+Eg:
+
+![Xnip2021-11-15_09-34-41](MySQL Note.assets/Xnip2021-11-15_09-34-41.jpg)
+
+
+
+
+
+
+
+#### 8) DERIVED
+
+- 在包含派生表的查询中，如果以物化表的方式执行查询，则该派生表的Select_type为DERIVED
+
+Eg:
+
+![Xnip2021-11-15_09-38-39](MySQL Note.assets/Xnip2021-11-15_09-38-39.jpg)
+
+- id为1的表对应的table为<derived2>，说明该查询是将派生表物化后的表进行查询的
+
+
+
+
+
+
+
+#### 9) MATERIALIZED
+
+- 对应包含子查询的查询，**执行时将子查询物化后与外层查询进行连接查询**，该子查询的Select_type为MATERIALIZED
+
+Eg:
+
+![Xnip2021-11-15_09-46-13](MySQL Note.assets/Xnip2021-11-15_09-46-13.jpg)
+
+
+
+
+
+
+
+**注意：**
+
+- UNCACHEABLE SUBQUERY和UNCACHEABLE UNION不常用
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 15.1.4 partition
+
+- 暂不提
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 15.1.5 type
+
+- type指明了对某个表执行查询时的具体访问方法
+
+
+
+
+
+#### 1) system
+
+- 如果表中只有一条记录且，该表使用存储引擎的统计数据时精确的(MyISAM，MEMORY)，则该表的访问方法为system
+
+
+
+#### 2) const
+
+- 根据主键/唯一二级索引与常数进行等值匹配时，访问方法为const
+
+
+
+#### 3) eq_ref
+
+- 执行**连接查询时**，**被驱动表通过主键/非null的唯一二级索引等值匹配的方式进行访问时**，该驱动表的访问方法为eq_ref
+
+
+
+#### 4) ref
+
+- 通过普通二级索引进行等值匹配的方式查询表时，访问方法为ref
+
+
+
+- fulltext不展开讲
+
+
+
+#### 5) ref_or_null
+
+- 通过普通二级索引进行等值匹配或者为null的方式查询表时，访问方法为ref_or_null
+
+
+
+#### 6) index_merge
+
+在某些场景下可以使用索引合并的方式执行，包含Intersection、Union、Sort-Union三种索引合并
+
+
+
+#### 7) unique_subquery
+
+- 针对包含IN子查询的查询语句
+- 如果查询优化器决定将IN子查询转换为EXISTS子查询，而且在转换之后可以使用主键/非null的唯一二级索引进行等值匹配，则该子查询执行计划对应的type列值为unique_subquery
+
+Eg:
+
+![Xnip2021-11-15_13-56-41](MySQL Note.assets/Xnip2021-11-15_13-56-41.jpg)
+
+
+
+
+
+#### 8) index_subquery
+
+- 其与unique_subquery类似，不过在访问子查询中的表使用的普通的索引
+
+Eg:
+
+![Xnip2021-11-15_14-00-44](MySQL Note.assets/Xnip2021-11-15_14-00-44.jpg)
+
+
+
+#### 9) range
+
+- 使用索引**获取某些单点扫描区间的记录或者某些范围扫描区间**，可能使用到range访问方法
+
+Eg:
+
+![Xnip2021-11-15_14-03-05](MySQL Note.assets/Xnip2021-11-15_14-03-05.jpg)
+
+
+
+#### 10) index
+
+- 可以**使用索引覆盖，但需要扫描全部的索引记录时**，则访问方法就是index
+
+Eg:
+
+![Xnip2021-11-15_14-38-27](MySQL Note.assets/Xnip2021-11-15_14-38-27.jpg)
+
+- 对于InnoDB存储引擎来说，如果我们需要执行全部扫描，且需要对主键进行排序时，此时的type列值就是index
+
+
+
+
+
+
+
+#### 11) ALL
+
+- 全表扫描
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 15.1.6 possible_keys和key
+
+- possible_key表示对某个表执行单表扫描时可能使用到的索引
+- key表示实际使用到的索引
+
+Eg:
+
+![Xnip2021-11-15_20-35-49](MySQL Note.assets/Xnip2021-11-15_20-35-49.jpg)
+
+- 在使用index访问方法时，possible_key是空的，而key列中是实际使用的索引
+
+Eg:
+
+![Xnip2021-11-15_20-38-25](MySQL Note.assets/Xnip2021-11-15_20-38-25.jpg)
+
+
+
+- possible_key中的索引不是越多越好，**可以使用的索引越多，查询优化器在计算查询成本时花费的时间越长**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 15.1.7 key_len
+
+- 想要从查询计划中直接获取形成扫描区间的边界条件时，就能用到key_len了
+
+Eg:
+
+![Xnip2021-11-15_20-45-13](MySQL Note.assets/Xnip2021-11-15_20-45-13.jpg)
+
+
+
+key_len值由三部分组成:
+
+1. 该列实际数据最多占用的存储空间长度(字符集规定的单个字符所占最大子节数 * 该列最大可容纳的字符数量)
+2. 再加1字节(如果改列的值可以为null)
+3. 再加上2字节(如果列为变长类型，会多出两个子节来存储该列的实际数据占用的存储空间)
+
+
+
+再回头看上面例子的输出:
+
+- key列为idx_key1，说明查询计划使用了idx_key1索引
+- key_len为303，说明形成扫描区间的搜索条件只有key1一个列(3(utf8) * 100)
+- 而涉及key1的搜索条件只有key1 > 'a' AND key1 < 'b'
+
+
+
+**注意：**这里计算每个变长类型字符都看作2个字节，是因为这里只是server层，与存储引擎不同，key_len的作用只是让我们在使用联合索引时，能够知道查询计划具体涉及了几个列的搜索条件作为形成搜索区间的边界条件
+
+
+
+
+
+Eg:
+
+![Xnip2021-11-15_20-59-37](MySQL Note.assets/Xnip2021-11-15_20-59-37.jpg)
+
+- 这里的key_len为303，所以明显查询计划只涉及key_part1这一个列
+
+
+
+Eg:
+
+![Xnip2021-11-15_21-01-22](MySQL Note.assets/Xnip2021-11-15_21-01-22.jpg)
+
+- key_len为606，说明查询计划涉及key_part1，key_part2两个列
+
+
+
+
+
+
+
+### 15.1.8 ref
+
+- 与索引列等值匹配的东西(为一个常数const/一个列)
+
+Eg:
+
+![Xnip2021-11-15_21-04-39](MySQL Note.assets/Xnip2021-11-15_21-04-39.jpg)
+
+- ref段的值为const，说明在使用idx_key1查询时，与key1列匹配的是一个常数
+
+
+
+Eg:
+
+![Xnip2021-11-15_21-09-09](MySQL Note.assets/Xnip2021-11-15_21-09-09.jpg)
+
+- ref段的值为test.s1.id，即一个具体的字段，说明在使用主键索引时，与id列进行等值匹配的是s1.id列
+
+
+
+Eg:
+
+![Xnip2021-11-15_21-12-21](MySQL Note.assets/Xnip2021-11-15_21-12-21.jpg)
+
+- ref列的值为func，说明与key1列进行等值匹配的对象是一个函数
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 15.1.9 rows
+
+- 如果查询优化器使用全表扫描的方式查询，则rows列对应**该表记录数的估计值**
+- 如果使用过索引来执行查询，则rows列代表**预计扫描的索引记录数**
+
+Eg:
+
+![Xnip2021-11-15_21-16-25](MySQL Note.assets/Xnip2021-11-15_21-16-25.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 15.1.10 filtered
+
+- 计算驱动表扇出时采用的一个策略: condition filtering(条件过滤)
+    - 使用全表扫描，则计算扇出时需要估计满足所有搜索添加的记录条数
+    - 使用索引执行单表扫描时，计算扇出时需要估计在满足索引列对应搜索条件外，还满足其他搜索条件的记录数
+
+Eg:
+
+![Xnip2021-11-15_21-23-53](MySQL Note.assets/Xnip2021-11-15_21-23-53.jpg)
+
+
+
+假如rows列为266(满足索引列条件的记录数)，因为filtered列为10，所以266条记录中满足common_field = 'a'的记录只占10%
+
+(该字段在单表查询中意义不大，我们重点关注其在连接查询中的值)
+
+
+
+
+
+Eg:
+
+![Xnip2021-11-15_21-28-15](MySQL Note.assets/Xnip2021-11-15_21-28-15.jpg)
+
+- 在查询计划中，s1作为驱动表，而rows为1000，filtered为10，则扇出值为100
+
+    还要对被驱动表查询100次
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 15.1.11
+
+
+
+
+
+
+
+
+
+
+
 
 
 

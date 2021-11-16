@@ -1726,7 +1726,84 @@ GROUP BY month;
 
 - 优化空间不大，可以在uid和submit_time上面建立联合索引
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day115
+
+## Tag: GROUP BY, ORDER BY
+
+![Xnip2021-11-16_07-26-37](MySQL Note.assets/Xnip2021-11-16_07-26-37.jpg)
+
+
+
+![Xnip2021-11-16_07-27-55](MySQL Note.assets/Xnip2021-11-16_07-27-55.jpg)
+
+
+
+![Xnip2021-11-16_07-36-01](MySQL Note.assets/Xnip2021-11-16_07-36-01.jpg)
+
+
+
+![Xnip2021-11-16_07-35-19](MySQL Note.assets/Xnip2021-11-16_07-35-19.jpg)
+
+题意:
+
+给你一张试卷信息表，一张试卷作答记录表，一张用户信息表，请你查询出每张SQL类别的试卷发布后，当天5级以上用户作答的人数和平均分，最后按照人数降序，人数相同则按照平均分升序
+
+
+
+
+
+
+
+思路:
+
+- 按照题目的说法，我们需要对每张SQL类别试卷进行查询，也就是按照不同的试卷分组
+- 计算人数则只需要使用COUNT即可，但需要注意的是，在作答记录中，有些用户会对同一张试卷重复作答，所以需要去重
+- 计算平均分则使用AVG即可
+- 在连接三张表的时候需要注意: 我们要查询出所有SQL类别试卷的信息，所以要保证查询出所有类别的SQL的试卷，也就是要以试卷信息表为准，因此exam_record要作为驱动表
+- 之后就是常规的WHERE子句限定，最后注意排序字段的先后顺序即可，SQL如下
+
+```mysql
+SELECT
+    t1.exam_id,
+    COUNT(DISTINCT t2.uid) AS 'uv',
+    ROUND(AVG(t2.score), 1) AS 'avg_score'
+FROM
+    examination_info AS t1
+LEFT JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id
+LEFT JOIN user_info AS t3 ON t2.uid = t3.uid
+WHERE t1.tag = 'SQL'
+AND t3.level > 5
+GROUP BY t1.exam_id
+ORDER BY uv DESC, avg_score
+```
+
+
+
+
+
+优化:
+
+- 从执行计划来看，貌似能够建立索引来加快查询，其实不然
+- examination_info表中需要查询两个字段: exam_id和tag，创建联合索引的话意义不大，因为在判断完exam_id后还是需要重新查询tag字段
+- 如果为exam_record中的exam_id创建索引的话，则查询优化器不会用到user_info中的主键索引，相比之下还是使用user_info的主键索引要好，因为前两张表连接后得出的扇出值决定了访问user_info表的次数，第一张表的扇出值肯定小于前两张表连接后的扇出值，从所以我们应该想办法减少扇出值较对多的连接对应的访问表开销，因此我们选择减少对user_info的访问开销，因为对user_info的访问次数远大于对应exam_record的访问次数(扇出值大)
 
 
 
