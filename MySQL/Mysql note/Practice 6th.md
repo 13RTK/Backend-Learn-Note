@@ -1805,7 +1805,104 @@ ORDER BY uv DESC, avg_score
 - examination_info表中需要查询两个字段: exam_id和tag，创建联合索引的话意义不大，因为在判断完exam_id后还是需要重新查询tag字段
 - 如果为exam_record中的exam_id创建索引的话，则查询优化器不会用到user_info中的主键索引，相比之下还是使用user_info的主键索引要好，因为前两张表连接后得出的扇出值决定了访问user_info表的次数，第一张表的扇出值肯定小于前两张表连接后的扇出值，从所以我们应该想办法减少扇出值较对多的连接对应的访问表开销，因此我们选择减少对user_info的访问开销，因为对user_info的访问次数远大于对应exam_record的访问次数(扇出值大)
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day116
+
+## Tag: GROUP BY, ORDER BY
+
+![Xnip2021-11-17_10-17-44](MySQL Note.assets/Xnip2021-11-17_10-17-44.jpg)
+
+
+
+![Xnip2021-11-17_10-19-11](MySQL Note.assets/Xnip2021-11-17_10-19-11.jpg)
+
+
+
+![Xnip2021-11-17_10-37-42](MySQL Note.assets/Xnip2021-11-17_10-37-42.jpeg)
+
+
+
+![Xnip2021-11-17_11-04-14](MySQL Note.assets/Xnip2021-11-17_11-04-14.jpg)
+
+
+
+![Xnip2021-11-17_11-05-27](MySQL Note.assets/Xnip2021-11-17_11-05-27.jpg)
+
+
+
+![Xnip2021-11-17_11-14-12](MySQL Note.assets/Xnip2021-11-17_11-14-12.jpg)
+
+
+
+![Xnip2021-11-17_11-16-44](MySQL Note.assets/Xnip2021-11-17_11-16-44.jpg)
+
+题意:
+
+给你一张用户信息表，一张试卷信息表，一张作答信息表，请你查询出作答SQL试卷得分大于80的用户的等级分布，结果按照数量降序排列
+
+
+
+
+
+思路:
+
+- 所谓的统计等级分布，其实就是按照等级分组，并计算对应等级的用户数量，在计算用户数量的时候同样需要注意去重
+- 在写好三张表的连接后，在WHERE子句中写好对应的限制条件即可
+- 需要注意的是，题目其实还需要在分数相同的时候按照等级降序排列(出题人出来挨打！)，最后SQL如下
+
+```mysql
+SELECT
+    t1.level,    
+    COUNT(DISTINCT t2.uid) AS 'level_cnt'
+FROM
+    user_info AS t1
+LEFT JOIN exam_record AS t2 ON t1.uid = t2.uid
+LEFT JOIN examination_info AS t3 ON t2.exam_id = t3.exam_id
+WHERE t3.tag = 'SQL'
+AND t2.score > 80 
+GROUP BY t1.level
+ORDER BY level_cnt DESC, t1.level DESC
+```
+
+
+
+
+
+
+
+
+
+优化:
+
+- 首先先看输入的JSON格式执行计划，查询消耗为7.00
+- 通过EXPLAIN发现查询优化器其实将我们的连接顺序进行了修改，说明我们写的外连接被改成了内连接，所以可以修改表的连接顺序
+- 在执行计划中，t3也就是表examination_info作为了驱动表，其对应的访问方法为全表扫描，而扫描后还需要在server层中判断(因为WHERE中有t3.tag ='SQL')，t2的访问方法同样为全表扫描
+- 能不能创建索引让t2和t3使用覆盖索引呢？当然可以，只需要在t3的exam_id和tag字段上建立联合索引，在t2的exam_id，uid，score字段上建立联合索引即可(按照连接的顺序创建)
+- 此时再次查看执行计划后发现这两张表都用到了我们创建的联合索引，且匹配的记录条数也变少了
+- 此时再查看一下JSON格式的执行计划，查询消耗降为了5.81！
+
+
+
+- 查询的性能是提高了，但我们创建的联合索引比较庞大，而且索引列的数据都是会经常CRUD的，所以维护这两个联合索引会消耗很多性能和空间，能不能只创建一个简单的索引呢？
+- 从未优化之前的执行计划来看，t3和t2连接后的扇出是最大的，而且访问方法为全表扫描，那么我们需要想办法减少t2表的访问开销
+- 在t3和t2连接时对应的列为两表的exam_id，那么我们可以在t2的exam_id列上建立索引，此时t2表的访问方法就变为了ref，JSON中的查询消耗降为了6.80，虽然降得不多，但比起创建庞大的联合索引，这样的方式明显更合理一些，具体怎取舍就看对应业务的需求了
 
 
 
