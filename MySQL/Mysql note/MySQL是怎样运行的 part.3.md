@@ -4144,6 +4144,244 @@ key1 LIKE '%a'条件虽然不能用来形成合适的扫描区间，但其用到
 
 #### 6) Using where
 
+- 需要回表，并将完整的聚簇索引用户记录返回给server层判断(因为索引不包含搜索条件中的所有列)
+
+
+Eg:
+
+![Xnip2021-11-17_13-48-10](MySQL Note.assets/Xnip2021-11-17_13-48-10.jpg)
+
+
+
+
+
+#### 7) Using join buffer(Block Nested Loop)
+
+- 被驱动表需要多次访问，为了减少I/O，使用join buffer先行加载一些驱动表记录，方便一次性匹配
+
+
+
+
+
+#### 8) Using intersection/union/sort_union
+
+- 使用索引合并的方式执行查询
+
+
+
+
+
+
+#### 9) Zero limit
+
+- 当LIMIT子句参数为0时，说明不打算从表中读取任何数据
+
+
+
+
+
+#### 10) Using filesort
+
+- 需要对结果集中的记录进行排序
+- 排序时无法用到索引，需要在内存(记录较少)或者磁盘中进行排序(记录较多)
+
+Eg:
+
+![Xnip2021-11-17_13-59-55](MySQL Note.assets/Xnip2021-11-17_13-59-55.jpg)
+
+- 优化时应该尝试改为使用索引排序
+
+
+
+
+
+#### 11) Using temporary
+
+- 在去重/排序等操作时，如果不能利用索引，则需要建立内部的临时表
+
+Eg:
+
+![Xnip2021-11-17_14-03-56](MySQL Note.assets/Xnip2021-11-17_14-03-56.jpg)
+
+
+
+Eg:
+
+![Xnip2021-11-17_14-04-34](MySQL Note.assets/Xnip2021-11-17_14-04-34.jpg)
+
+- 这里出现了file sort，但SQL没有ORDER BY子句
+- 其实MySQL在包含GROUP BY子句的查询中，默认添加一个ORDER BY
+
+因此上述SQL其实和加上ORDER BY的SQL查询是等价的
+
+
+
+
+
+- 如果不想为包含GROUP BY的查询进行排序，则需要显式的加上ORDER BY NULL
+
+Eg:
+
+![Xnip2021-11-17_14-08-52](MySQL Note.assets/Xnip2021-11-17_14-08-52.jpg)
+
+
+
+
+
+
+
+
+
+#### 12) Start temporary, End temporary
+
+- 在将子查询转换为半查询时，当执行的策略为Duplicate Weedout时，会通过建立临时表为外层查询的记录进行去重操作，此时Extra列中会显示Start temporary，被驱动表的Extra将显示End temporary
+
+
+
+
+
+
+
+#### 13) LooseScan
+
+- 在将IN子查询转为半查询时，如果采用的是LooseScan执行策略，则驱动表执行计划的Extra列显示为LooseScan
+
+
+
+
+
+
+
+#### 14) FirstMatch(table_name)
+
+- 在将IN子查询转为半查询时，如果采用的是FirstMatch执行策略，则被驱动表执行计划的Extra列显示为FirstMatch(table_name)
+
+![Xnip2021-11-17_14-16-58](MySQL Note.assets/Xnip2021-11-17_14-16-58.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 15.2 JSON格式的执行计划
+
+- 之前的EXPLAIN语句的输出缺少了执行计划的成本，我们可以在EXPLAIN和SQL加上FORMAT = JSON获得JSON格式的执行计划，其中就包含了执行计划的成本
+
+
+
+Syntax:
+
+```mysql
+EXPLAIN FORMAT=JSON SQL...;
+```
+
+
+
+Eg:
+
+![Xnip2021-11-17_14-22-47](MySQL Note.assets/Xnip2021-11-17_14-22-47.jpg)
+
+
+
+以一张表为例:
+
+![Xnip2021-11-17_14-33-00](MySQL Note.assets/Xnip2021-11-17_14-33-00.jpg)
+
+s1表的read_cost由两个部分组成:
+
+- I/O成本
+- 检测的rows * (1 - filter)条记录的CPU成本
+
+
+
+eval_cost的计算方式:
+
+- 检测rows * filter条件记录的成本
+
+
+
+prefix_cost就是单独s1表的总成本: read_cost + eval_cost
+
+data_read_per_join表示查询中需要读取的数据量
+
+
+
+
+
+总结: 只需要知道prefix_cost是查询s1表的成本即可
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 15.3 Extend EXPLAIN
+
+- 可以使用SHOW WARNINGS语句查看的执行计划
+
+![Xnip2021-11-17_14-47-45](MySQL Note.assets/Xnip2021-11-17_14-47-45.jpg)
+
+
+
+- 当Code为1003时，Message字段展示的信息**类似查询优化器重写后的语句**
+- 只是类似，并不等价，所以其并不是标准的查询语句，只是帮助理解查询优化器的一个参考依据
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

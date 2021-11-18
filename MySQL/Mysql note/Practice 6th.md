@@ -1904,6 +1904,7 @@ ORDER BY level_cnt DESC, t1.level DESC
 - 从未优化之前的执行计划来看，t3和t2连接后的扇出是最大的，而且访问方法为全表扫描，那么我们需要想办法减少t2表的访问开销
 - 在t3和t2连接时对应的列为两表的exam_id，那么我们可以在t2的exam_id列上建立索引，此时t2表的访问方法就变为了ref，JSON中的查询消耗降为了6.80，虽然降得不多，但比起创建庞大的联合索引，这样的方式明显更合理一些，具体怎取舍就看对应业务的需求了
 
+****
 
 
 
@@ -1917,6 +1918,112 @@ ORDER BY level_cnt DESC, t1.level DESC
 
 
 
+
+
+
+
+
+
+# Day117
+
+## Tag: UNION ALL, ORDER BY
+
+![Xnip2021-11-18_07-14-53](MySQL Note.assets/Xnip2021-11-18_07-14-53.jpg)
+
+
+
+![Xnip2021-11-18_07-26-26](MySQL Note.assets/Xnip2021-11-18_07-26-26.jpg)
+
+
+
+![Xnip2021-11-18_07-16-40](MySQL Note.assets/Xnip2021-11-18_07-16-40.jpg)
+
+
+
+![Xnip2021-11-18_07-28-30](MySQL Note.assets/Xnip2021-11-18_07-28-30.jpg)
+
+题意:
+
+给你一张试卷作答记录表，一张题目练习记录表，请你查询出其中每张试卷和每道题目被作答过的人数和作答的次数，最后按照人数和作答次数的顺序逆序排列
+
+
+
+
+
+思路:
+
+- 因为试卷和题目在不同的表中，而且两表中试卷和题目对应id列的字段名不同，所以需要我们分别查询出试卷和题目的作答结果并上下连接起来，所以需要使用到UNION，这里两个查询之间不需要去重，所以可以使用UNION ALL
+- 题目还要求我们要排序，但在UNION联合查询中，UNION只能出现在外面，不能出现在子连接查询中，因此两表的查询分别为
+
+SQL1:
+
+```mysql
+SELECT
+    exam_id AS 'tid',
+    COUNT(DISTINCT uid) AS 'uv',
+    COUNT(exam_id) AS 'pv'
+FROM
+    exam_record
+GROUP BY exam_id
+```
+
+
+
+SQL2:
+
+```mysql
+SELECT
+    question_id AS 'tid',
+    COUNT(DISTINCT uid) AS 'uv',
+    COUNT(question_id) AS 'pv'
+FROM
+    practice_record
+GROUP BY question_id
+```
+
+
+
+- 之后使用UNION ALL连接，最后再排序，SQL如下
+
+```mysql
+(SQL1)
+UNION ALL
+(SQL2)
+ORDER BY LEFT(tid, 1) DESC, uv DESC, pv DESC
+```
+
+
+
+- 注意，连接后的查询是乱序的在对人数和作答次数排序之前，还需要对查询出的试卷/题目id进行排序
+
+
+
+
+
+
+
+优化:
+
+- 通过查询计划可知，总消耗为8.20。两张表的访问方法都为全表扫描，且Extra中字段为Using filesort也就是文件排序，这是什么情况？我们没写ORDER BY呀？
+- 其实这是因为MySQL会在GROUP BY之后默认加上一个ORDER BY排序子句，且该查询在外层也显式地写了ORDER BY排序
+- 能不能将访问方法改为走覆盖索引呢？同样的，我们可以创建联合索引，在exam_record中的uid和exam_id字段上创建联合索引，在practice_record中的uid和question_id字段上创建联合索引
+- 但这样做其实于事无补，因为在排序时使用的是exam_id和question_id字段，而为了与查询列表一致，这两个字段都在联合索引的下一层，不能直接用于排序，再加上没有WHERE子句形成合适的扫描区间，所以此时我们的执行计划虽然走了覆盖索引但其效果和全表扫描差不多，且还是需要文件排序，大头开销并没有减少，JSON中的查询消耗也没变
+
+
+
+![Xnip2021-11-18_07-54-58](MySQL Note.assets/Xnip2021-11-18_07-54-58.jpg)
+
+
+
+- 既然无法走覆盖索引意义不大，那么我们可以想办法将文件排序改为使用索引排序
+- 在exam_id和question_id上建立索引，再次查看执行计划，两张表的文件排序消失了！
+- 再次查看查询消耗，降为了2.20！
+
+![Xnip2021-11-18_07-28-30](MySQL Note.assets/Xnip2021-11-18_07-28-30.jpg)
+
+
+
+![Xnip2021-11-18_07-58-28](MySQL Note.assets/Xnip2021-11-18_07-58-28.jpg)
 
 
 
