@@ -2025,5 +2025,128 @@ ORDER BY LEFT(tid, 1) DESC, uv DESC, pv DESC
 
 ![Xnip2021-11-18_07-58-28](MySQL Note.assets/Xnip2021-11-18_07-58-28.jpg)
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day118
+
+## Tag: TIMESTAMPDIFF, HAVING
+
+![Xnip2021-11-19_07-25-16](MySQL Note.assets/Xnip2021-11-19_07-25-16.jpg)
+
+
+
+![Xnip2021-11-19_07-31-52](MySQL Note.assets/Xnip2021-11-19_07-31-52.jpg)
+
+
+
+![Xnip2021-11-19_07-49-22](MySQL Note.assets/Xnip2021-11-19_07-49-22.jpg)
+
+
+
+![Xnip2021-11-19_07-56-48](MySQL Note.assets/Xnip2021-11-19_07-56-48.jpg)
+
+
+
+![Xnip2021-11-19_07-57-54](MySQL Note.assets/Xnip2021-11-19_07-57-54.jpg)
+
+题意:
+
+给你一张试卷作答记录表，一张试卷信息表，请你查询出其中满足条件1或者条件2的用户id，其中条件1为:2021年所有试卷得分大于等于85分，条件2为至少有一次用时只占规定的一半就完成了高难度试卷，且分数大于80
+
+
+
+
+
+思路:
+
+- 因为有两个条件，且查询的字段都是uid，所以我们需要查询两次之后将结果联合起来，需要使用UNION ALL(这里不需要去重)
+- 对于条件1，所有试卷都大于等于85则说明其最小的分数值也大于等于85，限制年份则使用YAER即可，注意我们获取最小分数需要使用MIN，则在获取每个用户对应的最小分数前需要分组，所以我们需要分组后再查询，所以需要使用HAVING而不是WHERE，且需要在GROUP BY之后，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	uid,
+	'activity1' AS 'activity' 
+FROM
+	exam_record 
+WHERE YEAR ( start_time ) = 2021 
+GROUP BY uid 
+HAVING MIN( score ) >= 85 
+```
+
+
+
+- 接下来查询满足条件2的uid，首先高难度试卷其实就是试卷的难度为hard，而规定时间的一半其实就是试卷信息表中duration的一半，所以需要连接两表
+- 获取时间值的差值可以使用TIMESTAMPDIFF，并指定单位为SECOND即可，最后再指定分数和日期即可，SQL如下
+
+```mysql
+SELECT 
+	DISTINCT t1.uid,
+	'activity2' AS 'activity'
+FROM
+	exam_record AS t1
+INNER JOIN examination_info AS t2 ON t1.exam_id = t2.exam_id 
+WHERE TIMESTAMPDIFF( SECOND, t1.start_time, t1.submit_time ) <= t2.duration * 30 
+AND t2.difficulty = 'hard' AND score > 80 AND YEAR ( t1.start_time ) = 2021 
+```
+
+
+
+- 获取两种情况后，再将这两个查询连接起来即可，SQL如下
+
+```mysql
+SQL1
+UNION ALL
+SQL2
+ORDER BY uid
+```
+
+
+
+
+
+优化:
+
+- 首先查看执行计划，此时JSON格式中的总开销为7.00
+- 输出的信息中有四条记录，最后一条是联合查询时的临时表，因为我们最后写了ORDER BY排序，所以最后需要文件排序，且我们无法将该文件排序改为索引排序，因为排序的数据是连接后的记录，不是表中已有的记录，因此不考虑优化临时表
+- 内连接中，优化器最终选择将t2作为驱动表，而t2的限制条件比较多，所以连接后需要回表，因为涉及到的字段比较多，从空间开销的角度考虑就不创建联合索引了，就算创建了，其走覆盖索引的效率也和全表扫描差不了多少
+- t1表同理，所以我们暂时只需要考虑优化第一个查询
+- 从extra字段中可以看出，其使用了文件排序和临时表，这里我们就可以将文件排序转换为索引排序了，只需要在uid字段上创建一个索引即可，再次查看执行计划，文件排序和临时表都消失啦，消耗降为了2.00！
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
