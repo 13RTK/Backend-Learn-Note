@@ -2134,6 +2134,90 @@ ORDER BY uid
 - t1表同理，所以我们暂时只需要考虑优化第一个查询
 - 从extra字段中可以看出，其使用了文件排序和临时表，这里我们就可以将文件排序转换为索引排序了，只需要在uid字段上创建一个索引即可，再次查看执行计划，文件排序和临时表都消失啦，消耗降为了2.00！
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day119
+
+## Tag: JOIN, SUBQUERY
+
+![Xnip2021-11-20_14-58-43](MySQL Note.assets/Xnip2021-11-20_14-58-43.jpg)
+
+
+
+![Xnip2021-11-20_14-58-12](MySQL Note.assets/Xnip2021-11-20_14-58-12.jpg)
+
+题意:
+
+给你一张用户信息表，一张试卷信息表，一张试卷作答记录表，一张题目作答记录表，请你查询出所有等级为7级且高难度SQL试卷平均分大于80的用户，在2021年完成的试卷和题目练习的数量，结果按照试卷完成数升序，按照题目练习数降序
+
+
+
+
+
+思路:
+
+- 首先我们需要先获取目标用户的id，因此需要先限制等级和对应试卷的平均分
+- 求平均分可以使用AVG，有多个用户则需要分组，所以我们可以在使用GROUP BY后，使用HAVING限制平均分，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.uid
+FROM
+	user_info AS t1
+INNER JOIN exam_record AS t2 ON t1.uid = t2.uid
+INNER JOIN examination_info AS t3 ON t2.exam_id = t3.exam_id
+WHERE t3.tag = 'SQL'
+AND t3.difficulty = 'hard'
+AND t1.level = 7
+GROUP BY t1.uid
+HAVING AVG(t2.score) > 80
+```
+
+
+
+- 之后就需要统计试卷和题目作答数了，我们直接将上述查询结果作为一个派生表，与其他两表连接即可
+- 连接时注意限制年份并去重即可，SQL如下
+
+```mysql
+SELECT
+	t1.uid,
+	COUNT(DISTINCT t2.id) AS 'exam_cnt',
+	COUNT(DISTINCT t3.id) AS 'question_cnt'
+FROM (
+	SQL1
+	) AS t1
+LEFT JOIN exam_record AS t2 ON t1.uid = t2.uid AND YEAR(t2.submit_time) = 2021
+LEFT JOIN practice_record AS t3 ON t1.uid = t3.uid AND YEAR(t3.submit_time) = 2021
+GROUP BY t1.uid
+ORDER BY exam_cnt, question_cnt DESC;
+```
+
 
 
 
