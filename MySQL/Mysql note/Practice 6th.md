@@ -2218,6 +2218,7 @@ GROUP BY t1.uid
 ORDER BY exam_cnt, question_cnt DESC;
 ```
 
+****
 
 
 
@@ -2229,6 +2230,138 @@ ORDER BY exam_cnt, question_cnt DESC;
 
 
 
+
+
+
+
+
+
+
+
+# Day120
+
+## Tag: UNION, DISTINCT
+
+![Xnip2021-11-21_15-11-04](MySQL Note.assets/Xnip2021-11-21_15-11-04.jpg)
+
+
+
+![Xnip2021-11-21_15-13-35](MySQL Note.assets/Xnip2021-11-21_15-13-35.jpg)
+
+题意:
+
+给你一张用户信息表，一张试卷作答记录表，一张题目作答记录表，请你查询出每个等级大于等于6级的用户的总获取月份，2021年的活跃天数，2021年试卷作答活跃天数，2021年答题活跃天数，结果按照总活跃月份数和2021年活跃天数降序排列
+
+
+
+
+
+思路:
+
+- 在统计时需要注意，统计的月份和活跃天数在包含试卷和答题记录表中的日期的同时，还必须去除两表中重复的月份和日期，因此在统计总月份数和2021年总活跃天数时，必须先连接答题和试卷作答表中的数据
+- 为了上下连接答题表和试题表中的数据，我们需要使用UNION，并限制好等级，最后取出包含年份和月份的日期值(使用LEFT取出前7个字符)，再分组统计即可，部分用户可能没有记录，所以需要以用户表为驱动表进行查询，这样即使没有活跃日期的用户最终也能被统计为0，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		t1.uid,
+		COUNT(DISTINCT t1.month) AS 'act_month_total'
+	FROM (
+		SELECT
+			t1.uid,
+			LEFT(t2.start_time, 7) AS month
+		FROM
+			user_info AS t1
+		LEFT JOIN exam_record AS t2 ON t1.uid = t2.uid
+		UNION ALL
+		SELECT
+			t1.uid,
+			LEFT(t2.submit_time, 7) AS month
+		FROM
+			user_info AS t1
+		LEFT JOIN practice_record AS t2 ON t1.uid = t2.uid
+		) AS t1
+	INNER JOIN user_info AS t2 ON t1.uid = t2.uid AND t2.level >= 6
+	GROUP BY uid
+```
+
+
+
+
+
+- 同理，我们需要连接两表并取出日期值的部分，并限制年份后计算2021年的活跃天数，为了统计没有记录的用户，我们还需要手动记录下为NULL的记录，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	t1.uid,
+	COUNT(DISTINCT t1.day) AS 'act_days_2021'
+FROM (
+	SELECT
+		t1.uid,
+		LEFT(t2.start_time, 10) AS day
+	FROM
+		user_info AS t1
+	LEFT JOIN exam_record AS t2 ON t1.uid = t2.uid
+	UNION ALL
+	SELECT
+		t1.uid,
+		LEFT(t2.submit_time, 10) AS day
+	FROM
+		user_info AS t1
+	LEFT JOIN practice_record AS t2 ON t1.uid = t2.uid
+	) AS t1
+WHERE YEAR(t1.day) = 2021 OR t1.day IS NULL
+GROUP BY uid
+```
+
+
+
+- 之后的两列数据就比较简单了，连接三张表后分别统计即可，SQL如下
+
+SQL3:
+
+```mysql
+SELECT
+	t1.uid,
+	COUNT(DISTINCT LEFT(t3.start_time, 10)) AS 'act_days_2021_exam',
+	COUNT(DISTINCT LEFT(t2.submit_time, 10)) AS 'act_days_2021_question'
+FROM
+	user_info AS t1
+LEFT JOIN practice_record AS t2 ON t1.uid = t2.uid AND YEAR(t2.submit_time) = 2021
+LEFT JOIN exam_record AS t3 ON t1.uid = t3.uid AND YEAR(t3.start_time) = 2021
+WHERE t1.level >= 6
+GROUP BY t1.uid
+```
+
+
+
+
+
+- 最后的最后通过uid连接三张表，写好排序即可，SQL如下
+
+
+```mysql
+SELECT
+	t1.uid,
+	t1.act_month_total,
+	t3.act_days_2021,
+	t2.act_days_2021_exam,
+	t2.act_days_2021_question
+FROM (
+	SQL1
+	) AS t1
+LEFT JOIN (
+	SQL3
+	) AS t2 ON t1.uid = t2.uid
+LEFT JOIN (
+	SQL2
+	) AS t3 ON t1.uid = t3.uid
+ORDER BY t1.act_month_total DESC, t3.act_days_2021 DESC;
+
+```
 
 
 
