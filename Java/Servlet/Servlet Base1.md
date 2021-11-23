@@ -446,7 +446,7 @@
 
 
 
-### 3. 请求转发
+## 3. 请求转发
 
 - 通过ServletContext对象调用getRequestDispatcher()方法，传入转发到的虚拟路径，返回值为一个RequestDispatcher对象
 - 之后通过该RequestDispatcher对象调用forward()方法进行转发即可
@@ -465,6 +465,145 @@
 与重定向的区别:
 
 ![Xnip2021-11-08_21-56-55](Servlet/Xnip2021-11-08_21-56-55.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 4. 读取资源文件
+
+- 平时读取时:
+
+创建一个Properties对象，根据绝对路径创建一个配置文件的输入流，用Properties的load方法加载这个流
+
+最后通过getProperties获取键对应的值
+
+
+
+- 通过ServletContext:
+
+通过项目运行后的相对路径加载配置文件为一个输入流，将该输入流用Properties对象的load方法加载
+
+之后通过Properties的getProperties方法获取键对应的值
+
+
+
+流程:
+
+### 1) 获取相对路径
+
+- 创建一个配置文件(一般在resources目录下)，**运行后Servlet程序和配置文件都在/WEB-INF/classes路径下**
+
+![Xnip2021-11-22_20-49-41](Servlet/Xnip2021-11-22_20-49-41.jpg)
+
+- 所以我们获取该配置文件的路径应该为:
+
+```java
+InputStream resourceGetter = servletContext.getResourceAsStream("/WEB-INF/classes/db.properties");
+```
+
+
+
+
+
+- 其中classes被称为类路径(classpath)，最前面的"/"代表当前项目(图中的servlet-02)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 加载文件流/读取文件
+
+![Xnip2021-11-22_20-52-27](Servlet/Xnip2021-11-22_20-52-27.jpg)
+
+
+
+
+
+### 3) 注册Servlet程序名称/设置虚拟路径映射
+
+```xml
+<servlet>
+    <servlet-name>getResource</servlet-name>
+  	<servlet-class>com.alex.ContextGetSource</servlet-class>
+</servlet>
+<servlet-mapping>
+		<servlet-name>getResource</servlet-name>
+		<url-pattern>/getResource</url-pattern>
+</servlet-mapping>
+```
+
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 六、
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

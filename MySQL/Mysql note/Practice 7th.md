@@ -62,6 +62,130 @@ HAVING incomplete_cnt >= 1;
 - 根据执行计划，最终需要使用临时表和文件排序，明显是因为最后的分组字段
 - 所以在该字段上建立索引即可，可见文件排序和临时表都消失了，查询消耗直接降为1.60
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day122
+
+## Tag: IFNULL, TIMESTAMPDIFF
+
+![Xnip2021-11-23_07-19-34](MySQL Note.assets/Xnip2021-11-23_07-19-34.jpg)
+
+
+
+![Xnip2021-11-23_07-22-42](MySQL Note.assets/Xnip2021-11-23_07-22-42.jpg)
+
+
+
+![Xnip2021-11-23_07-31-03](MySQL Note.assets/Xnip2021-11-23_07-31-03.jpg)
+
+
+
+![Xnip2021-11-23_07-44-29](MySQL Note.assets/Xnip2021-11-23_07-44-29.jpg)
+
+
+
+![Xnip2021-11-23_07-44-10](MySQL Note.assets/Xnip2021-11-23_07-44-10.jpg)
+
+题意:
+
+给你一张用户信息表，一张试卷信息表，一张作答记录表，请你查询出每个0级用户所有高难度题目的平均用时和平均分数，如果试卷未完成则按照默认时间和0分处理
+
+
+
+
+
+
+
+
+
+思路:
+
+- 求分数本身其实就是求出总分再除以总人数，但我们统计总分的时候需要考虑未完成的情况(分数为null)，所以要用IF来转换NULL值为0
+- 统计总人数也是如此，使用IFNULL处理即可，给的值随意，只要不为null就都能被COUNT计算到，最外层记得用ROUND保留整数
+- 在计算平均用时的时候也需要处理NULL值，正常计算用时则需要TIMESTAMPDIFF并制定单位为MINUTE，为null则用IFNULL设置为duration，记得最外层使用ROUND保留一位小数
+- 最后连接三张表，写上剩余的限制条件即可，SQL如下
+
+```mysql
+SELECT
+    t1.uid,
+    ROUND(
+			SUM(IF(t1.score IS NULL, 0, t1.score)) 
+			/
+			COUNT(IFNULL(t1.score IS NULL, 0)), 0
+		) AS 'avg_score',
+    ROUND(
+			AVG(IFNULL(TIMESTAMPDIFF(MINUTE, t1.start_time, t1.submit_time), t2.duration)), 1
+		) AS 'avg_time_took'
+FROM
+    exam_record AS t1
+INNER JOIN examination_info AS t2 ON t1.exam_id = t2.exam_id
+INNER JOIN user_info AS t3 ON t1.uid = t3.uid
+WHERE t3.level = 0
+AND t2.difficulty = 'hard'
+GROUP BY t1.uid
+```
+
+
+
+
+
+
+
+优化:
+
+- 由查询计划可知，查询消耗为5.33，最终驱动表为t3且只有t1使用了索引
+- 在t3的Extra列中有Using where，说明最终需要回表，涉及到t3的列只有uid和level，其中uid上已经有了一个唯一键，所以我们在level上建立一个索引即可
+- 查看查询计划，消耗降为了5.13，同样，我们也可以在examination_info上的difficulty列上建立索引，但效果差不多
+- 但t1就比较难优化了，因为涉及到的列很多，想要强行走索引的话需要创建多个索引或者一个很大的联合索引
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
