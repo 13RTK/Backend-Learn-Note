@@ -573,9 +573,23 @@ InputStream resourceGetter = servletContext.getResourceAsStream("/WEB-INF/classe
 
 
 
-# 六、
+# 六、HttpServletResponse
 
 
+
+
+
+
+
+## 1) 下载文件
+
+- 首先以本地上的文件(服务器上)为准建立一个文件输入流
+- 再通过Servlet程序中的resp参数对象调用getOutputStream方法，或者一个ServletOutputStream对象
+- 设置相应头，设置缓冲区
+- 在循环中将输入流写入到缓冲区中，将缓冲区内的文件通过ServletOutputStream发送给用户
+- 在Tomcat中配置war，在web.xml中配置虚拟路径
+
+![Xnip2021-11-23_14-14-16](Servlet/Xnip2021-11-23_14-14-16.jpg)
 
 
 

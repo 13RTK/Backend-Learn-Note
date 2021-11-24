@@ -164,6 +164,7 @@ GROUP BY t1.uid
 - 查看查询计划，消耗降为了5.13，同样，我们也可以在examination_info上的difficulty列上建立索引，但效果差不多
 - 但t1就比较难优化了，因为涉及到的列很多，想要强行走索引的话需要创建多个索引或者一个很大的联合索引
 
+****
 
 
 
@@ -177,6 +178,63 @@ GROUP BY t1.uid
 
 
 
+
+
+
+
+
+
+# Day123
+
+## Tag: SUBSTRING_INDEX
+
+![Xnip2021-11-24_07-27-51](MySQL Note.assets/Xnip2021-11-24_07-27-51.jpg)
+
+
+
+![Xnip2021-11-24_07-32-00](MySQL Note.assets/Xnip2021-11-24_07-32-00.jpg)
+
+
+
+![Xnip2021-11-24_07-37-29](MySQL Note.assets/Xnip2021-11-24_07-37-29.jpg)
+
+
+
+![Xnip2021-11-24_07-44-46](MySQL Note.assets/Xnip2021-11-24_07-44-46.jpg)
+
+题意:
+
+给你一张试卷信息表，其中部分记录的试题类别tag、难度、时长被同时输入到了tag字段中，请你找出这些字段，并将它们正确拆分后列出
+
+
+
+
+
+思路:
+
+- 所谓的输入错误其实就是将多个字段值用","隔开后放到了同一个字段里，使用SUBSTRING_INDEX就能实现拆分
+- 而确定这些字段可以根据difficulty(空字符长度为0)或者duration(为0)，SQL如下
+
+```mysql
+SELECT
+    exam_id,
+    SUBSTRING_INDEX(tag, ',', 1) AS 'tag',
+    SUBSTRING_INDEX(SUBSTRING_INDEX(tag, ',', 2), ',', -1) AS 'difficulty',
+    SUBSTRING_INDEX(tag, ',', -1) AS 'duration'
+FROM
+    examination_info
+WHERE duration = 0;
+```
+
+
+
+
+
+优化:
+
+- 由查询计划可知，最终的查询需要回表，且没有用到索引，查询消耗为1.80 
+- 在WHERE子句中只有一个等值边界条件，所以很明显，在这个条件列上建立索引即可，此时消耗降为1.20
+- 需要注意的是，MySQL5.7并不支持索引列以函数的形式出现，所以如果我们改为WHERE LENGTH(difficulty) = 0的话就不会用到索引了，除非通过虚拟列的方式，而MySQL8.0是支持函数索引的(也是通过虚拟列的方式)
 
 
 
