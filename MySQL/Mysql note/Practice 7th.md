@@ -236,6 +236,72 @@ WHERE duration = 0;
 - 在WHERE子句中只有一个等值边界条件，所以很明显，在这个条件列上建立索引即可，此时消耗降为1.20
 - 需要注意的是，MySQL5.7并不支持索引列以函数的形式出现，所以如果我们改为WHERE LENGTH(difficulty) = 0的话就不会用到索引了，除非通过虚拟列的方式，而MySQL8.0是支持函数索引的(也是通过虚拟列的方式)
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day124
+
+## Tag: CHAR_LENGTH
+
+![Xnip2021-11-25_07-39-51](MySQL Note.assets/Xnip2021-11-25_07-39-51.jpg)
+
+
+
+![Xnip2021-11-25_07-42-26](MySQL Note.assets/Xnip2021-11-25_07-42-26.jpg)
+
+题意:
+
+给你一张用户信息表，请你将其中用户昵称长度大于10个字符的用户查询出来，并根据昵称长度做相应的处理
+
+
+
+
+
+
+
+思路:
+
+- 统计字符串长度的时候下意识会想到用LENGTH函数，但这个函数在统计时会受到编码的影响，所以并不准确
+- 因此我们需要换用CHAR_LENGTH，在处理时只需要判断长度是否大于13即可，大于则使用LEFT进行截断，再使用CONCAT进行拼接即可
+
+
+
+SQL:
+
+```mysql
+SELECT
+    uid,
+    IF(CHAR_LENGTH(nick_name) > 13, CONCAT(LEFT(nick_name, 10), '...'), nick_name) AS 'nick_name'
+FROM
+    user_info
+WHERE CHAR_LENGTH(nick_name) > 10;
+```
+
+
+
+
+
+
+
 
 
 
