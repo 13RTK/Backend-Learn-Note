@@ -296,6 +296,7 @@ FROM
 WHERE CHAR_LENGTH(nick_name) > 10;
 ```
 
+****
 
 
 
@@ -307,6 +308,99 @@ WHERE CHAR_LENGTH(nick_name) > 10;
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day125
+
+## Tag: UPPER, JOIN
+
+![Xnip2021-11-26_07-59-30](MySQL Note.assets/Xnip2021-11-26_07-59-30.jpg)
+
+
+
+![Xnip2021-11-26_07-59-07](MySQL Note.assets/Xnip2021-11-26_07-59-07.jpg)
+
+题意:
+
+给你一张试卷信息表，一张试卷作答表，请你查询出其中作答数小于3，且tag转换为大写后依然有数据的试卷信息和大写对应的作答数，tag转换为大写后无变化的则不需要查询出来
+
+
+
+
+
+
+
+思路:
+
+- 首先肯定是先找出作答数小于3的试卷了，而且还需要筛掉变为大写后无变化的数据，因此需要分组求和，大写转换则可以使用UPPER，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	t1.exam_id,
+	t1.tag,
+	COUNT( t2.start_time ) AS 'answer_cnt' 
+FROM
+	examination_info AS t1
+INNER JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id 
+WHERE t1.tag != UPPER( t1.tag ) 
+GROUP BY t1.exam_id, t1.tag
+HAVING answer_cnt < 3 
+```
+
+
+
+
+
+
+
+- 之后需要寻找出其对应的大写数据，所以我们还需要查询出所有的作答记录，从中选取，SQL如下
+
+SQL2
+
+```mysql
+SELECT
+	t1.exam_id,
+	t1.tag,
+	COUNT( t2.start_time ) AS 'answer_cnt' 
+FROM
+	examination_info AS t1
+INNER JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id 
+GROUP BY t1.exam_id, t1.tag
+```
+
+
+
+
+
+
+
+
+
+- 最后连接两张表，通过转换后的tag连接起来，并将对应的大写记录加起来，SQL如下
+
+
+```mysql
+SELECT
+	t1.tag,
+	SUM( t2.answer_cnt ) AS 'answer' 
+FROM (
+	SQL1
+	) AS t1
+INNER JOIN (
+	SQL2
+	) AS t2 ON UPPER( t1.tag ) = t2.tag 
+GROUP BY t1.tag
+```
 
 
 
