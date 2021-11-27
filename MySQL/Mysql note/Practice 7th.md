@@ -402,6 +402,81 @@ INNER JOIN (
 GROUP BY t1.tag
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day126
+
+## Tag: TIMESTAMPDIFF
+
+![Xnip2021-11-27_07-26-23](MySQL Note.assets/Xnip2021-11-27_07-26-23.jpg)
+
+
+
+![Xnip2021-11-27_07-29-04](MySQL Note.assets/Xnip2021-11-27_07-29-04.jpg)
+
+题意:
+
+给你一张试卷信息表，一张用户信息表，一张试卷作答记录表，请你查询出求职方向为算法工程师，且注册当天就完成了算法类试卷的人，并按照考试的最高分进行排序。最后查询的结果应该分页显示，每页3条，需要你取出第3页
+
+
+
+
+
+
+
+思路:
+
+- 题目中的限制条件很少，求职方向只需要限制用户信息表的tag为算法即可，同样试卷的tag也限制为算法即可
+- 但要限制为注册当天的话，要么使用YEAR，MONTH，DAY将注册试卷和提交时间进行等值匹配，要么使用日期差值函数，这里我们选择TIMESTAMPDIFF，将unit设置为HOUR即可，注意要加上绝对值
+- 最高分就很简单的了，使用MAX后再分组就是了
+- 最后分页其实就是跳过前两页的数据，每页3条，所以我们跳过前6条就行，使用OFFSET，再使用LIMIT限制3条数据，SQL如下
+
+```mysql
+SELECT
+	t1.uid,
+	t1.level,
+	t1.register_time,
+	MAX(t2.score) AS 'max_score'
+FROM
+	user_info AS t1
+INNER JOIN exam_record AS t2 ON t1.uid = t2.uid
+INNER JOIN examination_info AS t3 ON t2.exam_id = t3.exam_id
+WHERE t1.job = '算法'
+AND ABS(TIMESTAMPDIFF(HOUR, t1.register_time, t2.submit_time)) <= 24
+AND t3.tag = '算法'
+GROUP BY t1.uid
+ORDER BY max_score DESC
+LIMIT 3 OFFSET 6
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 

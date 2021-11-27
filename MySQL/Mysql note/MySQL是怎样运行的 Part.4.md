@@ -1523,6 +1523,226 @@ Max Row ID这个属性**占用的存储空间为8字节**。所以当事务向�
 
 
 
+SQL语句执行后会更新聚簇索引/二级索引对应的B+树中的页，但这些修改都发生在Buffer Pool中，所以需要记录下对应的redo日志
+
+**执行SQL产生的日志被划分为了若干不可分割的组，例如**:
+
+- 更新Max Row ID属性时产生的redo日志为一组，不可分割
+- 向聚簇索引对应的B+树页面插入一条记录时产生的redo日志为一组，不可分割
+- 向某个二级索引对应的B+树页面插入一条记录时产生的redo日志为一组，不可分割
+- 其他。。。
+
+
+
+不可分割:
+
+
+
+向索引对应的B+树中插入记录为例
+
+向B+树中插入记录之前，需要先定位记录应该被插入的叶子节点数据页，定位后有两种情况:
+
+1. **剩余数据页空间充足**，足够容纳这条记录，那么我们直接将该记录插入到这个数据页中，并记录一条MLOG_COMP_REC_INSERT类型的redo日志即可。**此种情况称为乐观插入**
+2. **剩余数据页空间不足**，那么需要页分裂，这样就会生产许多redo日志。**此种情况称为悲观插入**
+
+
+
+
+
+对于记录的插入过程应该是原子性的，不能插入一半就停止
+
+而记录redo日志的过程中，**如果只记录了一部分，那么在崩溃重启后会将索引恢复到一种不确定的状态，这是不应该的**，因此规定**在执行需要保证原子性的操作时，必须以组的形式来记录redo日志**，对于**组内的日志，要么全部恢复，要么都不恢复**，解决方法如下:
+
+
+
+- 一些需要保证原子性的操作会生成多条redo日志，比如一次悲观插入。
+
+如何保证redo日志都在一个组里？
+
+在**同组的最后一条redo日志后面加上一个特殊类型的redo日志**，该类型**日志名称为MLOG_MULTI_REC_END**，其只有一个type字段(31)
+
+某个需要保证原子性操作对应产生的一系列redo日志必须以一条类型为MLOG_MULTI_REC_END的redo日志结尾，如图:
+
+![Xnip2021-11-26_10-39-27](MySQL Note.assets/Xnip2021-11-26_10-39-27.jpg)
+
+
+
+这样在系统崩溃重启后，**只有解析到类型为MLOG_MULTI_REC_END的redo日志时，才会认为解析了一组完整的redo日志，才会进行恢复**，否则会放弃前面解析的所有redo日志
+
+
+
+
+
+- 有些需要保证原子性的操作只生成一条redo日志，例如更新Max Row ID属性的操作
+
+表示redo日志类型只需要7个bit，上述的type字段占用了一个bit，**没有type字段的日志说明原子操作只产生单一redo日志**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 19.3.2 Mini-Transaction概念
+
+
+
+**对底层页面进行一次原子访问的过程称为Mini-Transaction，简称为MTR**
+
+一个MTR可以包含一组redo日志，恢复时将一组redo日志作为一个不可分割的整体来处理
+
+事务，语句，MTR，redo日志的关系:
+
+![Xnip2021-11-26_10-58-01](MySQL Note.assets/Xnip2021-11-26_10-58-01.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 19.4 redo日志的写入过程
+
+
+
+### 19.4.1 redo log block
+
+为了管理redo日志，一个MTR生成的redo日志都放在了大小为512byte的页面里，我们将存储redo日志的页称为block
+
+一个redo log block的结构如下:
+
+![Xnip2021-11-26_11-00-51](MySQL Note.assets/Xnip2021-11-26_11-00-51.jpg)
+
+
+
+在一个redo log block中，只有log block body是存储真正的redo日志的(占用496字节)
+
+其余的log block header和log block trailer存储的是一些管理信息，如图:
+
+![Xnip2021-11-26_11-03-45](MySQL Note.assets/Xnip2021-11-26_11-03-45.jpg)
+
+
+
+log block header中几个属性的意思:
+
+- LOG_BLOCK_HDR_NO: **表示block的编号值**(**每个block都有一个大于0的唯一编号**)
+- LOG_BLOCK_HDR_DATA_LEN: 表示**block中已经使用了多少字节**，初始值为12(由图，其从第12个字节处开始)，如果log block body被写满，则该属性的值为512
+- LOG_BLOCK_FIRST_REC_GROUP: **一条redo日志也被称为一条redo日志记录**。一个MTR会生成多条redo日志记录，这个**MTR生成的这些redo日志记录被称为一个redo日志记录组**。**该值就是block中第一个MTR生成的redo日志记录组的偏移量**。
+- LOG_BLOCK_CHECKPOINT_NO: 表示checkpoint的序号(**后面介绍**)
+- LOG_BLOCK_CHECKSUM: 表示block的校验值，用于正确性校验(**暂时不关心**)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 19.4.2 redo日志缓冲区
+
+之前为了解决磁盘写入满的问题而引入了Buffer Pool，同理，写入redo日志时也不能直接写到磁盘中
+
+实际上在server启动时向系统申请了一大片连续的内存空间，称为"redo log buffer"，简称为log buffer
+
+该空间被分成若干连续的redo log block，如图:
+
+![Xnip2021-11-26_11-28-32](MySQL Note.assets/Xnip2021-11-26_11-28-32.jpg)
+
+- 可以通过innodb_log_buffer_size来指定log buffer的大小，该启动项的默认值为16MB(MySQL5.7.22)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 19.4.3 redo日志写入log buffer
+
+向log buffer中写入redo日志的过程是顺序的，也就是先在前面的block中写，该block空间用完后再写在后面的block中
+
+往log buffer中写日志时的问题: 写在哪个block的哪个偏移量处？
+
+通过名为"buf_free"的全局变量，该变量指明后续写入的redo日志应该写在log buffer中的哪个位置处，如图:
+
+![Xnip2021-11-26_11-34-07](MySQL Note.assets/Xnip2021-11-26_11-34-07.jpg)
+
+
+
+一个MTR执行时可能会生成若干条redo日志，而这些redo日志都是不可分割的组，所以**不是每生成一条redo日志就插入到log buffer中，而是将每个MTR运行时产生的日志暂存在一个地方；**
+
+**当MTR结束时，将过程中产生的一组redo日志全部复制到log buffer中**
+
+
+
+
+
+
+
+
+
+
+
 
 
 
