@@ -467,11 +467,103 @@ ORDER BY max_score DESC
 LIMIT 3 OFFSET 6
 ```
 
+****
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day127
+
+## Tag: UNION
+
+![Xnip2021-11-28_08-29-28](MySQL Note.assets/Xnip2021-11-28_08-29-28.jpg)
+
+
+
+![Xnip2021-11-28_08-30-50](MySQL Note.assets/Xnip2021-11-28_08-30-50.jpg)
+
+题意:
+
+给你一张用户信息表，一张题目练习记录表，一张试卷作答记录表，请你查询出其中用户名以"牛客"开头，以"号"结尾，成就值在1200到2500，且最近一次试卷获取或者题目活跃在2021年9月的用户信息
+
+
+
+
+
+
+
+
+
+思路:
+
+- 
+
+- 需要注意的是，题目要求的是最近一次的活跃日期，所以需要我们先查询出每个用户最近一次的活跃日期才行，其实就是取试卷和题目作答记录中每个用户的最近一次日期，用MAX分组即可
+- 两张表的话自然就需要连接了，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	uid
+FROM (
+	SELECT
+		DISTINCT
+		uid,
+		submit_time AS 'last_time'
+	FROM
+		practice_record
+	UNION
+	SELECT
+		uid,
+		start_time AS 'last_time'
+	FROM
+		exam_record
+	) AS t1
+GROUP BY uid
+HAVING LEFT(MAX(last_time), 7) = '2021-09'
+```
+
+
+
+
+
+- 之后用这张临时表作为uid字段的限制条件即可，其余条件就很简单了，SQL如下
+
+```mysql
+SELECT
+	uid,
+	nick_name,
+	achievement
+FROM
+	user_info
+WHERE nick_name LIKE '牛客%号'
+AND achievement BETWEEN 1200 AND 2500
+AND uid IN (
+	SQL1
+)
+```
 
 
 
