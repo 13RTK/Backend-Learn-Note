@@ -565,6 +565,81 @@ AND uid IN (
 )
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day128
+
+## Tag: REGEXP, LIKE, AVG
+
+![Xnip2021-11-29_07-02-26](MySQL Note.assets/Xnip2021-11-29_07-02-26.jpg)
+
+
+
+![Xnip2021-11-29_07-22-49](MySQL Note.assets/Xnip2021-11-29_07-22-49.jpg)
+
+题意:
+
+给你一张用户信息表，一张试卷作答记录表，一张试卷信息表，请你查询出昵称以"牛客" + 纯数字 + "号"或者以纯数字组成的用户，在试卷类别以c(C/c)开头的已完成试卷中的平均id，最后按照用户id，平均分升序排列
+
+
+
+
+
+思路:
+
+- 在用户名的匹配上，我们可以使用LIKE进行模糊匹配，但这样只能勉强解决第一个，纯数字该怎么匹配呢？
+- 这时候就需要正则表达式了，[0-9]表示任意数字，"*"表示将前面的表达式重复一次或多次
+- 将这两个条件用OR连接起来即可
+- 以c开头的话，使用LEFT取第一个字符即可，再统一转换为大写或者小写后与字母c比较即可
+- 求平均值自然需要AVG，所以最后需要分组，需要注意的是，我们这里需要排除掉没有分数的记录，最后SQL如下
+
+```mysql
+SELECT
+	t1.uid,
+	t2.exam_id,
+	ROUND(AVG(t2.score), 0) AS 'avg_score'
+FROM
+	user_info AS t1
+INNER JOIN exam_record AS t2 ON t1.uid = t2.uid
+INNER JOIN examination_info AS t3 ON t2.exam_id = t3.exam_id
+WHERE t2.score IS NOT NULL
+AND (t1.nick_name LIKE '牛客%号'
+OR t1.nick_name REGEXP '^[0-9]*$')
+AND UPPER(LEFT(t3.tag, 1)) = 'C'
+GROUP BY t2.exam_id, t1.uid
+ORDER BY t1.uid, avg_score
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
