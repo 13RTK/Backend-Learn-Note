@@ -628,6 +628,84 @@ GROUP BY t2.exam_id, t1.uid
 ORDER BY t1.uid, avg_score
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day129
+
+## Tag: LAST_DAY, ROLL UP, IFNULL
+
+![Xnip2021-11-30_07-39-49](MySQL Note.assets/Xnip2021-11-30_07-39-49.jpg)
+
+
+
+![Xnip2021-11-30_07-50-57](MySQL Note.assets/Xnip2021-11-30_07-50-57.jpg)
+
+题意:
+
+给你一张刷题记录表，请你查询出其中每个月用户的刷题数量和每月中平均每天的刷题记录，最后再查询出一年中的刷题总数
+
+
+
+
+
+思路:
+
+- 在计算月份时，需要我们求出当月的天数，可以使用LAST_DAY获取对应日期的当月最后一天，再使用DAY获取天数
+- 而月份格式则使用DATE_FORMAT即可，SQL如下
+
+SQL1
+
+```mysql
+SELECT 
+	DAY(LAST_DAY(submit_time)) AS days_of_month,
+	DATE_FORMAT(submit_time, "%Y%m") AS month
+FROM
+	practice_record 
+WHERE YEAR(submit_time) = '2021'
+```
+
+
+
+
+
+- 之后直接按照月份分组即可，但我们还需要计算出全年的总和
+- 其实使用WITH ROLLUP就可以在最后一行获取总和，但获取的数据列为null
+- 所以我们需要将null转换为我们需要的字段，使用IFNULL即可，SQL如下
+
+```mysql
+SELECT
+	IFNULL( t1.month, '2021汇总' ) AS submit_month,
+	COUNT( 1 ) AS month_q_cnt,
+	ROUND( count( 1 ) / MAX( days_of_month ), 3 ) AS avg_day_q_cnt 
+FROM ( 
+	SQL1
+	) AS t1 
+GROUP BY t1.month
+WITH ROLLUP
+```
+
+
+
 
 
 
