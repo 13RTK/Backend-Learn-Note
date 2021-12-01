@@ -704,6 +704,75 @@ GROUP BY t1.month
 WITH ROLLUP
 ```
 
+****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day130
+
+## Tag: ROUND, IF
+
+![Xnip2021-12-01_14-32-48](MySQL Note.assets/Xnip2021-12-01_14-32-48.jpg)
+
+
+
+![Xnip2021-12-01_14-38-38](MySQL Note.assets/Xnip2021-12-01_14-38-38.jpg)
+
+题意:
+
+给你一张用户-视频互动表，一张短视频信息表，请你查询出其中有观看记录的视频的完播率
+
+
+
+
+
+
+
+思路:
+
+- 首先我们需要判断该视频是否完播，所以需要我们通过开始和结尾的时间与视频的时长进行判断，完播则记为1次
+- 再除以总的观看视频数即可，注意限制年份，SQL如下
+
+```mysql
+SELECT
+    t1.video_id,
+    ROUND(
+		SUM(IF((t1.end_time - t1.start_time - t2.duration) >= 0, 1, 0))
+		/ 
+		COUNT(t1.start_time), 3
+		) AS 'avg_comp_play_rate'
+FROM
+    tb_user_video_log AS t1
+INNER JOIN tb_video_info AS t2 ON t1.video_id = t2.video_id
+WHERE YEAR(t1.start_time) = 2021
+GROUP BY t1.video_id
+ORDER BY avg_comp_play_rate DESC;
+```
+
+
+
+
+
+
+
 
 
 
