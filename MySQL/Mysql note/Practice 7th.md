@@ -767,7 +767,70 @@ GROUP BY t1.video_id
 ORDER BY avg_comp_play_rate DESC;
 ```
 
+****
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day131
+
+## Tag: GROUP_CONCAT, CONCAT
+
+![Xnip2021-12-02_07-15-05](MySQL Note.assets/Xnip2021-12-02_07-15-05.jpg)
+
+
+
+![Xnip2021-12-02_07-13-44](MySQL Note.assets/Xnip2021-12-02_07-13-44.jpg)
+
+
+
+![Xnip2021-12-02_07-12-07](MySQL Note.assets/Xnip2021-12-02_07-12-07.jpg)
+
+题意:
+给你一张试卷信息表，一张试卷作答记录表，请你查询出2021年每个未完成试卷数大于1的有效用户数据(有效用户指试卷完成数大于等于1，且未完成数小于5)，输出用户id、未完成试卷作答数、完成试卷作答数、作答过的试卷tag集合，最后按照未完成的试卷数倒序排列
+
+
+
+
+
+思路:
+
+- 未完成试卷数其实就是submit_time为null的记录数，完成数则统计submit_time不为null的即可，因此我们通过SUM和IF组合就可以计算这两个数据
+- 比较麻烦的是detail字段，观察后发现用";"分隔的数据为日期 + ":" + tag，拼接字符串可以使用CONCAT，将连接符指定为":"即可
+- 之后，这样的组合需要根据id分组，而每个id对应的数据又必须在同一个数据框内，所以需要使用GROUP_CONCAT，并指定SEPARATOR为";"
+- 最后就是分组后查询了，使用HAVING即可，SQL如下
+
+```mysql
+SELECT
+	t1.uid,
+	SUM(IF(t1.submit_time IS NULL, 1, 0 )) AS 'incomplete_cnt',
+	SUM(IF(t1.submit_time IS NULL, 0, 1 )) AS 'complete_cnt',
+	GROUP_CONCAT(DISTINCT CONCAT(DATE_FORMAT(t1.start_time, '%Y-%m-%d' ), ':', t2.tag) SEPARATOR ';') AS 'detail'
+FROM
+	exam_record AS t1
+INNER	JOIN examination_info AS t2 ON t1.exam_id = t2.exam_id 
+WHERE YEAR (t1.start_time) = 2021 
+GROUP BY t1.uid 
+HAVING incomplete_cnt > 1 AND incomplete_cnt < 5 AND complete_cnt >= 1 
+ORDER BY incomplete_cnt DESC
+```
 
 
 

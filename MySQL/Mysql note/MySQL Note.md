@@ -1925,7 +1925,7 @@ exam:
 格式
 
 ```mysql
-SELECT GROUP_CONCAT(column_name), (group_by_column_name) FROM table_name GROUP BY column;
+SELECT GROUP_CONCAT(column_name SEPARATOR sep), (group_by_column_name) FROM table_name GROUP BY column;
 ```
 
 
@@ -1936,7 +1936,7 @@ exam:
 
 
 
-
+![Xnip2021-12-02_07-12-07](MySQL Note.assets/Xnip2021-12-02_07-12-07.jpg)
 
 
 
