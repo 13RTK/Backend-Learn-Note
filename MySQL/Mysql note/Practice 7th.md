@@ -832,6 +832,88 @@ HAVING incomplete_cnt > 1 AND incomplete_cnt < 5 AND complete_cnt >= 1
 ORDER BY incomplete_cnt DESC
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day132
+
+## Tag: CONCAT, TIMESTAMPDIFF, HAVING
+
+![Xnip2021-12-03_07-55-01](MySQL Note.assets/Xnip2021-12-03_07-55-01.jpg)
+
+
+
+![Xnip2021-12-03_07-54-45](MySQL Note.assets/Xnip2021-12-03_07-54-45.jpg)
+
+题意:
+给你一张视频-用户交互记录表，一张视频信息表，请你查询出每个视频分类中，平均播放进度大于60%的类别
+
+
+
+
+
+
+
+思路:
+
+- 求一条记录的播放进度很简单，使用TIMSTAMPDIFF获取end_time和start_time相差的时间，并除以视频时长即可，至于平均值，使用AVG就是了
+- 但这里有所不同的是，需要判断观看时长是否超过了视频时长，如果超过了，则只能记为1
+- 因此，我们需要先获取每条视频的观看时长，SQL如下
+
+SQL:
+
+```MYSQL
+SELECT
+	video_id,
+	TIMESTAMPDIFF(SECOND, start_time, end_time) AS 'diff'
+FROM
+	tb_user_video_log;
+```
+
+
+
+
+
+- 之后通过IF判断diff和duration的大小关系，输出对应的值并取平均值，最后还需要保留两位小数并拼接上"%"
+- 因为平均播放进度是在分组后获取的，所以想要限制该字段，则必须使用HAVING，SQL如下
+
+```mysql
+SELECT
+	t1.tag,
+	CONCAT(ROUND(AVG(IF(diff > t1.duration, 1, diff / t1.duration) * 100), 2), '%') AS 'avg_play_progress'
+FROM
+	tb_video_info AS t1
+INNER JOIN (
+	SQL1
+	) AS t2 ON t1.video_id = t2.video_id
+GROUP BY t1.tag
+HAVING avg_play_progress > 60
+ORDER BY avg_play_progress DESC
+```
+
+
+
+
+
+
+
+
+
 
 
 
