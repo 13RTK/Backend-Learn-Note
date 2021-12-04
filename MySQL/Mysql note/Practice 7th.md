@@ -906,6 +906,70 @@ HAVING avg_play_progress > 60
 ORDER BY avg_play_progress DESC
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day133
+
+## Tag: IF, DISTINCT
+
+![Xnip2021-12-04_15-08-25](MySQL Note.assets/Xnip2021-12-04_15-08-25.jpg)
+
+
+
+![Xnip2021-12-04_15-08-42](MySQL Note.assets/Xnip2021-12-04_15-08-42.jpg)
+
+题意:
+给你一张试卷作答记录表，请你查询出其中作答的总次数、完成作答的次数、已经完成的试卷数
+
+
+
+
+
+思路:
+
+- 作答次数随便统计一个字段就行，完成的次数其实就是submit_time不为null的次数，使用COUNT可以排除null
+- 最后一项则需要首先判断对应的submit_time或者score是否为null，只统计不为null的部分，且注意去重
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
