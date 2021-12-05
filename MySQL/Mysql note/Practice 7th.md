@@ -948,6 +948,81 @@ ORDER BY avg_play_progress DESC
 - 作答次数随便统计一个字段就行，完成的次数其实就是submit_time不为null的次数，使用COUNT可以排除null
 - 最后一项则需要首先判断对应的submit_time或者score是否为null，只统计不为null的部分，且注意去重
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day134
+
+## Tag: HAVING, Sub query
+
+![Xnip2021-12-05_09-30-34](MySQL Note.assets/Xnip2021-12-05_09-30-34.jpg)
+
+
+
+![Xnip2021-12-05_09-31-28](MySQL Note.assets/Xnip2021-12-05_09-31-28.jpg)
+
+题意:
+
+给你一张试卷信息表，一张试卷作答记录表，请你查询出其中月均作答数不小于3的用户作答不同类别试卷的次数，并按照次数倒序排列
+
+
+
+
+
+思路:
+
+- 首先我们需要查询出每个用户的月均作答数，并选出不小于3的
+- 计算月均作答数其实就是总的作答数 / 月份数，月份数在题目中需要对submit_time字段进行处理，并且在统计时需要去重，最后分组后筛选即可所以SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	uid,
+	COUNT(submit_time) / COUNT(DISTINCT DATE_FORMAT(submit_time, '%Y%m')) AS 'avg'
+FROM
+	exam_record
+GROUP BY uid
+HAVING avg >= 3;
+```
+
+
+
+
+
+- 下一步则将该表作为临时表，以tag分组，计算出每种试卷的作答次数即可，最后排序一下，SQL如下
+
+```mysql
+SELECT
+    t1.tag,
+    COUNT(t2.exam_id) AS 'tag_cnt'
+FROM
+    examination_info AS t1
+INNER JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id
+INNER JOIN (
+    SQL1
+    ) AS t3 ON t2.uid = t3.uid
+GROUP BY t1.tag
+ORDER BY tag_cnt DESC
+```
+
+
+
 
 
 

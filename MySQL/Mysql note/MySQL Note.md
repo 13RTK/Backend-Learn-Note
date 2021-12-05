@@ -466,6 +466,8 @@ alter table table_name modify column_name column_new_type null_option comment 'T
 
 **2.除了not null的参数，其余都不能写为null**
 
+3.如果数据已经存在，可以使用REPLACE INTO来尝试插入
+
 
 
 SQL语句
