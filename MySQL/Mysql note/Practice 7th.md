@@ -1021,6 +1021,7 @@ GROUP BY t1.tag
 ORDER BY tag_cnt DESC
 ```
 
+<hr>
 
 
 
@@ -1034,6 +1035,71 @@ ORDER BY tag_cnt DESC
 
 
 
+
+
+
+
+
+
+# Day135
+
+## Tag: TIMESTAMPDIFF
+
+![Xnip2021-12-06_07-27-05](MySQL Note.assets/Xnip2021-12-06_07-27-05.jpg)
+
+
+
+![Xnip2021-12-06_07-27-47](MySQL Note.assets/Xnip2021-12-06_07-27-47.jpg)
+
+题意:
+
+给你一张用户-视频互动表，一张视频信息表，请你计算出每类视频在近30天中的转发量和转发率
+
+
+
+
+
+
+
+
+
+
+
+思路:
+
+- 计算转发量只需要计算if_retweet字段即可
+- 而转发率则需要用转发量除以视频的总数，我们同样可以通过计算if_retweet字段得到，不过需要使用COUNT而不是SUM
+- 最后我们需要限制日期，因为题目要求为近30天，所以我们首先需要查询出最近的日期，SQL如下
+
+SQL1:
+
+```mysql
+SELECT MAX(end_time) AS 'max' FROM tb_user_video_log
+```
+
+
+
+
+
+- 之后我们将其作为其中一个表，通过TIMESTAMPDIFF获取日期差值即可，SQL如下
+
+```mysql
+SELECT
+    t1.tag,
+    SUM(t2.if_retweet) AS 'retweet_cnt',
+    ROUND(SUM(t2.if_retweet) / COUNT(t2.if_retweet), 3) AS 'retweet_rate'
+FROM
+    tb_video_info AS t1
+INNER JOIN tb_user_video_log AS t2 ON t1.video_id = t2.video_id
+INNER JOIN (
+	SELECT MAX(end_time) AS 'max' FROM tb_user_video_log
+) AS t3
+WHERE TIMESTAMPDIFF(DAY, t2.end_time, t3.max) <= 30
+GROUP BY t1.tag
+ORDER BY retweet_rate DESC
+```
+
+// 牛客这道题目的判题系统有bug，本地运行明明好好的，一提交就报错
 
 
 
