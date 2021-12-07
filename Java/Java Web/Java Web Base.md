@@ -433,6 +433,7 @@ Eg:
 
 ![Xnip2021-12-05_22-40-43](Java Web.asset/Xnip2021-12-05_22-40-43.jpg)
 
+<hr>
 
 
 
@@ -444,6 +445,209 @@ Eg:
 
 
 
+
+
+
+
+
+
+
+
+# 六、Servlet
+
+- Servlet是Java EE规范之一。规范就是接口
+- Servlet是Java Web三大组件之一。三大组件: Servlet程序、Filter过滤器、Listener监听器
+- Servlet是运行在服务器上的一个Java程序，它可以接受客户端发送的请求，并响应数据给client
+
+
+
+
+
+
+
+## 6.1 第一个servlet程序
+
+- 首先在Tomcat中给定一个项目的工程路径
+
+Eg:
+
+![Xnip2021-12-06_22-05-17](Java Web.asset/Xnip2021-12-06_22-05-17.jpg)
+
+
+
+
+
+
+
+- 创建一个Servlet程序实现Servlet接口
+- 实现service方法，处理请求并响应
+
+Eg:
+
+![Xnip2021-12-06_22-08-57](Java Web.asset/Xnip2021-12-06_22-08-57.jpg)
+
+
+
+
+
+- 在web.xml中配置Servlet程序的访问地址
+
+Eg:
+
+![Xnip2021-12-06_22-14-55](Java Web.asset/Xnip2021-12-06_22-14-55.jpg)
+
+
+
+![Xnip2021-12-06_22-33-45](Java Web.asset/Xnip2021-12-06_22-33-45.jpg)
+
+
+
+
+
+
+
+
+
+## 6.2 url到Servlet的过程
+
+![Xnip2021-12-06_22-37-34](Java Web.asset/Xnip2021-12-06_22-37-34.jpg)
+
+
+
+通过ip找到server，通过端口号定位到对应的应用，通过工程路径定位到Tomcat中的工程
+
+通过资源路径在工程对应的web.xml配置文件中找到工程下对应的Servlet程序
+
+
+
+
+
+
+
+
+
+## 6.3 Servlet的生命周期
+
+调用方法的顺序:
+
+1. 执行Servlet构造方法
+2. 执行init初始化方法
+
+这两步只在第一次访问时，在创建Servlet程序的时候才会使用
+
+
+
+3. 执行Service方法
+
+每次访问都会执行
+
+4. 执行destroy方法销毁
+
+只有停止工程时才会执行(关闭Tomcat)
+
+Eg:
+
+![Xnip2021-12-06_22-47-29](Java Web.asset/Xnip2021-12-06_22-47-29.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6.4 请求分发
+
+- 通过Service方法提供的ServletRequest对象
+- 将其转换为HttpServletRequest对象
+- 调用getMethod方法获取请求的方法
+- 最后根据返回的请求方法进行请求分发处理
+
+Eg:
+
+![Xnip2021-12-06_22-58-27](Java Web.asset/Xnip2021-12-06_22-58-27.jpg)
+
+
+
+![Xnip2021-12-06_23-03-06](Java Web.asset/Xnip2021-12-06_23-03-06.jpg)
+
+最好将两种请求的处理封装为两个独立的方法
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6.5 通过继承HttpServlet实现Servlet程序
+
+- 编写一个类继承HttpServlet类
+- 根据业务需要重写doGet和doPost方法
+- 到web.xml中配置访问地址
+
+![Xnip2021-12-06_23-07-05](Java Web.asset/Xnip2021-12-06_23-07-05.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 6.6 Servlet类的继承体系
+
+![Xnip2021-12-06_23-11-11](Java Web.asset/Xnip2021-12-06_23-11-11.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 七、ServletConfig类
+
+- 可以获取Servlet程序的别名: Servlet-name的值
+- 获取初始化参数init-param
+
+- 获取ServletContext对象
+
+![Xnip2021-12-06_23-19-17](Java Web.asset/Xnip2021-12-06_23-19-17.jpg)
 
 
 

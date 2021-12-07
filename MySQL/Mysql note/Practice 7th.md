@@ -1101,6 +1101,73 @@ ORDER BY retweet_rate DESC
 
 // 牛客这道题目的判题系统有bug，本地运行明明好好的，一提交就报错
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day136
+
+## Tag: SUM() OVER
+
+![Xnip2021-12-07_07-40-52](MySQL Note.assets/Xnip2021-12-07_07-40-52.jpg)
+
+
+
+![Xnip2021-12-07_07-41-24](MySQL Note.assets/Xnip2021-12-07_07-41-24.jpg)
+
+题意:
+
+给你一张用户视频互动表，一张短视频信息表，请你查询出2021年中每个创作者每月的涨粉率和当前的粉丝数
+
+
+
+思路:
+
+- 要求每月涨粉量自然需要根据月份来分组，在计算时还需要我们根据if_follow字段判断是掉粉还是涨粉，因此使用IF嵌套即可
+- 而当前粉丝数需要单独排序，因为该字段所求的和是前几个月的粉丝总和，所以我们使用SUM的窗口函数
+- 最后限制一下年份，写好分组顺序即可，SQL如下
+
+```mysql
+SELECT
+    t2.author,
+    DATE_FORMAT(t1.end_time, '%Y-%m') AS 'month',
+    ROUND(SUM(IF(t1.if_follow = 1, 1, IF(t1.if_follow = 2, -1, 0))) / COUNT(end_time), 3) AS 'fans_growth_rate',
+    SUM(SUM(IF(if_follow = 1, 1,0)) - SUM(IF(if_follow = 2, 1, 0))) OVER(
+			PARTITION BY author 
+			ORDER BY DATE_FORMAT(start_time,'%Y-%m')
+		) AS 'total_fans'
+FROM
+    tb_user_video_log AS t1
+INNER JOIN tb_video_info AS t2 ON t1.video_id = t2.video_id
+WHERE YEAR(t1.end_time) = 2021
+GROUP BY t2.author, month
+ORDER BY t2.author, total_fans
+```
+
+
+
+
+
+
+
+
+
 
 
 
