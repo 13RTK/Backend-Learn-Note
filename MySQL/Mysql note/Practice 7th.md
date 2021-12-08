@@ -1160,6 +1160,7 @@ GROUP BY t2.author, month
 ORDER BY t2.author, total_fans
 ```
 
+<hr>
 
 
 
@@ -1173,6 +1174,77 @@ ORDER BY t2.author, total_fans
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day137
+
+## Tag: COUNT OVER()
+
+![Xnip2021-12-08_09-51-11](MySQL Note.assets/Xnip2021-12-08_09-51-11.jpg)
+
+
+
+![Xnip2021-12-08_09-50-27](MySQL Note.assets/Xnip2021-12-08_09-50-27.jpg)
+
+题意:
+给你一张用户信息表，一张试卷作答记录表，请你根据用户的等级查询出每个等级的用户在各个分数段中的占比数
+
+
+
+
+
+
+
+
+
+思路:
+
+- 这里的各个分数段需要按照具体的分数来区分，所以需要我们做判断，这里使用CASE WHEN或者IF都可以
+- 但在统计占比时，需要用当前等级当前分数段的用户数 / 当前等级下的用户总数，如果之间分组的话，则分母不正确
+- 所以我们需要先行查询出分母，并与等级和分数段对应，使用普通的GROUP BY的话需要创建临时表将总数结果和等级与分数段连接起来，效率较低
+- 所以我们选择更简洁的COUNT() OVER窗口函数，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	t1.level,
+	IF(t2.score < 60, '差', IF(t2.score < 75, '中', IF(t2.score < 90, '良', '优'))) AS 'score_grade',
+	COUNT(t1.uid) OVER (
+		PARTITION BY t1.level
+	) AS 'total'
+FROM
+	user_info AS t1
+INNER JOIN exam_record AS t2 ON t1.uid = t2.uid
+WHERE t2.score IS NOT NULL
+```
+
+
+
+
+
+- 之后再使用这张临时表即可，SQL如下
+
+
+```mysql
+SELECT
+	t1.level,
+	t1.score_grade,
+	ROUND(COUNT(t1.level) / t1.total, 3) AS 'ratio'
+FROM (
+SQL1
+	) AS t1
+GROUP BY t1.level, t1.score_grade
+ORDER BY t1.level DESC, ratio DESC
+```
 
 
 

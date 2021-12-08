@@ -906,6 +906,1015 @@ Eg:
 
 ![Xnip2021-12-06_17-00-11](MySQL Note.assets/Xnip2021-12-06_17-00-11.jpg)
 
+- TRX_UNDO_PAGE_NODE
+
+
+代表一个链表节点结构
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 20.6 Undo页面链表
+
+
+
+
+
+### 20.6.1 单个事务中的undo页面链表
+
+事务中的一条语句对记录进行修改时，在对聚簇索引记录改动前，都需要记录1/2条undo日志
+
+所以一个事务会产生多个undo日志，这些日志需要放在多个undo页面中
+
+这些页面根据页面中的TRX_UNDO_PAGE_NODE属性连成链表(双向链表)
+
+![Xnip2021-12-07_08-49-10](MySQL Note.assets/Xnip2021-12-07_08-49-10.jpg)
+
+链表中的第一个页面(first undo page)除了Undo Page Header外，还有一些管理信息，其余页面没有
+
+
+
+
+
+
+
+因为事务中会有多种语句(UPDATE/DELETE/INSERT)，所以会产生两大类undo日志
+
+而这两大日志需要存储在两个不同的链表中，因此一个事务在执行时可能需要2个undo页面的链表
+
+一个为insert undo链表，另一个为update undo链表
+
+![Xnip2021-12-07_08-53-50](MySQL Note.assets/Xnip2021-12-07_08-53-50.jpg)
+
+
+
+
+
+另外，对普通表和临时表进行修改时产生的undo日志需要分别记录，所以一个事务中最多会有四个undo页面链表
+
+Eg:
+
+![Xnip2021-12-07_08-57-27](MySQL Note.assets/Xnip2021-12-07_08-57-27.jpg)
+
+并不是一开始就有四个链表，具体的分配策略如下:
+
+- 开启事务时一个页面链表也没有
+- 当向普通表中插入记录/更新主键时，会分配一个insert undo链表
+- 当删除/更新了普通表，会分配一个update undo链表
+- 当向临时表中插入记录/更新主键时，会分配一个临时表的insert undo链表
+- 当删除/更新了临时表，会分配一个临时表的update undo链表
+
+总之，需要时才会分配
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.6.2 多个事务中的undo页面链表
+
+为了提高效率，不同事务执行时产生的undo日志会写入到不同的undo链表中
+
+
+
+对于事务trx1和trx2:
+
+- trx1对普通表执行了delete，对临时表执行了insert和update，此时分配三个链表
+    - 普通表的updete链表
+    - 临时表的update链表
+    - 临时表的insert链表
+- trx2对普通表执行了insert、update和delete操作，没有修改临时表，此时分配两个链表
+    - 普通表的insert undo链表
+    - 普通表的update undo链表
+
+![Xnip2021-12-07_09-06-03](MySQL Note.assets/Xnip2021-12-07_09-06-03.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 20.7 undo日志的写入过程
+
+
+
+### 20.7.1 段的概念
+
+回顾:
+
+段是一个逻辑上的概念，其由若干零散页和若干完整区组成
+
+一个B+树的索引被划分为两个段: 叶子结点段，非叶子结点
+
+每个段对应一个INODE Entry结构，该结构描述了段的各个信息
+
+为了定位INODE Entry，有一个Segment Header结构可用(该结构存在于页面链表的第一个页面中)
+
+
+
+Segment Header的结构:
+
+|   Space ID of the INODE Entry(4byts)   |
+| :------------------------------------: |
+| Page Number of the INODE Entry(4bytes) |
+| Byte Offset of the INODE Entry(2bytes) |
+
+各属性含义:
+
+- Space ID of the INODE Entry: INODE Entry结构所在表空间ID
+- Page Number of the INODE Entry: INODE Entry结构所在页号
+- Byte Offset of the INODE Entry: INODE Entry结构在页面中的偏移量
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.7.2 Undo Log Segment Header
+
+每个undo页面链表都对应一个段，称为Undo Log Segment
+
+链表页面都从这个段中申请，在undo页面链表中的第一个页面(first undo page)中有一个Undo Log Segment Header的部分，该部分包含了链表对应段的Segment Header信息，以及其他一些段的信息
+
+
+
+first undo page的结构:
+
+![Xnip2021-12-07_09-18-06](MySQL Note.assets/Xnip2021-12-07_09-18-06.jpg)
+
+
+
+该页面比起其他页面只是多了一个Undo Log Segment Header，该结构如图:
+
+![Xnip2021-12-07_09-19-57](MySQL Note.assets/Xnip2021-12-07_09-19-57.jpg)
+
+各个属性的意思:
+
+- TR_UNDO_STATE: 表示页面链表处于的状态
+    - TRX_UNDO_ACTIVE: **活跃状态**，一个活跃的事务正在向undo页面中写入日志
+    - TRX_UNDO_CACHED: **被缓冲的状态**，Undo页面链表等待被重用
+    - TRX_UNDO_TO_FREE: **等待被释放**，insert undo链表对应的事务提交后，该链表不能被重用
+    - TRX_UNDO_PURGE: **等待purge**，update undo链表对应事务提交后，链表不能重用
+    - TRX_UNDO_PREPARED: undo页面链表用户存储处于PREPARED阶段的事务产生的日志
+
+注：何时重用，如何重用，后面会详细讲解，PREPARED在分布式事务中才会出现，暂时忽略
+
+
+
+
+
+- TRX_UNDO_LAST_LOG: 当前undo页面链表中最后一个Undo Log Header的位置
+- TRX_UNDO_FSEG_HEADER: 当前undo页面链表对应段的Segment Header信息(用来找段对应的INODE Entry)
+- TRX_UNDO_PAGE_LIST: undo页面链表的基节点
+
+
+
+每个undo页面根据一个TRX_UNDO_PAGE_NODE属性组成一个双向链表，而TRX_UNDO_PAGE_LIST就是该链表的基节点，这个基节点只存在于first undo page中(在Undo Log Segment Header中)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.7.3 Undo Log Header
+
+事务向undo页面写入undo日志时，会直接往里"堆"，一条紧接着一条写，各条undo日志是紧靠的
+
+每当写完一个undo页面后，就会从段中申请一个新的页面，然后将页面插入到undo页面链表中，再从这个新的页面开始写undo日志
+
+
+
+
+
+**同一个事务写入的undo日志是一个组**，每写入一组undo日志时，都会**在该组undo日志前记录一下该组的属性**
+
+**存储这些属性的地方称为Undo Log Header**
+
+
+
+
+
+因此在undo页面链表第一个页面真正写入undo日志之前，都会填充Undo Page Header、Undo Log Segment Header、Undo Log Header这三个部分，如图:
+
+![Xnip2021-12-07_09-36-21](MySQL Note.assets/Xnip2021-12-07_09-36-21.jpg)
+
+
+
+其中Undo Log Header具体结构如图:
+
+![Xnip2021-12-07_09-37-31](MySQL Note.assets/Xnip2021-12-07_09-37-31.jpg)
+
+各属性的意义:
+
+- TRX_UNDO_TRX_ID: 本组undo日志的事务id
+- TRX_UNDO_TRX_NO: 事务提交后的序号，标记事务提交的顺序
+- TRX_UNDO_DEL_MARKS: 标记本组undo日志是否存在包含由delete mark操作产生的undo日志
+- TRX_UNDO_LOG_START: 表示本组undo日志中第一条undo日志在页面中的偏移量
+- TRX_UNDO_XID_EXISTS: 暂不了解
+- TRX_UNDO_DICT_TRANS: 标记本组undo日志是否由DDL语句产生
+- TRX_UNDO_TABLE_ID: 如果上一个属性为true，那么本属性代表DDL语句操作表的表id
+- TRX_UNDO_NEXT_LOG: 下一组undo日志在页面中开始的偏移量
+- TRX_UNDO_PREV_LOG: 上一组undo日志在页面中开始的偏移量
+
+拓展: undo页面链表重用后，一个页面中可能会有多组事务产生的undo日志，上述两个属性就区分了不同组的undo日志
+
+- TRX_UNDO_HISTORY_NODE: 一个12字节的链表节点结构，代表一个名为History的链表节点(下一章)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.7.4 小结
+
+![Xnip2021-12-07_09-45-58](MySQL Note.assets/Xnip2021-12-07_09-45-58.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 20.8 重用Undo页面
+
+之前说过:
+
+一个事务执行期间可能会产生4条Undo页面链表，但会造成问题：
+
+如果事务在执行时至修改了一条/几条记录，那么对应undo页面链表中只产生了很少的undo日志
+
+这些undo日志可能只占用了一点点存储空间，但**为了存储这么一点undo日志而创建undo页面链表很浪费**
+
+
+
+为了解决这个问题：
+
+事务提交后某些情况下会重用undo页面链表，需要符合两个情况:
+
+
+
+- 链表只包含一个Undo页面
+
+如果事务产生了很多的undo日志，那么会从段中申请很多页面加入到undo页面链表中
+
+事务提交后，**如果整个链表的页面都重用**，那么即使新事务只写入了很少的undo日志，链表也需要维护很多页面
+
+
+
+为了避免这种浪费，规定**Undo页面链表中只包含一个Undo页面时，链表才可以被下一个事务重用**
+
+
+
+
+
+
+
+- undo页面已经使用的空间小于整个页面的3/4
+
+因为如果该页已经使用了大部分空间，那么重用的好处不大
+
+
+
+
+
+
+
+
+
+
+
+按照undo日志，页面链表也非为两大类: update undo页面链表和insert undo页面链表，两种链表在重用时的策略也不同:
+
+
+
+
+
+- insert undo链表
+
+这种链表存储的日志在事务提交后就没用了，所以重用该链表时，可以直接将之前事务写入的undo日志覆盖掉
+
+![Xnip2021-12-07_09-57-59](MySQL Note.assets/Xnip2021-12-07_09-57-59.jpg)
+
+拓展:
+
+在重用undo页面链表时，还会更新Undo Page Header，Undo Log Segment Header，Undo Log Header中的多个属性值
+
+
+
+
+
+
+
+
+
+- update undo链表
+
+update语句对应的事务提交后，其对应的undo日志不能立即删除，此时重用该update undo页面链表时不能覆盖掉之前的undo日志，此时页面中会有多组undo日志
+
+Eg:
+
+![Xnip2021-12-07_11-10-38](MySQL Note.assets/Xnip2021-12-07_11-10-38.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 20.9 回滚段
+
+
+
+### 20.9.1 概念
+
+事务执行时最多会分配4个undo页面链表，而不同事务对应的链表不同
+
+
+
+为了管理这些链表，有一个名为Rollback Segment Header的页面
+
+其中存放了各个undo页面链表的first undo page的页号，这些页号被称为"undo slot"
+
+
+
+我们可以通过Rollback Segment Header中的undo slot找到对应的first undo page，再通过first undo page找到对应的undo页面链表
+
+
+
+Rollback Segment Header页面的结构:
+
+![Xnip2021-12-07_11-16-26](MySQL Note.assets/Xnip2021-12-07_11-16-26.jpg)
+
+
+
+按照规定，**每个Rollback Segment Header页面都对应一个段，这个段就是回滚段(Rollback Segment)**
+
+不同于其他的段，回滚段中其实只有一个页面
+
+
+
+Rollback Segment Header页中各个部分的含义:
+
+- TRX_RSEG_MAX_SIZE
+
+该回滚段对应undo页面链表中undo页面数之和的最大值，所有undo页面链表中的undo页面数之和不能超过该值
+
+拓展：
+
+其实际上的默认值为0xFFFFFFFE(4bytes)
+
+
+
+
+
+下一章：
+
+- TRX_RSEG_HISTORY_SIZE
+
+History链表占用的页面数
+
+- TRX_RSEG_HISTORY
+
+History链表的基节点
+
+
+
+
+
+- TRX_RSEG_FSEG_HEADER
+
+通过该属性可以找到回滚段对应的10字节大小的Segment Header结构，从而找到本段对应的INODE Entry
+
+- TRX_RSEG_UNDO_SLOTS
+
+各个undo页面链表的first undo page页号集合，也就是undo slots集合
+
+一个页号4bytes，一个大小为16KB的页能够存储1024个undo slot，所以该属性占用4096Bytes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.9.2 从回滚段中申请Undo页面链表
+
+
+
+初始情况下，由于没有为任何事务分配任何undo页面链表，所以对于Rollbakc Segment Header页面来说，它的各个undo slot都应该设置为一个特殊值: FIL_NULL
+
+该值表示undo slot不指向任何一个undo页面(undo slot: undo页面链表中 first undo page的页号)
+
+
+
+当需要为事务分配undo页面链表时，从回滚段的第一个undo slot开始，查看undo slot的值是否为FIL_NULL
+
+- 如果为FIL_NULL，那么就需要在表空间中新创建一个段(Undo Log Segment)，再从这个段中申请页面作为Undo页面链表的first undo page，最后将undo slot更新为这个页面的地址，意味着该undo slot被分配给了这个事务
+- 如果不为FIL_NULL，那么说明undo slot已经指向了一个undo页面链表，说明该undo slot被占用了，此时需要跳到下一个undo slot，并重复上述步骤
+
+
+
+一个Rollback Segment Header页面中包含1024个undo slot，如果都不为FIL_NULL，说明无法为事务分配新的undo页面链表，此时就是停止待分配的事务，并报错：
+
+```mysql
+Too many active concurrent transactions
+```
+
+
+
+此时可以重新执行事务(可能其他事务提交了，undo页面链表可以重用了)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 事务提交后，对应的undo slot有两种处理方式
+
+
+
+- 如果undo slot指向的undo页面链表**符合重用条件**
+
+则该**undo slot就处于被缓存的状态**，其指向的**undo页面链表对应的TRX_UNDO_STATE属性就会被设置为TRX_UNDO_CACHED**
+
+**被缓存的undo slot都会被加入到一个链表中**，不同类型的undo页面链表对应的undo slot会被加入到不同的链表中
+
+
+
+1. 如果对应的undo页面链表**是insert undo链表**
+
+则该undo slot**会被加入到insert undo cache链表中**
+
+
+
+2. 如果对应的undo页面链表是update undo链表
+
+则该undo slot会被加入到update undo cached链表中
+
+
+
+一个回滚段对应上述两个cached链表，之后如果需要为新事务分配事务id，都会先从对应的cached链表中去找
+
+如果没有缓存的undo slot，才会从回滚段中Rollback Segment Header页面中查找
+
+
+
+
+
+
+
+
+
+- 如果不符合重用条件
+
+根据undo slot对应undo页面链表的类型进行不同的处理:
+
+
+
+1. 如果对应的undo页面链表为insert undo链表
+
+则该undo页面链表的TRX_UNDO_STATE属性会被设置为TRX_UNDO_TO_FREE
+
+之后undo页面链表对应的段会被释放(段中的页面可以重用)，undo slot设置为FIL_NULL
+
+
+
+2. 如果对应的undo页面链表是update undo链表
+
+则undo页面链表的TRX_UNDO_STATE属性会被设置为TRX_UNDO_TO_PURGE
+
+并将该undo slot的值设置为FIL_NULL，然后将事务写入的一组undo日志放入History链表中(对应段不会释放，还需要为MVCC服务)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.9.3 多个回滚段
+
+一个回滚段中只有1024个undo slot，所以在之后直接定义了128个回滚段
+
+与之前一样，每个回滚段都有一个对应的Rollback Segment Header页面，**这128个页面需要储存**
+
+
+
+这些Rollback Segment Header页面的地址都被存储在系统表空间第5号页面某个区域，其中包含128个8字节的格子
+
+Eg:
+
+![Xnip2021-12-07_15-53-48](MySQL Note.assets/Xnip2021-12-07_15-53-48.jpg)
+
+
+
+每个格子由两个部分组成:
+
+- Space ID: 代表表空间id
+- Page number: 代表一个页号
+
+每个格子相当于一个指针，指向表空间中的某一页，这个页就是Rollback Segment Header
+
+不同的回滚段可能分布在不同的表空间中
+
+
+
+
+
+
+
+
+
+总结:
+
+系统表空间中第5号页面中存储了128个Rollback Segment Header页面地址
+
+每个Rollback Segment Header就对应一个回滚段
+
+每个Rollback Segment Header页面中有1024个undo slot
+
+每个undo slot对应一个undo页面链表
+
+Eg:
+
+![Xnip2021-12-07_16-02-29](MySQL Note.assets/Xnip2021-12-07_16-02-29.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.9.4 回滚段的分类
+
+
+
+对这128个回滚段编号:
+
+最开始的回滚段为第0号回滚段，直到第127号回滚段，这128个回滚段可以分为2类:
+
+
+
+
+
+#### 1) 第0、第33～127号回滚段
+
+其中第0号必须在系统表空间中，也就是其对应的Rollback Segment Header页面必须在系统表空间中
+
+而第33～127号可以在系统表空间或者自己配置的undo表空间中
+
+
+
+如果事务对普通表的记录进行了修改，那么必须从这一类的段中分配相应的undo slot
+
+
+
+
+
+
+
+
+
+#### 2) 第1～32号回滚段
+
+这些回滚段必须在临时表空间，对应datadir下的ibtmp1文件
+
+如果事务对临时表记录进行了改动，需要分配undo页面链表时，必须从这类段中分配对应的undo slot
+
+
+
+总结:
+
+如果事务执行时修改了临时表和普通表的记录，那么需要为记录分配两个回滚段，然后分别从回滚段中分配对应的undo slot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3) 分类的原因
+
+Undo页面其实是类型为FIL_PAGE_UNDO_LOG页面的简称，其只是普通的页面
+
+向undo页面写入undo日志其实就是写页面的过程，所以在写入undo日志之前还需要写上对应的redo日志
+
+所以我们对undo页面的修改都会记录相应类型的redo日志
+
+
+
+
+
+对于临时表来说，因为修改临时表产生的undo日志只在运行时有效，崩溃重启后不需要恢复，所以针对临时表修改写的undo日志不需要写对应的redo日志
+
+
+
+针对普通表和临时表划分不同类型段的原因:
+
+在修改针对普通表的回滚段中undo页面时，需要记录对应的redo日志
+
+在修改针对临时表的回滚段中undo页面时，不需要记录对应的redo日志
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.9.5 roll_pointer的组成
+
+roll_pointer是聚簇索引记录中一个隐藏列
+
+
+
+有些类型的undo日志也包含一个名为roll_pointer的属性，该属性本质就是一个指针，指向一条undo日志的地址
+
+Eg:
+
+![Xnip2021-12-07_16-27-15](MySQL Note.assets/Xnip2021-12-07_16-27-15.jpg)
+
+各个属性的含义:
+
+- is_insert: 表面该指针指向的是否为TRX_UNDO_INSERT大类的undo日志
+- rseg_id: 表示指针指向的undo日志回滚段编号，即第几号回滚段
+- page_number: 表示指针指向的undo日志所在页面的页号
+- offset: 表示指针指向undo日志在页面中的偏移量
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 20.9.6 为事务分配undo页面链表的详细过程
+
+
+
+以事务**对普通表记录改动为例**，梳理事务执行时分配undo页面链表时的完整过程
+
+
+
+#### 1) 事务在对普通表记录进行首次修改之前
+
+会到系统表空间的第5号页面中分配一个回滚段(Rollback Segment Header的地址)，一旦某个回滚段被分配到了一个事务，那么之后事务对普通表进行改动时，就不会重复分配
+
+该过程使用round-robin(循环使用)的方式来分配，也就是将128个回滚段轮着分配给不同的事务
+
+
+
+
+
+#### 2) 分配回滚段之后
+
+首先查看该回滚段的两个cached链表中有没有缓存的undo slot
+
+如果执行的是INSERT操作，则到对应的insert undo cached链表中查看有没有缓存的undo slot
+
+如果是DELETE操作，则到update undo cached链表中查看有没有缓存的undo slot，有则分配给事务
+
+
+
+
+
+
+
+#### 3) 没有缓冲的undo slot
+
+那么就需要到Rollback Segment Header页面中去找了，过程见20.9.2
+
+
+
+
+
+
+
+#### 4) 找到可用的undo slot之后
+
+如果是从cached链表中找到的，那么其对应的Undo Log Segment就已经分配了，否则需要重新分配一个Undo Log Segment，并从这个段中申请一个页面作为undo页面链表的first undo page，并更新该页的页号到undo slot中
+
+
+
+
+
+
+
+#### 5) 之后事务可将undo日志写到undo页面链表中了
+
+并发执行的事务也可以被分配相同的回滚段，只需要分配不同的undo slot即可
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 20.10 回滚段配置
+
+
+
+### 20.10.1 配置回滚段数量
+
+
+
+系统中默认有128个回滚段，我们可以通过启动项innodb_rollback_segments来设置回滚段的数量
+
+该选项**不会影响临时表的回滚段数量**，**临时表的回滚段数量一直为32**
+
+也就是说:
+
+- 如果将innodb_rollback_segments设置为1，那么普通表只有一个可用的回滚段，而临时表有32个可用的回滚段
+- 如果设置为2～32之间的数，效果和1相同
+- 如果设置为大于33的数，那么实际可用的回滚段数量 = 设置数量 - 32
+
+
+
+
+
+
+
+
+
+### 20.10.2 配置undo表空间
+
+
+
+默认情况下，普通表可用的回滚段(第0号以及33～127号回滚段)都是分配到系统表空间中的
+
+其中的第0号回滚段一直在系统表空间中，但33～127号可通过配置放到指定的undo表空间中
+
+该设置只能够在系统初始化的时候使用，一旦初始化完成，就不能再更改了。相关的启动项:
+
+- innodb_undo_directory: 指定undo表空间所在的目录，如果没有指定该参数，则默认undo日志所在目录为数据目录
+- innodb_undo_tablespaces: **定义了undo表空间的数量**，默认值为0，表明不创建任何undo表空间
+
+第33～127号回滚段可以平均分不到不同的undo表空间中
+
+
+
+如果设置了undo表空间，那么系统表空间中的第0号回滚段将不可用
+
+
+
+设置undo表空间的好处: 当undo表空间中文件过大时，会自动将该undo表空间截断成小文件
+
+而系统表空间只会不断增大
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 20.11 undo日志在崩溃恢复时的作用
+
+
+
+按照redo的方法:
+
+重启时根据redo日志恢复到之前的状态，这样可以保证持久性，但是没有提交的事务写入的redo日志可能已经刷盘
+
+那么如果按照未提交事务对应的redo日志进行恢复的话就会出错
+
+
+
+为了保证事务的原子性，在服务器重启时会将未提交事务回滚，但是如何找到未提交的事务？通过undo日志！
+
+
+
+通过系统表空间中页号为5的页面定位128个回滚段的位置
+
+在每个回滚段的1024个undo slot中找到值不为FIL_NULL的undo slot
+
+每个undo slot都指向一个undo页面链表
+
+根据链表中第一个页面的Undo Segment Header找到TRX_UNDO_STATE属性(标识当前undo页面链表的状态)
+
+如果该属性为TRX_UNDO_ACTIVE，说明有一个活跃的事务向undo页面链表写入undo日志
+
+在页面的Undo Sgement Header中找到TRX_UNDO_LAST_LOG属性，通过该属性找到当前undo页面链表中最后一个Undo Log Header的位置，从该Undo Log Header中找到对应事务的事务id，该事务id对应的事务就是未提交的事务
+
+之后通过undo日志将事务对页面所做的更改全部回滚即可，从而保证了原子性
+
+
+
+
+
+
+
 
 
 

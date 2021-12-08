@@ -651,3 +651,623 @@ Eg:
 
 
 
+**注意：**init-param标签要写在servlet标签中，通过servletConfig获取到的配置只能是本servlet中的配置(web.xml中同一个servlet标签下的配置)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 1) 重写init方法注意
+
+![Xnip2021-12-07_21-50-40](Java Web.asset/Xnip2021-12-07_21-50-40.jpg)
+
+
+
+![Xnip2021-12-07_21-53-04](Java Web.asset/Xnip2021-12-07_21-53-04.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 八、ServletContext类
+
+
+
+## 1) 定义
+
+- 其是一个接口表示Servlet上下文对象
+- 一个Web工程中只有一个ServletContext对象(多个Servlet程序共用一个)
+- ServletContext是一个域对象，在web工程停止后就销毁了(对应的参数都没了)
+
+
+
+域对象:
+
+像Map一样存储数据的对象称为域对象
+
+域指的是存取数据的操作范围
+
+
+
+|        |     存数据     | 取数据         | 删除数据          |
+| :----: | :------------: | -------------- | ----------------- |
+|  Map   |     put()      | get()          | remove()          |
+| 域对象 | setAttribute() | getAttribute() | removeAttribute() |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) ServletContext类的四个作用
+
+- 获取web.xml中配置的上下文参数context-param
+- 获取当前工程路径，格式: /工程路径
+- 获取工程部署后在服务器硬盘上的绝对路径
+- 像Map一样存取数据
+
+
+
+![Xnip2021-12-07_22-18-38](Java Web.asset/Xnip2021-12-07_22-18-38.jpg)
+
+注意这里只能获取context-param标签中的参数，不能获取servlet标签中的init-param参数
+
+
+
+通过setAttribute方法添加属性键值对，用getAttribute方法通过对应的键获取值
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 九、Http协议
+
+- Http协议中传输的数据叫做报文
+
+
+
+
+
+## 1) 请求的HTTP协议格式
+
+- 请求分为get/post
+
+
+
+### (1) GET请求
+
+
+
+结构:
+
+1. 请求行
+    1. 请求的方式			GET
+    2. 请求的资源路径
+    3. 请求协议的版本号      HTTP/1.1
+2. 请求头
+    1. Key : value
+
+
+
+Eg:
+
+![Xnip2021-12-07_22-33-12](Java Web.asset/Xnip2021-12-07_22-33-12.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### (2) POST请求
+
+
+
+结构:
+
+1. 请求行
+
+    1. 请求的方式			POST
+    2. 请求的资源路径
+    3. 请求协议的版本号      HTTP/1.1
+
+2. 请求头
+
+    1. Key : value
+
+    空行
+
+3. 请求体(发送给服务器的数据)
+
+Eg:
+
+![Xnip2021-12-07_22-36-20](Java Web.asset/Xnip2021-12-07_22-36-20.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### (3) 常用的请求头
+
+- Accept: 客户端可以接收的数据类型
+- Accept-Language: 客户端可以接收的语言类型
+- User-Agent: 表示客户端浏览器的信息
+- Host: 表示请求时服务器的ip和端口号
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### (4) 两种请求两种请求的区别
+
+
+
+- Get
+    - form标签 method = get
+    - a 标签
+    - link标签引入css
+    - script引入js文件
+    - img引入图片
+    - iframe引入html页面
+    - 浏览器地址栏输入地址后回车
+- POST
+    - form标签 method = post
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) 响应的HTTP协议格式
+
+
+
+
+
+1. 响应行
+
+    1. 响应的协议和版本号
+    2. 响应状态吗
+    3. 响应状态描述符
+
+2. 响应头
+
+    1. key : value
+
+    空行
+
+3. 响应体 -> 回传给client的数据
+
+![Xnip2021-12-07_22-44-38](Java Web.asset/Xnip2021-12-07_22-44-38.jpg)
+
+
+
+通过Chrome查看:
+
+![Xnip2021-12-08_21-16-30](Java Web.asset/Xnip2021-12-08_21-16-30.jpg)
+
+
+
+![Xnip2021-12-08_21-17-11](Java Web.asset/Xnip2021-12-08_21-17-11.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) 常见的状态码
+
+- 200: 请求成功
+- 302: 请求重定向
+- 404: 表示服务器收到了请求，但你要的数据不存在(地址错误或者DNS污染/GFW)
+- 500: 表示服务器已经收到了请求，但服务器内部错误(代码错误)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4) MIME类型说明
+
+MIME是在HTTP协议中指定数据类型的
+
+MIME: Multipurpose Internet Mail Extensions，即多功能internet邮件扩展服务
+
+格式: 大类型/小类型。格式与一种文件的后缀名对应
+
+
+
+常见的MIME类型:
+
+|       文件        |                 MIEME类型                  |
+| :---------------: | :----------------------------------------: |
+|     html文件      |        .html .htm         text/html        |
+|   普通文本文件    |       .txt                text.plain       |
+|  RTF文本(类Unix)  |      .rtf            application/rtf       |
+|       GIF图       |      .gif                  image/gif       |
+|      JPEG图       |      .jpeg jpg            image/jpeg       |
+|    au声音文件     |      .au                 audio/basic       |
+|   MIDI音乐文件    | .mid .midi          audio/mid audio/x-mail |
+| RealAudio音乐文件 | .ra      .ram        audio/x-pen-realaudio |
+|     MPEG文件      | .mpg       .mpeg                video/mpeg |
+|      AVI文件      |       .avi           video/x-msvideo       |
+|   GZIP压缩文件    |     .gz            application/x-gzip      |
+|      TAR文件      |     .tar            application/x-tar      |
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十、HttpServletRequest类
+
+
+
+
+
+## 1) 作用
+
+- 请求进入Tomcat后，Tomcat会将请求发送过来的Http协议信息解析后封装好，写入到一个Request对象中
+- 然后将该对象传递给service方法(doGet, doPost)
+- 我们可以通过HttpServletRequest对象获取到所有的请求信息
+
+
+
+
+
+
+
+
+
+## 2) 常用方法
+
+- getRequestURI(): 获取请求的资源路径
+- getRequestURL(): 获取请求的统一资源定位符(文件在服务器上的绝对路径)
+- getRemoteHost(): 获取client的ip地址(请求的发送者)
+- getHeader(): 获取请求头信息
+- getParameter(): 获取请求的参数
+- getParameterValues(): 获取多个请求的参数
+- getMethod(): 获取请求的方式GET/POST
+- setAttribute(key, value): 设置域数据
+- getAttribute(key): 获取域数据
+- getRequestDispatcher(): 获取请求转发对象
+
+Eg:
+
+![Xnip2021-12-08_21-39-41](Java Web.asset/Xnip2021-12-08_21-39-41.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) 获取client发送的参数
+
+- getParameter(): 获取单个参数
+- getParamterValues(): 获取多个参数
+
+
+
+Eg:
+
+![Xnip2021-12-08_21-55-59](Java Web.asset/Xnip2021-12-08_21-55-59.jpg)
+
+通过input标签中的name属性值获取即可
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4) post方法乱码
+
+- 解决方法需要用req对象调用setCharacterEncoding()方法设置字符编码
+
+![Xnip2021-12-08_22-01-10](Java Web.asset/Xnip2021-12-08_22-01-10.jpg)
+
+- 一定要在获取对应参数之前设置，否则无效
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5) 请求转发
+
+
+
+特点:
+
+- 浏览器地址不变
+- 只有一次请求
+- 可以共享Request域中的数据
+- 可以转发到WEB-INF目录中(无法通过URL直接访问)
+- 不能访问当前工程以外的资源(无法出站)
+
+Eg:
+
+![Xnip2021-12-08_22-18-03](Java Web.asset/Xnip2021-12-08_22-18-03.jpg)
+
+
+
+![Xnip2021-12-08_22-19-34](Java Web.asset/Xnip2021-12-08_22-19-34.jpg)
+
+
+
+
+
+
+
+相关方法:
+
+- getRequestDispatcher(String str): 获取对应转发Servlet程序的一个转发类对象
+- forward(request, response): 将当前程序的请求和响应对象转发为之前指定的目录程序
+
+![Xnip2021-12-08_22-29-27](Java Web.asset/Xnip2021-12-08_22-29-27.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6) base标签的作用
+
+使用html的a标签:
+
+![Xnip2021-12-08_22-33-35](Java Web.asset/Xnip2021-12-08_22-33-35.jpg)
+
+
+
+
+
+
+
+
+
+使用servlet请求转发:
+
+![Xnip2021-12-08_22-40-38](Java Web.asset/Xnip2021-12-08_22-40-38.jpg)
+
+
+
+
+
+此时无法跳转回来:
+
+![Xnip2021-12-08_22-42-14](Java Web.asset/Xnip2021-12-08_22-42-14.jpg)
+
+
+
+
+
+为了解决这个问题，需要使用base标签指定url
+
+Eg:
+
+![Xnip2021-12-08_22-47-24](Java Web.asset/Xnip2021-12-08_22-47-24.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
