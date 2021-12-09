@@ -1246,6 +1246,69 @@ GROUP BY t1.level, t1.score_grade
 ORDER BY t1.level DESC, ratio DESC
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day138
+
+## Tag: DATE_FORMAT, TIMESTAMPDIFF
+
+![Xnip2021-12-09_07-20-06](MySQL Note.assets/Xnip2021-12-09_07-20-06.jpg)
+
+
+
+![Xnip2021-12-09_07-21-28](MySQL Note.assets/Xnip2021-12-09_07-21-28.jpg)
+
+题意:
+
+给你一张用户行为日志表，请你查询出2021年11月中每个用户每天浏览文章的平均时长，单位为秒
+
+
+
+
+
+思路:
+
+- 很明显需要我们按照日期来分组，而计算的过程就是每日的时长之和 / 用户数
+- 因此需要我们首先获取每条记录中观看文章的时长，再统计用户总数即可
+- 最后再限定一下文章id和年月即可
+- 注意这里不能使用AVG，因为记录中的用户有重复的，直接使用AVG的话结果回偏小，因为每日的用户数重复计算了，SQL如下
+
+```mysql
+SELECT
+    DATE(in_time) AS 'dt',
+    ROUND(SUM(TIMESTAMPDIFF(SECOND, in_time, out_time)) / COUNT(DISTINCT uid), 1) AS 'avg_view_len_sec'
+FROM
+    tb_user_log
+WHERE artical_id != 0
+AND DATE_FORMAT(in_time, '%Y-%m') = '2021-11'
+GROUP BY dt
+ORDER BY avg_view_len_sec
+```
+
 
 
 
