@@ -1261,6 +1261,282 @@ Eg:
 
 
 
+## 7) web中"/"的作用
+
+- 在web中，**"/"是一种绝对路径**
+
+
+
+- 如果"/"被浏览器解析，得到的地址为: http://ip:port
+
+Eg:
+
+```html
+<a href="/">text</a>
+```
+
+
+
+
+
+- 如果"/"被服务器解析，获取的地址为: http://ip:port/工程路径
+
+
+Eg:
+
+```
+web.xml中的配置:
+<url-pattern>/servlet<url-pattern>
+
+Java Code:
+
+servletContext.getRealPath("/")
+request.getRequestDispatcher("/")
+```
+
+
+
+
+
+特殊情况:
+
+```
+response.sendRediect("/");
+将斜杠发送给浏览器解析，获得http://ip:port			(重定向)
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十一、HttpServletResponse类
+
+
+
+## 1) 作用
+
+和HttpServletRequest类一样，每次有请求进来后，Tomcat服务器都会创建一个Response对象传递给Servlet程序使用
+
+HttpServletResponse表示所有响应的信息
+
+如果我们需要设置返回给客户端的信息，都可以通过HttpServletResponse对象来设置
+
+
+
+
+
+
+
+
+
+## 2) 两个输出流
+
+- getOutputStream(): 获取字节流，常用为用户提供下载服务(传递二进制数据)
+- getWriter(): 获取字符流，常用于回传字符串(常用)
+
+
+
+Eg:
+
+![Xnip2021-12-09_19-08-25](Java Web.asset/Xnip2021-12-09_19-08-25.jpg)
+
+- 两个流只能同时获取一个，否则会报错
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) 返回字符串给Client
+
+- 通过HttpServletResponse对象调用getWriter方法，获取一个PrintWriter对象
+- 通过该PrintWriter对象输出字符串
+
+
+
+![Xnip2021-12-09_19-12-37](Java Web.asset/Xnip2021-12-09_19-12-37.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4) 中文显示错误
+
+当我们返回的字符串为中文时，浏览器显示不正常:
+
+![Xnip2021-12-09_19-17-25](Java Web.asset/Xnip2021-12-09_19-17-25.jpg)
+
+
+
+
+
+通过setCharacterEncoding()方法设置字符编码即可:
+
+![Xnip2021-12-09_19-19-20](Java Web.asset/Xnip2021-12-09_19-19-20.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+- 还可以通过setContentType()方法设置client和server的字符编码
+
+
+
+Syntax:
+
+```java
+responseObject.setContentType("text/html; charset=UTF-8");
+```
+
+
+
+
+
+Eg:
+
+![Xnip2021-12-09_19-23-46](Java Web.asset/Xnip2021-12-09_19-23-46.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5) 请求重定向
+
+
+
+特点(和请求转发刚好相反！):
+
+- 浏览器地址会发生变化
+- 会有两次请求(所以Tomcat会将两次请求封装为两对不同的请求和响应对象)
+- 不能共享Response域中的数据(因为两次请求，对象不同)
+- 不能访问WEB-INF中的数据
+- 可以访问工程目录外的资源
+
+
+
+
+
+Eg:
+
+![Xnip2021-12-09_19-41-05](Java Web.asset/Xnip2021-12-09_19-41-05.jpg)
+
+
+
+![Xnip2021-12-09_19-42-51](Java Web.asset/Xnip2021-12-09_19-42-51.jpg)
+
+
+
+
+
+使用setStatus()方法设置相应码
+
+使用setHeader()方法设置响应头信息
+
+
+
+
+
+
+
+**常用的方法:**
+
+- sendRedirect()
+
+![Xnip2021-12-09_19-46-17](Java Web.asset/Xnip2021-12-09_19-46-17.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

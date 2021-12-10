@@ -1309,6 +1309,121 @@ GROUP BY dt
 ORDER BY avg_view_len_sec
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day139
+
+## Tag: UNION ALL, SUM() OVER, 
+
+![Xnip2021-12-10_07-42-37](MySQL Note.assets/Xnip2021-12-10_07-42-37.jpg)
+
+
+
+![Xnip2021-12-10_07-42-17](MySQL Note.assets/Xnip2021-12-10_07-42-17.jpg)
+
+题意:
+
+给你一张用户行为日志表，请你查询出每篇文章在同一时间的最大的观看人数，同一时间先计算进入的记录
+
+
+
+
+
+
+
+思路:
+
+- 该题目明显需要我们按照文章和时刻分组，然后求出各个时间内的人数后，再根据文章分组并求最大人数即可
+- 然而进入和退出的时间在同一行中，不能好统计，所以可以先通过上下连接联合起来，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		artical_id,
+		in_time AS 'time',
+		1 AS 'access'
+FROM
+		tb_user_log
+WHERE artical_id != 0
+UNION ALL
+SELECT
+		artical_id,
+		out_time AS 'time',
+		-1 AS 'access'
+FROM
+		tb_user_log
+WHERE artical_id != 0
+```
+
+
+
+
+
+- 之后就需要按照文章id和时间分组了，但我们其实只需要文章id和每个时段的总数，并不需要时段
+- 所以我们可以借助SUM窗口函数形式完成分组，SQL如下
+
+SQL2
+
+```mysql
+SELECT
+		artical_id,
+		SUM(access) OVER (
+				PARTITION BY artical_id
+				ORDER BY time, access DESC
+		) AS 'sum'
+FROM (
+	SQL1
+		) AS t1
+```
+
+
+
+
+
+- 最后就是取出每个文章对应的最大阅读人数了，使用MAX或者MAX的窗口函数形式分组获取即可，SQL如下
+
+```mysql
+SELECT
+    artical_id,
+    MAX(sum) AS 'max_uv'
+FROM (
+	SQL2
+) AS t1
+GROUP BY artical_id
+ORDER BY max_uv DESC
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
