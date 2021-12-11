@@ -1525,6 +1525,109 @@ Eg:
 
 ![Xnip2021-12-09_19-46-17](Java Web.asset/Xnip2021-12-09_19-46-17.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十二、JavaEE三层架构
+
+
+
+![Xnip2021-12-10_21-22-56](Java Web.asset/Xnip2021-12-10_21-22-56.jpg)
+
+
+
+
+
+
+
+
+
+## 1. 书城项目结构
+
+- web层				   com.alex.web/servlet/controller
+- service层           com.alex.service                                  Service接口包
+- ​                           com.alex.service.impl                         Service接口实现类
+- dao持久层        com.alex.dao                                       Dao接口包
+- ​                           com.alex.dao.impl                              Dao接口实现类
+- 实体bean对象  com.alex.pojo/entity/bean/domain   JavaBean类
+- 测试包               com.alex.test/junit
+- 工具类               com.alex.utils
+
+![Xnip2021-12-10_21-36-19](Java Web.asset/Xnip2021-12-10_21-36-19.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 创建用户数据库
+
+Eg:
+
+![Xnip2021-12-10_21-52-45](Java Web.asset/Xnip2021-12-10_21-52-45.jpg)
+
+
+
+![Xnip2021-12-10_21-53-23](Java Web.asset/Xnip2021-12-10_21-53-23.jpg)
+
+
+
+
+
+
+
+## 3.创建数据库表对应的User类
+
+![Xnip2021-12-10_21-57-21](Java Web.asset/Xnip2021-12-10_21-57-21.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. 
+
+
+
 
 
 

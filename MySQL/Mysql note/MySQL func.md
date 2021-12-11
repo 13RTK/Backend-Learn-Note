@@ -668,6 +668,50 @@ Eg:
 - 与LENGTH()的异同:
     - CHAR_LENGTH不受编码影响，LENGTH会受到编码的影响
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 5.CTE
+
+![Xnip2021-12-11_09-10-59](MySQL Note.assets/Xnip2021-12-11_09-10-59.jpg)
+
+
+
+![Xnip2021-12-11_09-11-14](MySQL Note.assets/Xnip2021-12-11_09-11-14.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1414,6 +1414,7 @@ GROUP BY artical_id
 ORDER BY max_uv DESC
 ```
 
+<hr>
 
 
 
@@ -1435,6 +1436,131 @@ ORDER BY max_uv DESC
 
 
 
+
+
+
+
+
+
+
+
+# Day140
+
+## Tag: UNION ALL, EXISTS
+
+![Xnip2021-12-11_08-34-00](MySQL Note.assets/Xnip2021-12-11_08-34-00.jpg)
+
+
+
+![Xnip2021-12-11_08-34-31](MySQL Note.assets/Xnip2021-12-11_08-34-31.jpg)
+
+
+
+![Xnip2021-12-11_09-03-21](MySQL Note.assets/Xnip2021-12-11_09-03-21.jpg)
+
+题意:
+
+给你一张用户信息表，一张试卷作答记录表，当有任意一个0级用户未完成试卷数大于2时，输出每个0级用户的试卷未完成数和未完成率(保留3位小数)；如果不存在这样的数据，则查询出所有有作答记录用户的试卷未完成数和未完成率，结果按照未完成率升序排列
+
+
+
+
+
+思路:
+
+- 首先我们需要先根据条件尝试查询出满足条件的0级用户，简单的分组和指定null即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.uid,
+	COUNT(DISTINCT t2.exam_id) AS 'uncomplete_count'
+FROM
+	user_info AS t1
+INNER JOIN exam_record AS t2 ON t1.uid = t2.uid
+WHERE t2.submit_time IS NULL AND t1.level = 0
+GROUP BY t1.uid
+HAVING uncomplete_count > 2
+```
+
+
+
+- 或者这里临时表之后，我们可以通过EXISTS判断该查询是否存在作为之后查询的依据
+- 因为需要查询的部分有两个，且是对立的，所以我们使用UNION ALL连接起来就可以，两个查询中只会有一个有效
+- 首先写出存在满足条件的0级用户时的查询，注意这里需要查询出所有0级用户的记录，所以要以用户表为准，因此要以用户表为驱动表，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	t1.uid,
+	COUNT(t2.start_time) - COUNT(t2.submit_time) AS 'incomplete_cnt',
+	ROUND(IFNULL(SUM(IF(t2.submit_time IS NULL, 1, 0)) / COUNT(t2.start_time), 0), 3) AS 'incomplete_rate'
+FROM
+	user_info AS t1 
+LEFT JOIN exam_record AS t2 ON t1.uid = t2.uid
+WHERE EXISTS (
+	SQL1
+	)
+AND t1.level = 0
+GROUP BY t1.uid
+```
+
+
+
+- 部分人可能会有疑惑：计算未完成数时为什么不用SUM(IF)呢？这样只需要写submit_time这一个字段就行呀？
+- 注意，这里我们写的是外连接，所以在IF处理null之前，其余未出现在记录表中的用户会与记录表连接存在submit_time为null的记录
+- 如果按照SUM(IF)的方式计算未完成数，那么原本没有作答记录的用户也会被计算出对应的作答记录数
+
+
+
+
+
+
+
+- 之后便是另一个部分，此时我们需要查询出所有有作答记录的用户数，所以此时我们应该使用内连接，并改为NOT EXISTS，且不设等级限制，SQL如下
+
+SQL3
+
+```mysql
+SELECT
+	t1.uid,
+	COUNT(t2.start_time) - COUNT(t2.submit_time) AS 'incomplete_cnt',
+	ROUND(IFNULL(SUM(IF(t2.submit_time IS NULL, 1, 0)) / COUNT(t2.start_time), 0), 3) AS 'incomplete_rate'
+FROM
+	user_info AS t1 
+INNER JOIN exam_record AS t2 ON t1.uid = t2.uid
+WHERE NOT EXISTS (
+	SQL1
+	)
+GROUP BY t1.uid
+```
+
+
+
+
+
+- 最后上下连接两表，并对未完成率排序即可，SQL如下
+
+
+```mysql
+SQL2
+UNION ALL
+SQL3
+ORDER BY incomplete_rate;
+```
+
+
+
+
+
+
+
+
+
+- 当然，如果MySQL版本为8.0及以上，可用使用CTE(common table expression)也就是所谓的公用表表达式
+- 使用WITH AS创建一个公用表即可，这样能简洁很多
 
 
 
