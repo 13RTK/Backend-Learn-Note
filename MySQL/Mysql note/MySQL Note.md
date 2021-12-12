@@ -2912,6 +2912,28 @@ DROP INDEX index_name ON table;
 
 
 
+## 3. 查看索引
+
+Syntax:
+
+```mysql
+SHOW INDEX FROM table_name;
+```
+
+Eg:
+
+![Xnip2021-12-11_10-49-59](MySQL Note.assets/Xnip2021-12-11_10-49-59.jpg) 
+
+
+
+
+
+
+
+
+
+
+
 
 
 

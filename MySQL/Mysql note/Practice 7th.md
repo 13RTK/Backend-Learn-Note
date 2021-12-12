@@ -1562,11 +1562,52 @@ ORDER BY incomplete_rate;
 - 当然，如果MySQL版本为8.0及以上，可用使用CTE(common table expression)也就是所谓的公用表表达式
 - 使用WITH AS创建一个公用表即可，这样能简洁很多
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day141
+
+## Tag: HAVING
+
+![Xnip2021-12-12_11-39-10](MySQL Note.assets/Xnip2021-12-12_11-39-10.jpg)
+
+
+
+![Xnip2021-12-12_11-38-51](MySQL Note.assets/Xnip2021-12-12_11-38-51.jpg)
+
+题意:
+
+给你一张订单信息表，请你查询出2021年中每月大于10万的GMV值(已付款和未支付订单金额的总和)
+
+
+
+思路:
+
+- 首先肯定就是按照月份分组了，所以我们使用DATE_FORMAT或者LEFT取出对应的格式即可
+- 而总金额就是total_amount字段的和了
+- 之后限制条件中排除掉退款的记录并限制年份即可
+- 注意GMV的限制应该在分组后进行，所以使用HAVING
 
 
 

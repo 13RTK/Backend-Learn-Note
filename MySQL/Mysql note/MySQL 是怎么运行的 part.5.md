@@ -2425,6 +2425,205 @@ SQL标准中的隔离等级:
 
 ### 21.2.3 MySQL支持的四种隔离等级
 
+MySQL中各级隔离等级允许发生的现象与SQL规定中的有些出入:
+
+MySQL在REPEATABLE READ隔离等级下，可以很大程度上禁止幻读发生
+
+
+
+MySQL默认隔离等级为REPEATABLE READ
+
+
+
+#### 1) 设置事务的隔离等级
+
+Syntax:
+
+```mysql
+SET [GLOBAL|SESSION] TRANSACTION ISOLATION LEVEL level;
+```
+
+
+
+level的可选项:
+
+```mysql
+level : {
+	REPEATABLE READ | READ COMMITTED | READ UNCOMMITTED | SERIALIZABLE
+}
+```
+
+
+
+
+
+设置隔离等级时，SET后不同的关键字对事务的影响范围:
+
+
+
+- GLOBAL
+    - 只对执行完语句后产生的新回话有效(新的client连接)
+    - 当前已经存在的会话无效
+- SESSION
+    - 只对当前会话的后续事务有效
+    - 该语句不会影响正在执行的事务
+    - 在事务之间执行时，只对后续事务有效
+- 都不使用(只生效一次)
+    - 只对当前会话中下一个即将开始的事务有效
+    - **下一个事务执行完后，后续事务将恢复到之前的隔离等级**
+    - 不能在已经开始的事务中执行，会报错
+
+
+
+
+
+
+
+
+
+
+
+
+
+启动时改变隔离等级
+
+修改启动选项: transaction-isolation
+
+Eg:
+
+```shell
+mysqld --transaction-isolation=SERIALIZABLE
+```
+
+
+
+
+
+
+
+通过系统变量查看隔离等级:
+
+```mysql
+SHOW VARIABLES LIKE 'transaction_isolation';
+```
+
+或者
+
+```mysql
+SHOW @@transaction_isolation;
+```
+
+
+
+**注意：**在MySQL5.7.20之前的版本需要使用"tx_isolation"
+
+
+
+
+
+Eg:
+
+![Xnip2021-12-11_14-36-14](MySQL Note.assets/Xnip2021-12-11_14-36-14.jpg)
+
+
+
+
+
+之前使用"SET TRANSACTION ISOLATION LEVEL level"就是在修改"tx/transaction_isolation"这个变量
+
+
+
+
+
+通过修改系统变量的方式修改隔离等级的语法:
+
+|                 Syntax                  |       scope        |
+| :-------------------------------------: | :----------------: |
+| SET GLOBAL transaction_isolaton = level |        全局        |
+|     SET @@GLOBALE var_name = level      |        全局        |
+|      SET SESSION var_name = level       |        会话        |
+|     SET @@SESSION var_name = level      |        会话        |
+|          SET var_name = level           |        会话        |
+|          SET @@var_name = leve          | 下一个事务(一次性) |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 21.3 MVCC原理
+
+
+
+### 21.3.1 版本链
+
+使用InnoDB存储引擎的表，在聚簇索引记录下都包含两个隐藏列(row_id非必需)
+
+- trx_id: 每次当有一个事务对聚簇索引记录进行修改时，都会将事务的id赋值到该列上
+- roll_pointer: 该列相当于指针，可以指向该记录修改前的信息(undo日志)
+
+
+
+假设现在一个id为80的事务执行了插入操作，则对应插入的记录为:
+
+![Xnip2021-12-11_14-54-39](MySQL Note.assets/Xnip2021-12-11_14-54-39.jpg)
+
+
+
+注意:
+
+insert undo日志只在事务回滚时起作用，因此如果事务提交了，那么insert undo就没用了
+
+对应的Undo log Segment会被回收(undo页面链表被重用/释放)
+
+但roll pointer不会清除。roll pointer占用7bytes，第一个bit标记其指向的undo日志类型，为1则说明指向的是TRX_UNDO_INSERT类
+
+
+
+之后的内容是为了展示undo日志在MVCC中的应用，而非事务回滚中的应用，所以后面都会去掉最开始的insert undo日志
+
+
+
+
+
+例子:
+
+假设之后有两个id为100、200的事务对这条记录进行了UPDATE操作，操作流程:
+
+  ![Xnip2021-12-11_15-07-18](MySQL Note.assets/Xnip2021-12-11_15-07-18.jpg)
+
+- 每一次UPDATE都会记录对应的undo日志，而每条undo日志又有一个roll_pointer属性指向上一个undo日志，这里省去了最早的insert undo日志
+
+Eg:
+
+![Xnip2021-12-11_15-09-58](MySQL Note.assets/Xnip2021-12-11_15-09-58.jpg)
+
+
+
+每次更新记录后，都会将旧值(被更新的部分)放到一条undo日志中，之后所有的undo**通过roll_pointer连接起来形成版本链**，其中的每个undo日志都有其生成时对应操作所在的事务id
+
+其中头节点就是当前记录的最新值
+
+我们会**通过这个记录的版本链来控制并发事务访问相同记录时的行为**，**我们将这种机制称为MVCC**(Multi-Version Concurrency Control)
+
+
+
+
+
+拓展:
+
+在update undo日志中，只会记录索引列和更新列的信息，所以不会记录下所有列的信息
+
+其中没有记录的列信息说明该列的值没有被更新，在之前的版本中找即可，如果都没有说明该列的值没有变过
 
 
 
@@ -2444,12 +2643,84 @@ SQL标准中的隔离等级:
 
 
 
+### 21.3.2 ReadView
+
+
+
+对于使用READ UNCOMMITTED隔离等级的事务:
+
+**可以读到未提交事务修改过的记录**，所有**直接读取记录版本链中的最新版记录即可**
+
+
+
+对于使用SERIALIZABLE隔离等级的事务:
+
+会**直接对记录加锁的方式来访问记录**
+
+
+
+对于使用READ COMMITTED和REPEATABLE READ的事务来说:
+
+必需保证**读取已提交事务修改的记录**
+
+也就是说明，一个事务修改了数据后但事务未提交，**此时其他事务不能读取该未提交事务在版本链中对应的新版记录**
 
 
 
 
 
 
+
+
+
+此时的核心问题就是:
+
+**如何判断记录的哪些版本是当前事务可操作的/可见的**
+
+
+
+为此提出了ReadView的概念，其中4个重要的内容:
+
+- m_id: 生成ReadView时，当前系统中**活跃事务的事务id列表**
+- min_trx_id: 生成ReadView时，当前系统**活跃的读写事务中最小的事务id**，即m_id中的最小值
+- max_trx_id: 生成ReadView时，系统应该分配给下一个事务的事务id
+
+**注意:** max_trx_id不是m_id中的最大值。假如有三个事务1、2、3，事务id为3的提交了，此时如果生成ReadView，那么**m_id为[1, 2]，max_trx_id为4**
+
+- creator_id: 生成ReadView的事务对应的事务id
+
+
+
+
+
+
+
+通过ReadView来判断记录版本可见的步骤:
+
+
+
+1. 如果**对应记录最新版本中的trx_id与当前事务生成的ReadView对应的create_trx_id相同**
+    - 说明当前事务在访问它修改过的记录(上次修改也是在本事务中)。当前版本可以访问
+2. 如果当前访问记录最新版本中的trx_id < 当前事务生成的ReadView对应的creator_trx_id
+    - 则说明上次修改当前记录的事务已经提交了，所以当前版本可以访问(事务id小的说明执行靠前)
+3. 如果当前访问记录最新版本中的trx_id >= 当前事务生成的ReadView对应的creator_trx_id
+    - **则说明生成该版本记录的事务在当前事务之后执行，需要先执行完当前事务后才能再次修改**，所以不能访问当前版本
+4. 如果当前访问记录最新版本中的trx_id 在min_trx_id和max_trx_id之间
+    - 则需要进一步判断其是否在m_id中
+    - 如果在说明生成该版本的记录还未提交，所以当前版本不能访问
+    - 如果不在则说明对应事务已经提交，可以访问该版本
+
+
+
+如果当前版本对事务不可见，则通过roll_pointer去找之前的版本，再做相同的判断
+
+如果都不可见，则该记录则不会包含在查询结果中
+
+
+
+
+
+而READ COMMITTED和REPEATABLE和直接一个非常大的区别就是生成ReadViewd的时间不同
 
 
 
