@@ -1609,6 +1609,7 @@ ORDER BY incomplete_rate;
 - 之后限制条件中排除掉退款的记录并限制年份即可
 - 注意GMV的限制应该在分组后进行，所以使用HAVING
 
+<hr>
 
 
 
@@ -1617,6 +1618,55 @@ ORDER BY incomplete_rate;
 
 
 
+
+
+
+
+
+
+
+
+
+# Day142
+
+## Tag: HAVING
+
+![Xnip2021-12-13_07-42-28](MySQL Note.assets/Xnip2021-12-13_07-42-28.jpg)
+
+
+
+![Xnip2021-12-13_07-42-45](MySQL Note.assets/Xnip2021-12-13_07-42-45.jpg)
+
+题意:
+
+给你一张用户对展示商品的行为表，请你查询出2021年10月中每个退货率不大于0.5的所有商品的各项指标
+
+
+
+
+
+
+
+思路:
+
+- 首先各项指标其实就根据给出的列和对各项指标的定义就能解决了，其中商品展示数就是这张表中出现的次数罢了
+- 之后常规的限制日期，注意对退货率的限制是在分组之后，所以我们应该使用HAVING，SQL如下
+
+```mysql
+SELECT
+    product_id,
+    ROUND(SUM(if_click) / COUNT(event_time), 3) AS 'ctr',
+    ROUND(SUM(if_cart) / SUM(if_click), 3) AS 'cart_rate',
+    ROUND(SUM(if_payment) / SUM(if_cart), 3) AS 'payment_rate',
+    ROUND(SUM(if_refund) / SUM(if_payment), 3) AS 'refund_rate'
+FROM
+    tb_user_event
+WHERE YEAR(event_time) = 2021
+AND MONTH(event_time) = 10
+GROUP BY product_id
+HAVING refund_rate <= 0.5
+ORDER BY product_id
+```
 
 
 
