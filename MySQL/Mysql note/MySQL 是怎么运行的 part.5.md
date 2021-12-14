@@ -2609,9 +2609,9 @@ Eg:
 
 
 
-每次更新记录后，都会将旧值(被更新的部分)放到一条undo日志中，之后所有的undo**通过roll_pointer连接起来形成版本链**，其中的每个undo日志都有其生成时对应操作所在的事务id
+每次更新记录后，都会将旧值(被更新的部分)放到一条undo日志中，之后所有的undo日志**通过roll_pointer连接起来形成版本链**，其中的每个undo日志中都有其生成时对应操作所在的事务id
 
-其中头节点就是当前记录的最新值
+该版本链的头节点指向当前记录的最新版本值
 
 我们会**通过这个记录的版本链来控制并发事务访问相同记录时的行为**，**我们将这种机制称为MVCC**(Multi-Version Concurrency Control)
 
@@ -2621,9 +2621,9 @@ Eg:
 
 拓展:
 
-在update undo日志中，只会记录索引列和更新列的信息，所以不会记录下所有列的信息
+在update undo日志中，**只会记录索引列和更新列的信息，所以不会记录下所有列的信息**
 
-其中没有记录的列信息说明该列的值没有被更新，在之前的版本中找即可，如果都没有说明该列的值没有变过
+其中没有记录的列信息说明该列的值没有被更新，在之前的版本中找即可，**如果都没有说明该列的值没有变过**
 
 
 
@@ -2649,7 +2649,7 @@ Eg:
 
 对于使用READ UNCOMMITTED隔离等级的事务:
 
-**可以读到未提交事务修改过的记录**，所有**直接读取记录版本链中的最新版记录即可**
+**可以读到未提交事务修改过的记录**，所以**直接读取记录版本链中的最新版记录即可**
 
 
 
@@ -2702,7 +2702,7 @@ Eg:
 1. 如果**对应记录最新版本中的trx_id与当前事务生成的ReadView对应的create_trx_id相同**
     - 说明当前事务在访问它修改过的记录(上次修改也是在本事务中)。当前版本可以访问
 2. 如果当前访问记录最新版本中的trx_id < 当前事务生成的ReadView对应的creator_trx_id
-    - 则说明上次修改当前记录的事务已经提交了，所以当前版本可以访问(事务id小的说明执行靠前)
+    - 则说明上次修改当前记录的事务已经提交了，所以当前版本可以访问(事务id小的说明执行顺序靠前)
 3. 如果当前访问记录最新版本中的trx_id >= 当前事务生成的ReadView对应的creator_trx_id
     - **则说明生成该版本记录的事务在当前事务之后执行，需要先执行完当前事务后才能再次修改**，所以不能访问当前版本
 4. 如果当前访问记录最新版本中的trx_id 在min_trx_id和max_trx_id之间
@@ -2718,10 +2718,7 @@ Eg:
 
 
 
-
-
-而READ COMMITTED和REPEATABLE和直接一个非常大的区别就是生成ReadViewd的时间不同
-
+而READ COMMITTED和REPEATABLE READ和直接一个非常大的区别就是生成ReadViewd的时间不同:
 
 
 
@@ -2733,6 +2730,503 @@ Eg:
 
 
 
+#### 1) READ COMMITTED
+
+- 读取数据前生成ReadView
 
 
 
+例子:
+
+执行两个id为100和200的事务
+
+
+
+```mysql
+# Transaction 100
+BEGIN;
+
+UPDATE HERO SET name = '关羽' WHERE number = 1;
+UPDATE HERO SET name = '张飞' WHERE number = 1;
+```
+
+
+
+强调:
+
+**只有在第一次修改记录时才会分配事务id**(INSERT, DELETE, UPDATE)
+
+
+
+此时number为1的记录对应的版本链表为:
+
+![Xnip2021-12-13_08-44-59](MySQL Note.assets/Xnip2021-12-13_08-44-59.jpg)
+
+
+
+此时**执行隔离级别为READ COMMITTED的新事务**:
+
+```mysql
+BEGIN;
+
+SELECT * FROM HERO WHERE number = 1;
+```
+
+
+
+此时该事务的SELECT语句的执行过程如下:
+
+
+
+1. 执行SELECT语句时生成一个ReadView
+
+ReadView的m_ids列表的内容为:[100, 200] (undo日志中的事务id)，min_trx_id为100，max_trx_id为201，creator_trx_id为0(该事务没有修改记录，所以事务id默认为0)
+
+2. 最新版的记录对应的事务id为100，其存在于ReadView的m_ids中
+
+所以不可见，应该使用roll_pointer跳到下一个版本记录中去
+
+3. 下个版本记录对应的事务id为100，其也存在于Read View的m_ids中
+
+不可见，再次跳到下一个记录中去
+
+4. 再下一版本的trx_id为80，小于min_trx_id的值
+
+该版本可见，所以最终查询出的记录name为'刘备'
+
+
+
+
+
+
+
+
+
+
+
+
+
+之后将id为100的事务提交
+
+```mysql
+# Transaction 100
+BEGIN;
+
+UPDATE HERO SET name = '关羽' WHERE number = 1;
+UPDATE HERO SET name = '张飞' WHERE number = 1;
+
+COMMIT;
+```
+
+
+
+之后使用id为200的事务更新hero中number为1的记录:
+
+```mysql 
+BEGIN;
+
+UPDATE HERO SET name = '赵云' WHERE number = 1;
+UPDATE HERO SET name = '诸葛亮' WHERE number = 1;
+```
+
+
+
+此时表HERO中number为1的记录对应的版本链为:
+
+![Xnip2021-12-13_09-34-42](MySQL Note.assets/Xnip2021-12-13_09-34-42.jpg)
+
+
+
+
+
+此时再到隔离等级为READ COMMITTED的事务中执行SELECT2:
+
+```mysql
+BEGIN;
+
+# SELECT1
+SELECT * FROM HERO WHERE number = 1;	// 结果为'刘备'
+
+# SELECT2 事务100提交了
+SELECT * FROM HERO WHERE number = 1;	// 结果为'张飞'
+```
+
+该SELECT2的执行过程
+
+
+
+1. 在执行该SELECT语句时又会生成一个ReadView
+
+其m_ids列表内此时只有[200] (id为100的已经提交了)，此时min_trx_id为200，max_trx_id为201，creator_trx_id为0
+
+
+
+2. 最新版记录版记录中的事务id为200
+
+在m_ids中，所以不可见，通过rollback_pointer跳到下一个位置
+
+
+
+3. 下一个版本对应的事务id为200
+
+在m_ids，所以不可见，再次跳到下一个位置
+
+
+
+4. 下一个版本对应的事务id为100
+
+小于ReadView中的min_trx_id值200，所以该版本可见，返回'张飞'
+
+
+
+**总结：****隔离等级为READ COMMITTED的事务，在每次查询时都会生成一个ReadView**
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 2) REPEATABLE READ
+
+- 在第一次读取数据时生成一个ReadView
+
+
+
+例子:
+
+执行两个id为100和200的事务
+
+
+
+```mysql
+# Transaction 100
+BEGIN;
+
+UPDATE HERO SET name = '关羽' WHERE number = 1;
+UPDATE HERO SET name = '张飞' WHERE number = 1;
+```
+
+Eg:
+
+![Xnip2021-12-13_08-44-59](MySQL Note.assets/Xnip2021-12-13_08-44-59.jpg)
+
+
+
+此时**执行隔离级别为REPEATABLE READ的新事务**:
+
+```mysql
+BEGIN;
+
+# 事务id为100和200的未提交
+SELECT * FROM HERO WHERE number = 1;  // 得到的值为'刘备'
+```
+
+
+
+这个SELECT的执行过程:
+
+
+
+1. 在执行SELECT时会产生一个ReadView
+
+其m_ids为[100, 200]，min_trx_id为100，max_trx_id为201，creator_trx_id为0
+
+
+
+剩余步骤同上:
+
+2. 最新版的记录对应的事务id为100，其存在于ReadView的m_ids中
+
+所以不可见，应该使用roll_pointer跳到下一个版本记录中去
+
+3. 下个版本记录对应的事务id为100，其也存在于Read View的m_ids中
+
+不可见，再次跳到下一个记录中去
+
+4. 再下一版本的trx_id为80，小于min_trx_id的值
+
+该版本可见，所以最终查询出的记录name为'刘备'
+
+
+
+
+
+之后将id为100的事务提交
+
+```mysql
+# Transaction 100
+BEGIN;
+
+UPDATE HERO SET name = '关羽' WHERE number = 1;
+UPDATE HERO SET name = '张飞' WHERE number = 1;
+
+COMMIT;
+```
+
+
+
+之后使用id为200的事务更新hero中number为1的记录:
+
+```mysql 
+BEGIN;
+
+UPDATE HERO SET name = '赵云' WHERE number = 1;
+UPDATE HERO SET name = '诸葛亮' WHERE number = 1;
+```
+
+
+
+此时表HERO中number为1的记录对应的版本链为:
+
+![Xnip2021-12-13_09-34-42](MySQL Note.assets/Xnip2021-12-13_09-34-42.jpg)
+
+
+
+此时再到隔离等级为REPEATABLE READ的事务中执行SELECT2:
+
+```mysql
+BEGIN;
+
+# SELECT1
+SELECT * FROM HERO WHERE number = 1;	// 结果为'刘备'
+
+# SELECT2 事务100提交了
+SELECT * FROM HERO WHERE number = 1;	// 结果为'张飞'
+```
+
+该SELECT2的执行过程:
+
+
+
+
+
+1. 因为隔离等级为REPEATABLE READ
+
+而之前一次SELECT已经生成了ReadView，所以会直接复用之前ReadView，此时m_ids列表的内容为[100, 200]，trx_min_id为100，max_trx_id为201，creator_trx_id为0
+
+
+
+2. 最新版的记录对应的事务id为200
+
+其存在于ReadView的m_ids中，不可见，通过roll_pointer跳转到下一条记录中
+
+
+
+3. 下一个版本的记录对应的事务id为200
+
+其存在于ReadView的m_ids中，不可见，通过roll_pointer跳转到下一条记录中
+
+
+
+4. 下下个版本的记录对应的事务id为100
+
+其存在于ReadView的m_ids中，不可见，通过roll_pointer跳转到下一条记录中
+
+
+
+5. 下下下个版本的记录对应的事务id为80
+
+小于min_trx_id，记录可见，返回'刘备'
+
+
+
+
+
+**总结：**
+
+在REPEATABLE READ隔离等级下，事务两次查询的结果相同，这就是可重复读的含义
+
+如果我们在开启事务时使用"START TRANSACTION"时，可以使用"START TRANSACTION WITH CONSISTENT SNAPSHOT"语句开始事务，**此时会在执行任意语句执行后立马生成一个ReadView**，而不是在第一个SELECT才生成
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 21.3.3 二级索引和MVCC
+
+- 前面提到的trx_id和roll_pointer只存在于聚簇索引记录中，那么使用二级索引时如何判断可见性呢？
+
+
+
+例子:
+
+```mysql
+BEGIN;
+
+SELECT name FROM hero WHERE name = '刘备'
+```
+
+此时使用到了idx_name这个二级索引，二级索引记录对事务的可见性判断:
+
+
+
+1. 每当对二级索引页进行CUD时候
+
+如果执行操作的事务对应的事务id，大于页面中Page Header部分中的PAGE_MAX_TRX_ID属性
+
+此时就会将PAGE_MAX_TRX_ID更新为该事务的id
+
+意味着PAGE_MAX_TRX_ID代表着修改该二级索引页面的最大事务id
+
+
+
+当SELECT访问二级索引记录时，会先查看ReadView中的min_trx_id是否大于页面的PAGE_MAX_TRX_ID
+
+如果大于则说明页面中所有记录都对事务可见；否则执行步骤二:
+
+
+
+
+
+2. 根据记录的主键值进行回表
+
+通过获取到的聚簇索引记录重复之前的判断即可
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 21.3.4 MVCC小结
+
+- MVCC是指隔离等级为READ COMMITTED, REPEATABLE READ的事务执行SELECT操作时，访问版本链判断可见性的过程
+- 这样可以让读-写，写-读操作并发执行，从而提高性能
+- READ COMMITTED和REPEATABLE READ的区别就是创建ReadView的时间不同
+- 后者只在第一次使用SELECT前创建，之后一直复用
+
+拓展
+
+- 只有进行普通的SELECT查询时，MVCC才会生效
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 21.4 Purge
+
+
+
+- insert undo日志在事务提交后就可以释放，但update undo日志需要支持MVCC，所以不能立马删除
+
+
+
+一个事务写的一组undo日志都有一个Undo Log Header部分，其中一个名为TRX_UNDO_HISTORY_NODE的属性，其表示一个名为History链表的节点。
+
+一个事务提交后，就会**将事务执行产生的udpate undo日志插入到history链表的头节点处**
+
+
+
+**每个回滚段对应一个Rollback Segment Header页面**，其中有两个属性:
+
+1. TRX_RSEG_HISTORY: 表示History链表的基节点
+2. TRX_RSEG_HISTORY_SIZE: 表示History链表占用的页面数量
+
+
+
+每个回滚段都有一个History链表，**一个事务在回滚段中写入的一组update undo日志在事务提交后都会加入到回滚段的History链表中**。回滚段很多，所以也有很多History链表
+
+这些链表中的update undo日志所占用空间没有释放，需要删除
+
+
+
+
+
+
+
+- 为了支持MVCC，delete mark操作只是在记录上做一个删除标记，并没有真正删除
+
+一组undo日志中的Undo Log Header部分有一个名为TRX_UNDO_DEL_MARKS的属性，用来标记本组undo日志中是否包含由delete mark产生的undo日志
+
+
+
+
+
+
+
+为了节省空间，**需要在合适的时候将这些标记为删除的记录彻底删除，该操作就是Purge**
+
+那么**合适的时机是什么**？
+
+
+
+只要Update undo日志和被标记为删除的记录，对应的最早的ReadView肯定不会访问某个事务产生的undo日志，则这些日志记录就可以删除了
+
+但是该如何保证ReadView不会访问到其他事务产生的undo日志？
+
+
+
+只要包含保证生成ReadView的时候其他的事务已经提交了，那么ReadView就不会访问其他事务的undo日志了
+
+
+
+
+
+为此MySQL设计者做了两件事:
+
+- **事务提交时，为事务生成一个名为事务no的值**
+
+该值表示事务提交的顺序
+
+一组undo日志中对应的Undo Log Header部分，有一个名为TRX_UNDO_TRX_NO的属性，事务提交时会将事务id赋值到这个属性中
+
+所以History链表也是按照对应的事务no来排序各组undo日志的
+
+
+
+- 一个ReadView结构包含一个事务no属性
+
+生成ReadView时会将当前系统中最大的事务no + 1后，赋值给这个属性
+
+
+
+所有的ReadView按照创建时间连成了链表
+
+当执行Purge时，会将最早生成的ReadView取出，然后从各个回滚段的History链表中取出事务no较小的各组undo日志
+
+如果一组undo日志的事务no小于最早的ReadView的no值，那么该组undo日志就没用了
+
+
+
+注意:
+
+如果使用REPEATABLE READ隔离等级的话，会一直复用最早的ReadView，此时如果事务一直不提交，那么对应的ReadView和update undo日志和打了删除标记的日志就会一直存在

@@ -1668,6 +1668,7 @@ HAVING refund_rate <= 0.5
 ORDER BY product_id
 ```
 
+<hr>
 
 
 
@@ -1682,6 +1683,69 @@ ORDER BY product_id
 
 
 
+
+
+
+# Day143
+
+## Tag: RANK() OVER
+
+![Xnip2021-12-14_08-00-06](MySQL Note.assets/Xnip2021-12-14_08-00-06.jpg)
+
+
+
+![Xnip2021-12-14_07-58-00](MySQL Note.assets/Xnip2021-12-14_07-58-00.jpg)
+
+题意:
+
+给你一张消费者信息表，一张订单信息表，请你查询出每个用户最近的三笔订单，如果该用户总订单数小于3，则查询出其所有的订单即可
+
+
+
+
+
+思路:
+
+- 很明显，我们需要根据每个用户进行分组，之后将订单按照日期排序
+- 但我们同时还需要订单日期和订单号，所以使用GROUP BY分组的话就不能一次性获取我们想要的字段
+- 因此我们需要在排名的时候不影响到其他字段，所以窗口函数是最好的选择
+- 我们可以使用RANK() OVER、DENSE_RANK()、ROW_NUM() OVER()，这三个只是在数值相同时，输出的排名有所差异而已，但都能满足我们的需求，因此SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	order_id,
+	order_date,
+	customer_id,
+	RANK() OVER (
+		PARTITION BY customer_id
+		ORDER BY order_date DESC
+	) AS 'rank'
+FROM
+	Orders
+```
+
+
+
+
+
+- 之后我们只需要简单的获取其中的字段并连接用户信息表即可，限制条件为排名小于等于3，最后注意排序字段的先后顺序即可，SQL如下
+
+```mysql
+SELECT
+	t1.name AS 'customer_name',
+	t2.customer_id,
+	t2.order_id,
+	t2.order_date
+FROM
+	Customers AS t1
+INNER JOIN (
+	SQL1
+	) AS t2 ON t1.customer_id = t2.customer_id
+WHERE t2.rank <= 3
+ORDER BY customer_name, t2.customer_id, order_date DESC
+```
 
 
 

@@ -58,7 +58,7 @@ Syntax:
 ```mysql
 DENSE_RANK() OVER (
 	PARTITION BY column_name
-  ORDER BY column_name DESC/ASC
+	ORDER BY column_name DESC/ASC
 ) AS 'alias'
 ```
 
@@ -78,7 +78,51 @@ eg:
 
 
 
-## 2) SUM() OVER
+
+
+
+
+## 2) RANK() OVER
+
+与DENSE_RANK()一致，但会空出排名
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) ROW_NUM() OVER()
+
+也是排名，但不会不管是否相同都会直接排序下去
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4) SUM() OVER
 
 - 根据整体或分组进行求和计算(PARTITION BY)
 - 能根据排序的字段(ORDER BY)进行逐次累加
