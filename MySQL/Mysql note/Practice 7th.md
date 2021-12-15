@@ -1747,7 +1747,75 @@ WHERE t2.rank <= 3
 ORDER BY customer_name, t2.customer_id, order_date DESC
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day144
+
+## Tag: RANK() OVER()
+
+![Xnip2021-12-15_09-55-18](MySQL Note.assets/Xnip2021-12-15_09-55-18.jpg)
+
+
+
+![Xnip2021-12-15_09-55-35](MySQL Note.assets/Xnip2021-12-15_09-55-35.jpg)
+
+题意:
+
+给你一张试卷信息表，一张试卷作答记录表，请你查询出每类试卷的前三名，如果最高分相同，则取最小分数大的那个，如果还相同则取uid较大的
+
+
+
+
+
+思路:
+
+- 首先我们需要根据不同的试卷类别获取每个用户的排名
+- 因为排序的基准为最值，所以需要先分组获取才行，这些写的话很麻烦，所以我们使用窗口函数就行了，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.tag,
+	t2.uid,
+	RANK() OVER(
+	PARTITION BY t1.tag
+		ORDER BY MAX(t2.score) DESC, MIN(t2.score) DESC, uid DESC
+	) AS 'ranking'
+FROM
+examination_info AS t1
+INNER JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id
+GROUP BY t1.tag, t2.uid
+```
+
+
+
+
+
+- 之后只需要限制排名即可，SQL如下
+
+```mysql
+SELECT
+    t1.tag,
+    t1.uid,
+    t1.ranking
+FROM (
+    SQL1
+    ) AS t1
+WHERE t1.ranking <= 3;
+```
 
