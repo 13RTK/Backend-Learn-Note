@@ -1819,3 +1819,65 @@ FROM (
 WHERE t1.ranking <= 3;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day145
+
+## Tag: SUM() OVER
+
+![Xnip2021-12-16_07-27-32](MySQL Note.assets/Xnip2021-12-16_07-27-32.jpg)
+
+
+
+![Xnip2021-12-16_07-27-44](MySQL Note.assets/Xnip2021-12-16_07-27-44.jpg)
+
+题意:
+
+给你一张试卷作答记录表，请你查询出其中每份试卷每月的作答数和截止当月的累积作答数
+
+
+
+
+
+思路:
+
+- 每月的作答数自然需要根据月份来分组，所以使用COUNT后再使用GROUP BY即可
+- 但截止当月的作答数就需要累加了，累加的窗口函数为SUM() OVER
+- 其中累加的是每月的作答数，所以SUM()中传入COUNT即可，按照月份累计则指定ORDER BY字段为月份，SQL如下
+
+```mysql
+SELECT
+    exam_id,
+    DATE_FORMAT(start_time, '%Y%m') AS 'start_month',
+    COUNT(start_time) AS 'month_cnt',
+    SUM(COUNT(start_time)) OVER(
+        PARTITION BY exam_id
+        ORDER BY DATE_FORMAT(start_time, '%Y%m')
+    ) AS 'cum_exam_cnt'
+FROM
+    exam_record
+GROUP BY exam_id, MONTH(start_time)
+```
+
+
+
+
+
+
+
+
+
+
+
