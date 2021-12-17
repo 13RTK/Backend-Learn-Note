@@ -1871,6 +1871,133 @@ FROM
 GROUP BY exam_id, MONTH(start_time)
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day146
+
+## Tag: SUM/MAX() OVER(), IFNULL
+
+![Xnip2021-12-17_07-46-29](MySQL Note.assets/Xnip2021-12-17_07-46-29.jpg)
+
+
+
+![Xnip2021-12-17_07-46-04](MySQL Note.assets/Xnip2021-12-17_07-46-04.jpg)
+
+题意:
+
+给你一张试卷作答记录表，请你查询出其中每个月的月活跃用户数、新增用户数，截止当月的最大单月新增用户数、截止当月的累计用户数，结果按照月份升序输出
+
+
+
+
+
+
+
+思路:
+
+- 首先搞定最简单的，即每月活跃用户数，我们只需要按照月份分组，再去重后统计用户数即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	DATE_FORMAT(start_time, '%Y%m') AS 'month',
+	COUNT(DISTINCT uid) AS 'mau'
+FROM
+	exam_record
+GROUP BY month
+```
+
+
+
+
+
+
+
+- 将SQL1放在一边，我们先处理另一个部分
+- 新增的用户数怎么求？其实我们可以先根据uid查询出每个用户记录中的最小月份，该月份就是该用户对应的新增月份，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	uid,
+	DATE_FORMAT(MIN(start_time), '%Y%m') AS 'min_month'
+FROM
+	exam_record
+GROUP BY uid
+```
+
+
+
+- 根据SQL2，我们按照月份分组后统计uid，此时就查询出了每个月新增的用户数了，SQL如下
+
+SQL3:
+
+```mysql
+SELECT
+	min_month,
+	COUNT(uid) AS 'month_add_uv'
+FROM (
+	SQL2
+	) AS t1
+GROUP BY min_month
+```
+
+- 此时我们查询出的新增用户记录数中没有包含每个月份，因为不是每个月都有新用户，但从示例的结果中可知，我们需要查询出每个月的结果，所以要按照月份输出
+- 而SQL1中的月份不就有每个月吗？所以我们以SQL1为驱动表进行连接即可，这样没有新增用户的月份也会出现在结果集中，但对应的新增用户数为null，所以我们需要使用IFNULL来处理一下
+- 最后两列的解题方式其实很明显，累计用户数其实就是累加每月的新增用户数，所以我们使用SUM的窗口函数形式，根据月份排序即可
+- 最大的新增用户数同样可以通过使用MAX的窗口函数形式，根据月份排序即可，同样传入每月的新增用户数，最终SQL如下
+
+```mysql
+SELECT
+	t2.month AS 'start_month',
+	t2.mau,
+	IFNULL(t1.month_add_uv, 0) AS 'month_add_uv'
+	MAX(t1.month_add_uv) OVER(
+		ORDER BY t2.month
+	) AS 'max_month_add_uv',
+	SUM(t1.month_add_uv) OVER(
+		ORDER BY t2.month
+	) AS 'cum_sum_uv'
+FROM (
+	SQL3
+	) AS t1
+RIGHT JOIN (
+	SQL1
+	) AS t2 ON t1.min_month = t2.month
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -337,6 +337,16 @@ field.set(curObj, colVal);
 
 
 
+## 2.11 更新的execute方法
+
+- execute(): 当第一个结果是一个结果集对象时，返回true(查询语句)
+- executeQuery(): 返回查询的结果集ResultSet对象
+- executeUpdate(): 返回sql语句影响的记录数量
+
+![Xnip2021-12-16_20-49-22](../../MySQL/Mysql note/MySQL Note.assets/Xnip2021-12-16_20-49-22.jpg)
+
+这里使用了executeUpdate方法获取影响的记录数量
+
 
 
 
