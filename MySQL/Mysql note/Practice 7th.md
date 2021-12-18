@@ -1982,6 +1982,7 @@ RIGHT JOIN (
 	) AS t2 ON t1.min_month = t2.month
 ```
 
+<hr>
 
 
 
@@ -1994,6 +1995,64 @@ RIGHT JOIN (
 
 
 
+
+
+
+
+
+
+
+# Day147
+
+## Tag: Sub Query
+
+![Xnip2021-12-18_14-08-13](MySQL Note.assets/Xnip2021-12-18_14-08-13.jpg)
+
+
+
+![Xnip2021-12-18_14-09-15](MySQL Note.assets/Xnip2021-12-18_14-09-15.jpg)
+
+题意:
+
+给你一张用户记录表，请你查询出截止2019-06-30，最近90天内每个有记录的日期对应的首次登陆的用户数
+
+
+
+
+
+思路:
+
+- 很明显，大思路就是查询出每个用户对应的最早登陆时间，之后再按照日期分组求和即可
+- 但这里需要注意的是，在统计时需要先排除掉不在规定日期范围内的用户记录
+- 而在查询每个用户的最早记录时，又不能直接排除不符合的日期，否则本来不符合日期条件的用户会因为最早的登陆记录被限定，而错误的被计算到结果集中
+- 所以我们首先查询出每个用户对应的最早登陆日期，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		user_id,
+		MIN(activity_date) AS 'login_date'
+FROM
+		Traffic
+WHERE activity = 'login'
+GROUP BY user_id
+```
+
+
+
+- 之后我们只需要按照日期分组求和，并限定日期即可，这里我选择DATEDIFF，SQL如下
+
+```mysql
+SELECT
+	t1.login_date,
+	COUNT(t1.user_id) AS 'user_count'
+FROM (
+	SQL1
+	) AS t1
+WHERE DATEDIFF('2019-06-30', t1.login_date) <= 90
+GROUP BY t1.login_date
+```
 
 
 

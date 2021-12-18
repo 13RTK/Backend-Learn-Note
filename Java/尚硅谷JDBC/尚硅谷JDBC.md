@@ -347,6 +347,121 @@ field.set(curObj, colVal);
 
 这里使用了executeUpdate方法获取影响的记录数量
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 三、Blob类型
+
+- PreparedStatement比起Statement类型，可以直接操作Blob类型
+- Blob: Binary Large Object
+
+
+
+四种Blob类型:
+
+|    Type    |   Max Size    |
+| :--------: | :-----------: |
+|  TinyBlob  |   255 bytes   |
+|    Blob    | 65 kilo bytes |
+| MediumBlob | 16 mega bytes |
+|  LongBlob  | 4 giga bytes  |
+|            |               |
+
+
+
+
+
+## 1) 插入Blob类型数据
+
+- 在表中创建Blob类型的列
+- 为需要插入的数据创建一个文件输入流
+- 通过preparedStatement对象调用setBlob方法传入该文件输入流
+- 最后执行preparedStatement的executeUpdate方法即可
+
+![Xnip2021-12-17_18-30-52](JDBC.asset/Xnip2021-12-17_18-30-52.jpg)
+
+
+
+![Xnip2021-12-17_18-35-21](JDBC.asset/Xnip2021-12-17_18-35-21.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) 读取Blob类型数据
+
+- 创建一个文件输出流
+- 通过resultSet对象调用getBlob方法获取一个blob对象
+- 通过blob对象调用getBinaryStream方法获取一个输入流
+- 通过缓冲区的方式将文件写入到输入流中的指定文件中
+
+![Xnip2021-12-17_18-39-52](JDBC.asset/Xnip2021-12-17_18-39-52.jpg)
+
+
+
+
+
+
+
+
+
+
+
+## 3) 使用Blob时的注意点
+
+- MySQL中有一个系统变量"max_allowed_packet"用来限定上传文件的最大size
+
+![Xnip2021-12-17_18-52-05](JDBC.asset/Xnip2021-12-17_18-52-05.jpg)
+
+
+
+- 我们选择的图片大小为6.24MB，但Medium Blob类型的上限明明为16MB
+- 因此我们需要修改配置文件或者修改系统变量
+
+![Xnip2021-12-17_18-56-16](JDBC.asset/Xnip2021-12-17_18-56-16.jpg)
+
+
+
+- 修改配置文件:
+- 在类Unix中，在/etc/my.cnf文件中，添加上max_allowed_packet属性即可
+
+Eg:
+
+![Xnip2021-12-17_19-12-25](JDBC.asset/Xnip2021-12-17_19-12-25.jpg)
+
+
+
+
+
+- 修改后就能成功插入了
+
+![Xnip2021-12-17_19-12-59](JDBC.asset/Xnip2021-12-17_19-12-59.jpg)
+
 
 
 
