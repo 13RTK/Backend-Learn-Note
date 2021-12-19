@@ -2054,6 +2054,57 @@ WHERE DATEDIFF('2019-06-30', t1.login_date) <= 90
 GROUP BY t1.login_date
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day148
+
+## Tag: IF
+
+![Xnip2021-12-19_12-55-24](MySQL Note.assets/Xnip2021-12-19_12-55-24.jpg)
+
+
+
+![Xnip2021-12-19_12-55-41](MySQL Note.assets/Xnip2021-12-19_12-55-41.jpg)
+
+题意:
+
+给你一张国家事务表，请你查询出每个月各个国家对应的总事务数、批准的事务数、总金额、批准的金额
+
+
+
+
+
+思路:
+
+- 题目很简单，我们只需要按照月份和国家分组即可
+- 其中筛选批准事务数和对应金额时使用IF判断state字段即可，SQL如下
+
+```mysql
+SELECT
+    LEFT(trans_date, 7) AS 'month',
+    country,
+    COUNT(country) AS 'trans_count',
+    SUM(IF(state = 'approved', 1, 0)) AS 'approved_count',
+    SUM(amount) AS 'trans_total_amount',
+    SUM(IF(state = 'approved', amount, 0)) AS 'approved_total_amount'
+FROM
+    Transactions
+GROUP BY month, country;
+```
 
 
 
