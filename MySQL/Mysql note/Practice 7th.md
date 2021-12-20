@@ -2106,6 +2106,94 @@ FROM
 GROUP BY month, country;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day149
+
+## Tag: JOIN, sql_mode, ONLY_FULL_GROUP_BY
+
+![Xnip2021-12-20_08-59-40](MySQL Note.assets/Xnip2021-12-20_08-59-40.jpg)
+
+
+
+![Xnip2021-12-20_09-10-23](MySQL Note.assets/Xnip2021-12-20_09-10-23.jpg)
+
+
+
+![Xnip2021-12-20_09-01-57](MySQL Note.assets/Xnip2021-12-20_09-01-57.jpg)
+
+
+
+![Xnip2021-12-20_09-02-10](MySQL Note.assets/Xnip2021-12-20_09-02-10.jpg)
+
+
+
+![Xnip2021-12-20_09-22-42](MySQL Note.assets/Xnip2021-12-20_09-22-42.jpg)
+
+题意:
+
+给你一张商店顾客信息表，一张联系方式表，一张发票表，请你查询出其中每个发票对应的用户名，对应的价格，该用户的联系人数量，可信联系人数量(既是该顾客的联系人，又在商店顾客信息表中)
+
+
+
+
+
+
+
+
+
+
+
+思路:
+
+- 前三个字段很简单，直接连接即可
+- 第四个字段只需要连接联系人表即可
+- 而最后一个字段则需要通过邮箱将联系人表和顾客表进行连接
+- 最后根据发票进行分组并排序
+
+
+
+拓展:
+
+- 除了聚合函数外，我们的查询列表中有三个字段
+- 按照常理的话，应该在分组字段中写出查询列表中所有的非聚合函数字段
+- 在本地，如果是MySQL5.7，会发现该SQL会报错，然而在leetcode上却能够通过，这是为何？
+
+
+
+- 其实这源于MySQL中的sql_mode配置
+- 使用select @@global.sql_mode;命令即可查看当前的sql_mode
+- 其中默认是有ONLY_FULL_GROUP_BY的，所以在本地会限制我们写出查询列表中的所有字段
+- 如何解除这个限制？
+- 我们可以通过SET的方式修改这个全局变量，但下次启动又会恢复到默认值，所以我们应该写在配置文件中:
+
+```mysql
+# /etc/my.cnf
+
+[mysqld]
+sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+```
+
+- 之后再次重启即可
+
+
+
+
+
 
 
 
