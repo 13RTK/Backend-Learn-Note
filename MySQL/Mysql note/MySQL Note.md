@@ -1908,7 +1908,19 @@ exam:
 
 
 
+拓展:
 
+- 可以通过配置文件的方式解除该限制
+
+![Xnip2021-12-20_09-01-57](MySQL Note.assets/Xnip2021-12-20_09-01-57.jpg)
+
+
+
+![Xnip2021-12-20_09-02-10](MySQL Note.assets/Xnip2021-12-20_09-02-10.jpg)
+
+
+
+![Xnip2021-12-20_09-22-42](MySQL Note.assets/Xnip2021-12-20_09-22-42.jpg)
 
 
 

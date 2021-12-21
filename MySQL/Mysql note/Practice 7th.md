@@ -2190,6 +2190,61 @@ sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_
 
 - 之后再次重启即可
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day150
+
+## Tag: GROUP BY, SUM
+
+![Xnip2021-12-21_09-33-42](MySQL Note.assets/Xnip2021-12-21_09-33-42.jpg)
+
+
+
+![Xnip2021-12-21_09-33-51](MySQL Note.assets/Xnip2021-12-21_09-33-51.jpg)
+
+题意:
+
+给你一张订单表，请你查询出至少有一单金额大于500的用户数量
+
+
+
+
+
+思路:
+
+- 看起来题目需要我们先查询出每个用户金额大于500的订单数，再计算订单数大于0的用户数，也就是一次分组查询后再作为子查询
+- 但同结果来说，我们要的只是交易金额大于500的用户数，只要有对应的记录就行了，我们并不关心具体的订单数，所以只需要限制金额即可，注意用户id需要去重，SQL如下
+
+```mysql
+SELECT
+    COUNT(DISTINCT customer_id) AS 'rich_count'
+FROM
+    Store
+WHERE amount > 500
+```
+
+
+
+
+
 
 
 
