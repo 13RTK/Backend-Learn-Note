@@ -2241,6 +2241,60 @@ FROM
 WHERE amount > 500
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day151
+
+## Tag: LEAST, GREATEST
+
+![Xnip2021-12-22_09-40-25](MySQL Note.assets/Xnip2021-12-22_09-40-25.jpg)
+
+
+
+![Xnip2021-12-22_09-40-33](MySQL Note.assets/Xnip2021-12-22_09-40-33.jpg)
+
+题意:
+
+给你一张通话记录表，请你查询出其中所有用户的通话记录汇总信息，其中要确保from_id < to_id
+
+
+
+
+
+思路:
+
+- 统计通话次数和时长其实很简单，使用聚合函数再分组就是了，但问题就是如何确保id大小关系一致
+- 这里可以使用两个函数: LEAST()和GREATEST()，和名字一样，它们分别会返回参数中的最小和最大值
+- 我们需要的是按照最小from_id分组，且还要按照最大的to_id分组
+- 所以只需要在GROUP BY中使用LEAST和GREATEST即可
+
+```mysql
+SELECT
+    from_id AS 'person1',
+    to_id AS 'person2',
+    COUNT(from_id) AS 'call_count',
+    SUM(duration) AS 'total_duration'
+FROM
+    Calls
+GROUP BY LEAST(from_id, to_id), GREATEST(from_id, to_id);
+```
+
 
 
 
