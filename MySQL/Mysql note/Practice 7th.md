@@ -2295,6 +2295,7 @@ FROM
 GROUP BY LEAST(from_id, to_id), GREATEST(from_id, to_id);
 ```
 
+<hr>
 
 
 
@@ -2308,6 +2309,72 @@ GROUP BY LEAST(from_id, to_id), GREATEST(from_id, to_id);
 
 
 
+
+
+
+
+# Day152
+
+## Tag: HAVING
+
+![Xnip2021-12-23_07-48-06](MySQL Note.assets/Xnip2021-12-23_07-48-06.jpg)
+
+
+
+![Xnip2021-12-23_07-48-26](MySQL Note.assets/Xnip2021-12-23_07-48-26.jpg)
+
+题意:
+
+给你一张活动信息表，一张参与者信息表，请你查询出其中参加人数既不是最少也不是最多的活动
+
+
+
+
+
+思路:
+
+- 很明显，我们需要先获取参加人数的最值，这里自然需要我们分组求和，且因为最值有两个，所以我们需要写两次查询，SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+	COUNT(name) AS 'person_num'
+FROM
+	Friends 
+GROUP BY activity 
+ORDER BY person_num 
+LIMIT 1
+```
+
+
+
+
+
+SQL2:
+
+```mysql
+SELECT 
+	COUNT(name) AS 'person_num'
+FROM
+	Friends 
+GROUP BY activity 
+ORDER BY person_num DESC
+LIMIT 1
+```
+
+
+
+- 最后再以这两个临时表为限制条件即可，注意是限制分组后的数据，我们需要使用HAVING，SQL如下
+
+```mysql
+SELECT
+    activity
+FROM
+    Friends
+GROUP BY activity
+HAVING COUNT(name) > (SQL1) AND COUNT(name) < (SQL2)
+```
 
 
 
