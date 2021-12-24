@@ -2376,9 +2376,78 @@ GROUP BY activity
 HAVING COUNT(name) > (SQL1) AND COUNT(name) < (SQL2)
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day153
+
+## Tag: DENSE_RANK, HAVING
+
+![Xnip2021-12-24_07-49-16](MySQL Note.assets/Xnip2021-12-24_07-49-16.jpg)
+
+
+
+![Xnip2021-12-24_07-49-34](MySQL Note.assets/Xnip2021-12-24_07-49-34.jpg)
+
+题意:
+
+给你一张试卷作答记录表，请你查询出其中近三个月作答试卷全都完成的用户和近三个月内对应的试卷作答总数
+
+
+
+
+
+思路:
+
+- 首先我们自然需要先获取每个用户对应的作答记录，且要按照月份分组，这里使用聚合函数比较好
+- 且因为记录中同月的记录较多，所以为了后面能够筛选前三个月记录，我们应该使用DENSE_RANK而不是RANK和ROW_NUMBER，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	uid,
+	score,
+	DENSE_RANK() OVER(
+		PARTITION BY uid
+		ORDER BY DATE_FORMAT(start_time, '%Y-%m') DESC
+	) AS 'month_rank'
+FROM
+	exam_record
+```
+
+
+
+
+
+- 之后我们只需要限制月份的排名，取前三即可，然后进行分组
+- 分组后我们再通过统计作答数和完成数来判断其近三个月是否做完了所有的试卷，SQL如下
+
+```mysql
+SELECT
+	uid,
+	COUNT(score) AS 'exam_complete_cnt'
+FROM (
+	SQL1
+	) AS t1
+WHERE month_rank <= 3
+GROUP BY uid
+HAVING COUNT(score) = COUNT(uid)
+ORDER BY exam_complete_cnt DESC, uid DESC
+```
 
 
 
