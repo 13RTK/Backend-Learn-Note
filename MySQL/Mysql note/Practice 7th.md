@@ -2449,5 +2449,83 @@ HAVING COUNT(score) = COUNT(uid)
 ORDER BY exam_complete_cnt DESC, uid DESC
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day154
+
+## Sub Query, IN
+
+![Xnip2021-12-25_08-28-20](MySQL Note.assets/Xnip2021-12-25_08-28-20.jpg)
+
+
+
+![Xnip2021-12-25_08-27-47](MySQL Note.assets/Xnip2021-12-25_08-27-47.jpg)
+
+题意:
+
+给你一张项目表，一张员工表，请你查询出每个项目中经验最丰富的员工，如果经验年份相同则报告所有具有最大经验的员工
+
+
+
+
+
+
+
+思路:
+
+- 首先我们需要查询出每个项目中最大的经验年份长度，所以根据项目分组再用MAX求最大值，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.project_id,
+	MAX(t2.experience_years) AS 'max'
+FROM
+	Project AS t1
+INNER JOIN Employee AS t2 ON t1.employee_id = t2.employee_id
+GROUP BY t1.project_id
+```
+
+
+
+- 之后我们只需要查询出原表中项目id和经验年份与该子查询表相同的员工即可，SQL如下
+
+```mysql
+SELECT
+    t1.project_id,
+    t2.employee_id
+FROM
+    Project AS t1
+INNER JOIN Employee AS t2 ON t1.employee_id = t2.employee_id
+WHERE (t1.project_id, t2.experience_years) IN (
+    SQL1
+)
+```
+
+
+
+
+
+
+
 
 
