@@ -2521,7 +2521,83 @@ WHERE (t1.project_id, t2.experience_years) IN (
 )
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day155
+
+## Tag: UNION ALL, IF
+
+![Xnip2021-12-26_10-08-17](MySQL Note.assets/Xnip2021-12-26_10-08-17.jpg)
+
+
+
+![Xnip2021-12-26_10-07-47](MySQL Note.assets/Xnip2021-12-26_10-07-47.jpg)
+
+题意:
+
+给你一张比赛记录表，一张球队信息表，请你查询出其中每个球队的team_id, team_name, num_points
+
+
+
+
+
+
+
+思路:
+
+- 首先我们需要获取每个队伍的得分，因为表中有主客场的区别，所以直接统计是不可能的，因此我们需要查询两次并连接，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	host_team AS 'team_id',
+	SUM(IF(host_goals > guest_goals, 3, IF(host_goals = guest_goals, 1, 0))) AS 'score_sum'
+FROM
+	Matches
+GROUP BY host_team
+UNION ALL
+SELECT
+	guest_team AS 'team_id',
+	SUM(IF(host_goals < guest_goals, 3, IF(host_goals = guest_goals, 1, 0))) AS 'score_sum'
+FROM
+	Matches
+GROUP BY guest_team
+```
+
+
+
+- 获取该临时表后，我们再将其与球队信息表连接起来，因为结果需要所有球队的得分，所以我们应该以球队表为驱动表
+- 因此部分球队可能未出现在比赛表中，此时查询结果的分数为null，我们需要转换这些null值为0，SQL如下
+
+```mysql
+SELECT
+	t2.team_id,
+	t2.team_name,
+	SUM(IF(t1.score_sum IS null, 0, score_sum)) AS 'num_points'
+FROM (
+	SQL1
+	) AS t1
+RIGHT JOIN Teams AS t2 ON t1.team_id = t2.team_id
+GROUP BY t2.team_id
+ORDER BY num_points DESC, t2.team_id
+```
 
 
 
