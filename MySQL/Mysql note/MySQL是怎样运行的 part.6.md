@@ -1705,6 +1705,38 @@ BEGIN;
 SELECT * FROM hero WHERE number = 8 FOR UPDATE; 	# 进入阻塞
 ```
 
+![Xnip2021-12-26_18-45-27](MySQL Note.assets/Xnip2021-12-26_18-45-27.jpg)
+
+此时我们获取了对应的事务id，但还不知道是哪个事务获取到了其他事务需要的锁，以及谁因为没有获取到锁而阻塞
+
+
+
+![Xnip2021-12-26_18-45-51](MySQL Note.assets/Xnip2021-12-26_18-45-51.jpg)
+
+
+
+
+
+
+
+
+
+#### 3) INNODB_LOCK_WAITS
+
+表名每个阻塞的事务是因为获取不到哪个事务持有的锁而阻塞
+
+![Xnip2021-12-26_18-51-02](MySQL Note.assets/Xnip2021-12-26_18-51-02.jpg)
+
+- requesting_trx_id: 表示因为获取不到锁而被阻塞的事务对应的事务id
+- blocking_trx_id: 表示获取到别的事务需要的锁而导致别的事务被阻塞，阻塞别人的事务id
+
+blocking_trx_id表示事务T1的事务id
+
+requesting_trx_id表示事务T2的事务id
+
+
+
+在新版本中(8.0)，不鼓励我们使用这两个表来获取相关的锁信息
 
 
 
@@ -1721,6 +1753,60 @@ SELECT * FROM hero WHERE number = 8 FOR UPDATE; 	# 进入阻塞
 
 
 
+
+### 22.5.2 使用SHOW ENGINE INNODB STATUS获取锁信息
+
+开启一个新的事务:
+
+```mysql 
+BEGIN;
+SELECT 
+	* 
+FROM 
+	hero 
+FORCE INDEX(idx_name) 
+WHERE name > 'c曹操' 
+AND name <= '荀彧' 
+AND country != '吴' 
+ORDER BY name DESC 
+FOR UPDATE;
+```
+
+
+
+加锁过程:
+
+![Xnip2021-12-26_19-07-16](MySQL Note.assets/Xnip2021-12-26_19-07-16.jpg)
+
+
+
+
+
+
+
+此时查看存储引擎的状态即可获取各个事务中的加锁情况
+
+Eg:
+
+![Xnip2021-12-26_19-14-24](MySQL Note.assets/Xnip2021-12-26_19-14-24.jpg)
+
+
+
+
+
+默认是无法得知哪个事务对哪些记录加了哪些锁，我们需要将系统变量innodb_status_output_locks设置为ON(在MySQL5.6.16中引入)
+
+```mysql
+SET GLOBAL innodb_status_output_locks = ON;
+```
+
+
+
+之后再次查看引擎状态
+
+Eg:
+
+![Xnip2021-12-26_19-15-19](MySQL Note.assets/Xnip2021-12-26_19-15-19.jpg)
 
 
 
