@@ -2599,6 +2599,78 @@ GROUP BY t2.team_id
 ORDER BY num_points DESC, t2.team_id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day156
+
+## Tag: IN, Sub Query
+
+![Xnip2021-12-27_09-08-54](MySQL Note.assets/Xnip2021-12-27_09-08-54.jpg)
+
+
+
+![Xnip2021-12-27_09-09-08](MySQL Note.assets/Xnip2021-12-27_09-09-08.jpg)
+
+题意:
+
+给你一张销售记录表，一张产品信息表，请你查询出其中每个产品第一年的id、年份，数量和价格
+
+
+
+
+
+
+
+
+
+思路:
+
+- 首先，我们需要获取每个产品对应的最早年份，这里根据产品分组后使用MIN即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    product_id,
+    MIN(year) AS 'min_year'
+FROM
+    Sales
+GROUP BY product_id
+```
+
+
+
+- 之后只需要将这两个列值作为限定，获取其他列值即可，SQL如下
+
+```mysql
+SELECT
+    product_id,
+    year AS 'first_year',
+    quantity,
+    price
+FROM 
+    Sales
+WHERE (product_id, year) IN (
+    SQL1
+);
+```
+
 
 
 
