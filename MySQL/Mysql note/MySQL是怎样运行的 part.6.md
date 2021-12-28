@@ -1810,3 +1810,108 @@ Eg:
 
 
 
+- TABLE LOCK table 'test'.'hero' trx id 2008083 lock mode IX
+
+表明事务id为2008083的事务对test数据库下的hero表加了表级别的IX锁(意向独占锁)
+
+
+
+- RECORD LOCKS space id 1183 page no 4 n bits 72 index idx_name of table 'test'.'hero' trx id 2008083 lock mode X locks gap before rec
+
+表示一个锁结构，其Space ID为1183，Page Number为4，n_bits属性值为72，对应的索引为idx_name，其中存放的锁类型为X型gap锁
+
+后面跟着具体的记录信息
+
+
+
+其余:
+
+![Xnip2021-12-27_13-19-10](MySQL Note.assets/Xnip2021-12-27_13-19-10.jpg)
+
+
+
+![Xnip2021-12-27_13-20-23](MySQL Note.assets/Xnip2021-12-27_13-20-23.jpg)
+
+![Xnip2021-12-27_13-20-30](MySQL Note.assets/Xnip2021-12-27_13-20-30.jpg)
+
+
+
+注意:
+
+如果某个事务没有被分配事务id，则SHOW ENGINE INNODB STATUS不会显示出该事务执行时持有的锁。SHOW ENGINE INNODB STATUS不显示隐式锁
+
+查询中，number列值都为800XXX的形式，因为number列是存储有符号位的
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 22.6 死锁
+
+![Xnip2021-12-27_13-36-49](MySQL Note.assets/Xnip2021-12-27_13-36-49.jpg)
+
+对图进行分析:
+
+- 3中，T1事务对number值为1的聚簇索引记录加了一个X型正经记录锁
+- 4中，T2事务对number值为3的聚簇索引记录加了一个X型正经记录锁
+- 5中，T1接着也想对number为3的聚簇索引记录加X型正经记录锁，但T2已经先加了一个锁，所以T1进入阻塞状态，等待获取锁
+- 6中，T2想number为1的聚簇索引记录加一个X型正经记录锁，但T1已经加过了，所以T2进入阻塞状态，等待获取锁
+
+此时T1和T2都在等待对方先释放锁，所以两个事务都不能执行，此时就称发生了死锁
+
+
+
+InnoDB有一个死锁检测机制，当检测到死锁时，会选择一个较小的事务进行回滚(涉及的记录数少)，再向clinen发送一条消息:
+
+```mysql
+ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction;
+```
+
+
+
+
+
+由上可知:
+
+- 当不同的事务以不同顺序获取某些记录的死锁时，可能会发生死锁
+- 死锁发生后，InnoDB会回滚一个事务以释放掉其所获取的锁
+
+
+
+
+
+为了了解产生死锁的原因，我们可以通过死锁发生时产生的死锁日志来逆向定位产生死锁的语句，再优化业务
+
+Eg:
+
+```mysql
+SHOW ENGINE INNODB STATUS;
+```
+
+
+
+![Xnip2021-12-27_13-48-25](MySQL Note.assets/Xnip2021-12-27_13-48-25.jpg)
+
+
+
+
+
+
+
+拓展:
+
+SHOW ENGINE INNODB STATUS只会显示最近一次发生的死锁信息，所以如果死锁频繁出现的话，可将全局变量"innodb_print_all_deadlocks"设置为ON，这样会将每个死锁发生时的信息都记录在MySQL错误日志中，之后通过错误日志进行分析即可

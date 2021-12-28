@@ -2671,6 +2671,99 @@ WHERE (product_id, year) IN (
 );
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day157
+
+## Tag: GROUP BY, INNER JOIN
+
+![Xnip2021-12-28_07-54-10](MySQL Note.assets/Xnip2021-12-28_07-54-10.jpg)
+
+
+
+![Xnip2021-12-28_07-53-50](MySQL Note.assets/Xnip2021-12-28_07-53-50.jpg)
+
+
+
+![Xnip2021-12-28_08-05-28](MySQL Note.assets/Xnip2021-12-28_08-05-28.jpg)
+
+
+
+![Xnip2021-12-28_07-57-55](MySQL Note.assets/Xnip2021-12-28_07-57-55.jpg)
+
+题意:
+
+给你一张等电梯的人的信息表，电梯最大载重为1000，请你根据其中的顺序，查询出最后一个能够进电梯的人
+
+
+
+
+
+思路:
+
+- 很明显，我们需要对这些人的体重根据turn字段的顺序进行求和
+- 借助大佬的图示，我们只需要对该表进行自连接，通过限制turn字段后使用SUM即可实现累加，SQL如下
+
+```mysql
+SELECT
+    t1.person_name
+FROM
+    Queue AS t1
+INNER JOIN Queue AS t2 ON t1.turn >= t2.turn
+GROUP BY t1.person_id
+HAVING SUM(t2.weight) <= 1000
+ORDER BY t1.turn DESC
+LIMIT 1
+```
+
+
+
+- 很明显，这样的连接也可以换做子查询条件，所以我们也可以这样写:
+
+```mysql
+SELECT 
+    t1.person_name
+FROM 
+    Queue AS t1
+WHERE (
+    SELECT 
+        SUM(t2.weight) 
+    FROM 
+        Queue AS t2
+    WHERE t2.turn <= t1.turn
+    ) <= 1000
+ORDER BY t1.turn DESC 
+LIMIT 1
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
