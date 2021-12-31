@@ -2840,6 +2840,87 @@ LIMIT 1
 - 最后限制年份时，我们应该使用AND而不是WHERE
 - 因为我们需要在连接的时候做判读，而不是连接后再做限制
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day160
+
+## Tag: IF, GROUP BY 
+
+![Xnip2021-12-31_11-16-40](MySQL Note.assets/Xnip2021-12-31_11-16-40.jpg)
+
+
+
+![Xnip2021-12-31_11-15-46](MySQL Note.assets/Xnip2021-12-31_11-15-46.jpg)
+
+题意:
+
+给你一张员工税前工资表，请你根据各个公司的情况查询出每个员工的税后工资
+
+
+
+
+
+
+
+思路:
+
+- 重点其实就是计算工资字段
+- 因为规则是根据每个公司的最高工资来计算的，所以需要我们通过分组获取每个公司的最高工资数才行，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+    company_id,
+    MAX(salary) AS 'max_salary'
+FROM
+    Salaries
+GROUP BY company_id
+```
+
+
+
+- 之后通过IF，分别判断对应的交税情况即可
+
+```mysql
+SELECT
+    t1.company_id,
+    t1.employee_id,
+    t1.employee_name,
+    ROUND(IF(t2.max_salary < 1000, t1.salary, IF(t2.max_salary <= 10000, t1.salary * 0.76, t1.salary * 0.51)), 0) AS 'salary'
+FROM
+    Salaries AS t1
+INNER JOIN (
+	SQL1
+) AS t2 ON t1.company_id = t2.company_id;
+```
+
+
+
+
+
+
+
 
 
 
