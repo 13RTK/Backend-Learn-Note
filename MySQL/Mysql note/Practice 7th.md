@@ -2915,6 +2915,57 @@ INNER JOIN (
 ) AS t2 ON t1.company_id = t2.company_id;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day161
+
+## Tag: SUM() OVER
+
+![Xnip2022-01-01_08-50-04](MySQL Note.assets/Xnip2022-01-01_08-50-04.jpg)
+
+
+
+![Xnip2022-01-01_08-50-53](MySQL Note.assets/Xnip2022-01-01_08-50-53.jpg)
+
+题意:
+给你一张分数表，请你查询出每天男队女队各自的分数
+
+
+
+
+
+思路:
+
+- 该题目看起来是分组后计算每天的分数，但从示例中可以看出，我们需要计算的其实是每天的累加分数，这不正好是窗口函数所擅长的吗？所以SQL如下
+
+```mysql
+SELECT
+    gender,
+    day,
+    SUM(score_points) OVER (
+        PARTITION BY gender
+        ORDER BY day
+    ) AS 'total'
+FROM
+    Scores;
+```
+
 
 
 
