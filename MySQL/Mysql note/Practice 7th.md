@@ -2966,6 +2966,64 @@ FROM
     Scores;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day162
+
+## Tag: DISTINCT
+
+![Xnip2022-01-02_10-25-36](MySQL Note.assets/Xnip2022-01-02_10-25-36.jpg)
+
+
+
+![Xnip2022-01-02_10-25-44](MySQL Note.assets/Xnip2022-01-02_10-25-44.jpg)
+
+题意:
+
+给你一张问答记录表，请你查询出11月每天中，人均的回答数
+
+
+
+
+
+思路:
+
+- 所谓人均回答数其实就是每天的总问题数 / 回答的人数，需要注意的是，我们在统计人数时需要对用户id去重，因为一个用户可能在一天内回答了多个问题
+- 又因为需要按照每天来查询，所以需要分组
+- 最后再加上月份限制即可，SQL如下
+
+```mysql
+SELECT
+    answer_date,
+    ROUND(COUNT(issue_id) / COUNT(DISTINCT author_id), 2) AS 'per_num'
+FROM
+    answer_tb
+WHERE MONTH(answer_date) = 11
+GROUP BY answer_date
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
