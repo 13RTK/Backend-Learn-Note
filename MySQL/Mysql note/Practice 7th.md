@@ -3014,11 +3014,68 @@ WHERE MONTH(answer_date) = 11
 GROUP BY answer_date
 ```
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+
+
+# Day163
+
+## Tag: DATE
+
+![Xnip2022-01-03_10-23-23](MySQL Note.assets/Xnip2022-01-03_10-23-23.jpg)
+
+
+
+![Xnip2022-01-03_10-23-06](MySQL Note.assets/Xnip2022-01-03_10-23-06.jpg)
+
+题意:
+
+给你一张交易记录表，请你查询出每天中金额最大的事务id，如一天中有个最值，也要一并查询出来
+
+
+
+
+
+思路:
+
+- 很明显，我们需要先获取每天的最值，使用MAX再分组即可，但需要注意的是，表中给我们的是datetime字段，其中含有时分秒，如果不做处理的话，分组的结果就是根据时刻来的，而不是我们想要的日期
+- 所以我们需要使用DATE函数提取其中的日期部分，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    DATE(day) AS 'day',
+    MAX(amount) AS 'max_amount'
+FROM
+    Transactions
+GROUP BY DATE(day)
+```
+
+
+
+- 再通过该临时表来限制原表中的数据即可
+
+```mysql
+SELECT
+    transaction_id
+FROM
+    Transactions
+WHERE (DATE(day), amount) IN (
+	SQL1
+)
+ORDER BY Transaction_id
+```
 
 
 
