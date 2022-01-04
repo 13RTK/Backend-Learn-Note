@@ -3077,6 +3077,7 @@ WHERE (DATE(day), amount) IN (
 ORDER BY Transaction_id
 ```
 
+<hr>
 
 
 
@@ -3084,6 +3085,47 @@ ORDER BY Transaction_id
 
 
 
+
+
+
+
+
+
+# Day164
+
+## Tag: DISTINCT, GROUP BY
+
+
+
+
+
+![Xnip2022-01-04_10-01-32](MySQL Note.assets/Xnip2022-01-04_10-01-32.jpg)
+
+
+
+![Xnip2022-01-04_10-01-51](MySQL Note.assets/Xnip2022-01-04_10-01-51.jpg)
+
+题意:
+
+给你一张浏览记录表，请你查询出同一天中阅读文章数量大于等于2的用户id
+
+
+
+
+
+思路:
+
+- 这里的限制条件其实就是一天中阅读的文章数量，所以我们按照日期和用户id分组后统计即可，因为我们需要对分组后的数据进行筛选，所以分组后应该使用HAVING，SQL如下
+
+```mysql
+SELECT
+    DISTINCT viewer_id AS 'id'
+FROM
+    Views
+GROUP BY view_date, viewer_id
+HAVING COUNT(DISTINCT article_id) >= 2
+ORDER BY viewer_id
+```
 
 
 
