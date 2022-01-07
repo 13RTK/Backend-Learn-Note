@@ -3127,6 +3127,28 @@ HAVING COUNT(DISTINCT article_id) >= 2
 ORDER BY viewer_id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day167
+
+## Tag: GROUP BY
+
+![Xnip2022-01-07_14-01-48](MySQL Note.assets/Xnip2022-01-07_14-01-48.jpg)
+
 
 
 
