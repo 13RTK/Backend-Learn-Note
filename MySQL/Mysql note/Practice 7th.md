@@ -3149,6 +3149,83 @@ ORDER BY viewer_id
 
 ![Xnip2022-01-07_14-01-48](MySQL Note.assets/Xnip2022-01-07_14-01-48.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day168
+
+## Tag: DENSE_RANK, GROUP BY
+
+![Xnip2022-01-08_12-34-31](MySQL Note.assets/Xnip2022-01-08_12-34-31.jpg)
+
+
+
+![Xnip2022-01-08_12-34-43](MySQL Note.assets/Xnip2022-01-08_12-34-43.jpg)
+
+题意:
+
+给你一张订单表和一张产品信息表，请你查询出每个用户购买次数最多的产品(如果次数相同则一并查询出来)
+
+
+
+
+
+思路:
+
+- 因为我们需要根据购买次数来判断，所以正常来说需要计数并分组
+- 且需要按照计数结果排序才行，不同的是，这里需要根据不同的用户进行排序，所以比较麻烦，能不能分组的同时进行排序？这不就是DENSE_RANK吗？
+- 所以我们使用窗口函数就能解决这个问题了，SQL如下
+
+```mysql
+SELECT
+    customer_id,
+    product_id,
+    DENSE_RANK() OVER(
+        PARTITION BY customer_id 
+        ORDER BY count(product_id) DESC
+    ) AS 'rank_num'
+FROM orders
+GROUP BY customer_id, product_id
+```
+
+
+
+- 有了排名后，我们再限制排名为1，查询出所有的信息即可，SQL如下
+
+```mysql
+SELECT
+    t1.customer_id,
+    t1.product_id,
+    t2.product_name
+FROM (
+	SQL1
+) AS t1 LEFT JOIN products t2 ON t1.product_id = t2.product_id
+WHERE t1.rank_num = 1
+```
+
+
+
+
+
+
+
 
 
 
