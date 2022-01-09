@@ -3220,9 +3220,51 @@ FROM (
 WHERE t1.rank_num = 1
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day169
+
+## Tag: DISTINCT, ROUND
+
+![Xnip2022-01-09_12-40-12](MySQL Note.assets/Xnip2022-01-09_12-40-12.jpg)
+
+题意:
+
+给你一个销售数据表，请你查询出其中11月的总销售额和客单价
+
+
+
+
+
+
+
+思路:
+
+- 总销售额就是sales_price字段的总和，而客单价就是总和 / 用户数，所以SQL如下
+
+```mysql
+SELECT
+    SUM(sales_price) AS 'sales_total',
+    ROUND(SUM(sales_price) / COUNT(DISTINCT user_id), 2) AS 'per_trans'
+FROM
+    sales_tb
+```
 
 
 
