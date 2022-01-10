@@ -3266,6 +3266,7 @@ FROM
     sales_tb
 ```
 
+<hr>
 
 
 
@@ -3273,6 +3274,49 @@ FROM
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day170
+
+## Tag: ROUND
+
+![Xnip2022-01-10_12-56-51](MySQL Note.assets/Xnip2022-01-10_12-56-51.jpg)
+
+
+
+![Xnip2022-01-10_12-58-34](MySQL Note.assets/Xnip2022-01-10_12-58-34.jpg)
+
+题意:
+
+给你一张产品信息表，一张销售数据表，请查询出折扣率(总成交金额/吊牌金额)
+
+
+
+
+
+思路:
+
+- 其中成交总金额其实就是sales_price字段的和，而吊牌金额其实就是产品的便签价格 * 对应的数量之和，所以SQL如下
+
+```mysql
+SELECT
+    ROUND(100 * SUM(t2.sales_price) / SUM(t1.tag_price * t2.sales_num), 2) AS 'discount_rate'
+FROM
+    product_tb AS t1
+INNER JOIN sales_tb AS t2 ON t1.item_id = t2.item_id
+```
+
+
+
+- 
 
 
 
