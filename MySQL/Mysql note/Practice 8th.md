@@ -106,6 +106,7 @@ GROUP BY t2.tag
 ORDER BY retweet_rate DESC
 ```
 
+<hr>
 
 
 
@@ -113,6 +114,43 @@ ORDER BY retweet_rate DESC
 
 
 
+
+
+
+
+# Day173
+
+## Tag: ROUND, GROUP BY
+
+![Xnip2022-01-13_13-00-15](MySQL Note.assets/Xnip2022-01-13_13-00-15.jpg)
+
+
+
+![Xnip2022-01-13_13-01-33](MySQL Note.assets/Xnip2022-01-13_13-01-33.jpg)
+
+题意:
+
+给你一张课程信息表，一张用户行为表，请你查询出其中每种科目转换率(报名人数/浏览人数)
+
+
+
+
+
+思路:
+
+- 报名人数只需要统计if_sign字段即可，浏览人数则统计if_vw字段即可，SQL如下
+
+```mysql
+SELECT
+    t1.course_id,
+    t1.course_name,
+    ROUND(100 * SUM(t2.if_sign) / COUNT(t2.if_vw), 2) AS 'sign_rate'
+FROM
+    course_tb AS t1
+INNER JOIN behavior_tb AS t2 ON t1.course_id = t2.course_id
+GROUP BY t1.course_id, t1.course_name
+ORDER BY course_id
+```
 
 
 
