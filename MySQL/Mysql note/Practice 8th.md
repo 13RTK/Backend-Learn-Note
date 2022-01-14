@@ -152,7 +152,51 @@ GROUP BY t1.course_id, t1.course_name
 ORDER BY course_id
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+# Day174
+
+## Tag: TIMESTAMPDIFF, AVG
+
+![Xnip2022-01-14_14-58-36](MySQL Note.assets/Xnip2022-01-14_14-58-36.jpg)
+
+
+
+![Xnip2022-01-14_14-58-51](MySQL Note.assets/Xnip2022-01-14_14-58-51.jpg)
+
+题意:
+
+给一张课程信息表，一张课程参与表，请你查询出其中每个课程的平均时长(分钟)
+
+
+
+
+
+思路:
+
+- 首先，每个用户的参与时长为出入直播间的时间之差，这里我使用TIMESTAMPDIFF，然后使用AVG计算平均值
+- 剩余部分就比较常规了，所以SQL如下
+
+```mysql
+SELECT
+    t1.course_name,
+    ROUND(AVG(TIMESTAMPDIFF(MINUTE, t2.in_datetime, t2.out_datetime)), 2) AS 'avg_Len'
+FROM
+    course_tb AS t1
+INNER JOIN attend_tb AS t2 ON t1.course_id = t2.course_id
+GROUP BY t1.course_name
+ORDER BY avg_Len DESC
+```
 
 
 
