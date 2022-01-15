@@ -198,5 +198,122 @@ GROUP BY t1.course_name
 ORDER BY avg_Len DESC
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day175
+
+## Tag: IF
+
+![Xnip2022-01-15_14-21-43](MySQL Note.assets/Xnip2022-01-15_14-21-43.jpg)
+
+
+
+![Xnip2022-01-15_14-44-57](MySQL Note.assets/Xnip2022-01-15_14-44-57.jpg)
+
+题意:
+给你一张创作者信息表，一张回答信息表，请你查询出高质量回答中，不同等级的用户对应的数量
+
+
+
+
+
+思路:
+
+- 因为需要根据等级来分组，所以我们需要对作者等级author_level字段做简单的逻辑判断，可以使用CASE WHEN，也可以使用IF，个人比较懒，所以就用IF了
+- 至于高质量回答，则限制char_len字段即可，最后注意分组和排序，SQL如下
+
+```mysql
+SELECT
+    IF(t1.author_level <= 2, '1-2级', IF(t1.author_level >= 5, '5-6级', '3-4级')) AS 'level_cnt',
+    COUNT(t2.author_id) AS 'num'
+FROM
+    author_tb AS t1
+INNER JOIN answer_tb AS t2 ON t1.author_id = t2.author_id
+WHERE char_len >= 100
+GROUP BY level_cnt
+ORDER BY num DESC
+```
+
+
+
+
+
+
+
+优化:
+
+MySQL版本为5.7.10
+
+
+
+优化前:
+
+- 使用EXPLAIN查看执行计划，由于原表中没有创建任何索引，所以Extra字段中出现了"Using where"，即需要回表到server层中再做判断
+- 又因为我们使用了ORDER BY进行排序，所以Extra字段中又出现了"Using filesort"，又因为排序时没有用到索引，所以需要使用临时表，因此Extra字段中出现了"Using temporary"
+- 最后，因为两表需要连接且需要多次访问驱动表，为了减少I/O，MySQL默认使用了join buffer来一次性加载多条驱动表记录，方便与其他表匹配
+- 再使用EXPLAIN FORMAT=JSON查看其查询开销，发现当前开销为18.46
+
+![Xnip2022-01-15_14-47-09](MySQL Note.assets/Xnip2022-01-15_14-47-09.jpg)
+
+
+
+
+
+
+
+分析:
+
+- 从Extra列中的信息来看，我们可以尝试将回表操作变为走覆盖索引，其中两表连接时使用了字段author_id，而t2表又用到了char_len字段，所以我们可以尝试用这两个字段建立一个联合索引，这样t2表就能走覆盖索引了
+
+- 此时查看执行计划，果然t2表中的"Using temporary"消失了，变为了"Using index"，说明执行计划使用了我们的联合索引，此时再查看开销，发现已经降为了16.81！
+
+
+
+![Xnip2022-01-15_15-03-57](MySQL Note.assets/Xnip2022-01-15_15-03-57.jpg)
+
+![Xnip2022-01-15_14-54-41](MySQL Note.assets/Xnip2022-01-15_14-54-41.jpg)
+
+- t2表搞定了，那么t1表呢？首先肯定是对连接字段author_id创建索引
+- 由于排序时没有使用索引，所以还是用到了临时表和文件排序
+- 正常思路来看，一般都会想到在分组字段和排序字段上创建索引，但这里没这么简单
+- 因为排序的字段是一个聚合函数表达式，不是表中的既存字段
+- 那么就没办法了吗？有的朋友可能会想到函数索引，也就是借助虚拟列来创建函数索引，其中COUNT(t2.author_id)是没办法的，因为它需要分组，所以不考虑
+- 但level_cnt可以考虑一下，因此我们可以在author_tb创建一个虚拟列，DDL语句如下
+
+```mysql
+ALTER TABLE author_tb ADD level_cnt varchar(10) AS (IF(t1.author_level <= 2, '1-2级', IF(t1.author_level >= 5, '5-6级', '3-4级')));
+```
+
+- 此时表结构如下
+
+![Xnip2022-01-15_15-34-26](MySQL Note.assets/Xnip2022-01-15_15-34-26.jpg)
+
+- 此时我们再对该虚拟列创建一个索引即可，这时再看查询计划和开销: 优化了个寂寞，查询计划只用到了我们创建的author_id索引，幸好查询开销降为了12.40！
+- 那就这样吧，还是太菜了...
+
+![Xnip2022-01-15_15-39-47](MySQL Note.assets/Xnip2022-01-15_15-39-47.jpg)
+
+
+
+![Xnip2022-01-15_15-40-55](MySQL Note.assets/Xnip2022-01-15_15-40-55.jpg)
+
+虚拟列的官方文档说明:
+
+[MySQL :: MySQL 5.7 Reference Manual :: 13.1.18.7 CREATE TABLE and Generated Columns](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html)
 
