@@ -317,3 +317,92 @@ ALTER TABLE author_tb ADD level_cnt varchar(10) AS (IF(t1.author_level <= 2, '1-
 
 [MySQL :: MySQL 5.7 Reference Manual :: 13.1.18.7 CREATE TABLE and Generated Columns](https://dev.mysql.com/doc/refman/5.7/en/create-table-generated-columns.html)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day176
+
+## Tag: HAVING
+
+![Xnip2022-01-16_13-17-11](MySQL Note.assets/Xnip2022-01-16_13-17-11.jpg)
+
+
+
+![Xnip2022-01-16_13-19-58](MySQL Note.assets/Xnip2022-01-16_13-19-58.jpg)
+
+题意:
+
+给你一张回答记录表，请你查询出其中单日回答数大于等于3的所有用户信息
+
+
+
+
+
+思路:
+
+- 
+
+- 因为需要限制的是回答数是分组后的的信息，所以我们需要在分组后使用HAVING，SQL如下
+
+```mysql
+SELECT
+    answer_date,
+    author_id,
+    COUNT(issue_id) AS 'answer_cnt'
+FROM
+    answer_tb
+GROUP BY answer_date, author_id
+HAVING answer_cnt >= 3
+ORDER BY answer_date, author_id
+```
+
+
+
+
+
+
+
+优化:
+
+MySQL版本为5.7.10，数据基于牛客网的示例
+
+
+
+分析:
+
+- 首先原表中没有任何索引，又因为我们需要分组和排序，所以用到了临时表和文件排序，因此Extra中有"Using temporary"和"Using filesort"
+- 此时查询计划使用的是全表扫描，查询开销为23.80
+
+![Xnip2022-01-16_13-24-01](MySQL Note.assets/Xnip2022-01-16_13-24-01.jpg)
+
+
+
+
+
+思考:
+
+- 既然是因分组和排序而起，那么在这两个字段上创建索引不就行了？
+- 其实不然，因为分组和排序的字段是有先后顺序的，而如果两个字段的索引是独立的，那么在使用除第一个字段外的字段索引时是很低效的(会重复扫描)，此时索引会失效
+- 因此，我们应该根据顺序创建一个联合索引，此时查看执行计划发现Extra字段变为了null，再查看查询开销发现降为了4.80!
+
+![Xnip2022-01-16_13-25-38](MySQL Note.assets/Xnip2022-01-16_13-25-38.jpg)
+
+
+
+![Xnip2022-01-16_13-40-29](MySQL Note.assets/Xnip2022-01-16_13-40-29.jpg)
+
