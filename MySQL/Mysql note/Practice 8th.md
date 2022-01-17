@@ -406,3 +406,111 @@ MySQL版本为5.7.10，数据基于牛客网的示例
 
 ![Xnip2022-01-16_13-40-29](MySQL Note.assets/Xnip2022-01-16_13-40-29.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day177
+
+## Tag: Sub Query
+
+![Xnip2022-01-17_12-02-24](MySQL Note.assets/Xnip2022-01-17_12-02-24.jpg)
+
+
+
+题意:
+
+给你一张题目信息表，一个回答情况表，请你查询出其中回答过教育类问题的用户中，回答过职场问题的用户数量
+
+
+
+思路:
+
+- 因为在统计前，我们需要对用户回答过的问题类型进行限制，而这个限制本身又有个条件(即在回答过教育类的用户中去查询)
+- 因此我们首先应该为这个限制，获取对应的记录，因此我们需要先查询出所有回答过教育类问题的用户，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t2.author_id
+FROM
+	issue_tb AS t1
+INNER JOIN answer_tb AS t2 ON t1.issue_id = t2.issue_id
+WHERE t1.issue_type = 'Education'
+```
+
+
+
+- 将该查询结果作为条件之一，再统计用户数量即可，SQL如下
+
+```mysql
+SELECT
+    COUNT(DISTINCT t2.author_id) AS 'num'
+FROM
+    issue_tb AS t1
+INNER JOIN answer_tb AS t2 ON t1.issue_id = t2.issue_id
+WHERE t2.author_id IN (
+    SQL1
+    )
+AND t1.issue_type = 'Career';
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+优化:
+
+- 按照惯例查看执行计划，因为没有索引，所以全为全表扫描
+- 此时开销为21.38
+
+![Xnip2022-01-17_14-19-43](MySQL Note.assets/Xnip2022-01-17_14-19-43.jpg)
+
+
+
+![Xnip2022-01-17_14-19-25](MySQL Note.assets/Xnip2022-01-17_14-19-25.jpg)
+
+
+
+
+
+分析:
+
+- 对于没有任何索引的表(其实还是有隐藏列的)，我们可以利用《阿里巴巴Java开发手册》中对索引的约束，对两表连接的字段添加索引
+- 所以我们对两表的issue_id添加索引，再为answer_tb中的author_id字段添加索引
+- 为什么不为issue_type建立索引呢？首先，这个字段在表中的区分度并不高，就算加上，也作用不大，甚至会起反作用(各位可以去试试)
+- 优化后，我们再次查看开销，降为了13.50
+
+![Xnip2022-01-17_14-25-29](MySQL Note.assets/Xnip2022-01-17_14-25-29.jpg)
+
+
+
+![Xnip2022-01-17_14-24-07](MySQL Note.assets/Xnip2022-01-17_14-24-07.jpg)
+
