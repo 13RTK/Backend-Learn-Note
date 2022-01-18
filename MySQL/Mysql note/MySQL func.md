@@ -758,11 +758,53 @@ Eg:
 
 ![Xnip2021-12-11_09-11-14](MySQL Note.assets/Xnip2021-12-11_09-11-14.jpg)
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 6. CONVERT
+
+
+
+## 1) CAST
+
+syntax
+
+```mysql
+CAST(colume AS new_type);
+```
+
+
+
+![Xnip2022-01-18_13-08-09](MySQL Note.assets/Xnip2022-01-18_13-08-09.jpg)
+
+
+
+
+
+## 2) CONVERT
+
+![Xnip2022-01-18_13-11-23](MySQL Note.assets/Xnip2022-01-18_13-11-23.jpg)
 
 
 

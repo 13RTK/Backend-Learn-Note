@@ -514,3 +514,114 @@ AND t1.issue_type = 'Career';
 
 ![Xnip2022-01-17_14-24-07](MySQL Note.assets/Xnip2022-01-17_14-24-07.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day178
+
+## Tag: CAST, SUBSTRING_INDEX
+
+![Xnip2022-01-18_13-12-44](MySQL Note.assets/Xnip2022-01-18_13-12-44.jpg)
+
+
+
+![Xnip2022-01-18_13-05-54](MySQL Note.assets/Xnip2022-01-18_13-05-54.jpg)
+
+题意:
+
+给你一张产品信息表，一张订单明细表，一张订单总表，请你查询出901店铺2021年10月份以来所有毛利率大于24.9%的商品信息和店铺的整体毛利率
+
+
+
+
+
+
+
+
+
+思路:
+
+- 既然需要商品和店铺两种，那么我们直接将问题分为两个部分不就行了？所以我们可以先行查询店铺的整体毛利率
+- 因为店铺毛利率 = (1 - 总进价成本 / 总销售成本) * 100%，所以我们应该求出卖出的商品进价总和以及销售总和(两者对应的商品数量应该一致)，而最终结果的"%"符号则只需要使用CONCAT进行连接即可，所以SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	'店铺汇总' AS 'product_id',
+	CONCAT(ROUND(100 * (1 - (SUM(t1.in_price * t2.cnt) / SUM(t2.price * t2.cnt))), 1), '%') AS 'profit_rate'
+FROM
+	tb_product_info AS t1
+INNER JOIN tb_order_detail AS t2 ON t1.product_id = t2.product_id
+INNER JOIN tb_order_overall AS t3 ON t2.order_id = t3.order_id
+WHERE t1.shop_id = 901
+AND DATE(t3.event_time) >= '2021-10-01'
+```
+
+
+
+- 剩下的就是单个商品了，我们采用类似的方法即可，注意这里的毛利率需要基于单价计算
+- 问题是，在获取901店铺每个商品的毛利率后，怎么筛选出毛利率大于24.9%的呢？此时我们的SQL为
+
+SQL2
+
+```mysql
+SELECT
+	t1.product_id,
+	CONCAT(ROUND(100 * (1 - t1.in_price / AVG(t2.price)), 1), '%') AS 'profit_rate'
+FROM
+	tb_product_info AS t1
+INNER JOIN tb_order_detail AS t2 ON t1.product_id = t2.product_id
+INNER JOIN tb_order_overall AS t3 ON t2.order_id = t3.order_id
+WHERE t1.shop_id = 901
+AND DATE(t3.event_time) >= '2021-10-01'
+GROUP BY t1.product_id
+```
+
+
+
+- 直接在HAVING中使用profit_rate吗？profit_rate是CONCAT连接后的结果，它是一个字符串呀，不能与数字直接比较，那咋办？类型转换？但它还带有一个"%"呀
+- 不怕，我们可以先使用SUBSTRING_INDEX分割出数字部分，再使用CAST将其转换为DECIMAL类型即可，最终SQL如下
+
+```mysql
+SQL1
+UNION ALL
+SQL2
+HAVING CAST(SUBSTRING_INDEX(profit_rate, '%', 1) AS DECIMAL(3, 1)) > 24.9
+```
+
+
+
+
+
+- 其他题解中用到了ROLLUP，在MySQL8.0确实没问题，但在MySQL5.7中ROLLUP和ORDER BY不能一起使用，因此我这里并未选择ROLLUP
+
+
+
+官方文档:
+
+![Xnip2022-01-18_13-42-21](MySQL Note.assets/Xnip2022-01-18_13-42-21.jpg)
+
+
+
+![Xnip2022-01-18_13-43-08](MySQL Note.assets/Xnip2022-01-18_13-43-08.jpg)
+
+
+
+
+
+
+
+
+
