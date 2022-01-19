@@ -617,9 +617,93 @@ HAVING CAST(SUBSTRING_INDEX(profit_rate, '%', 1) AS DECIMAL(3, 1)) > 24.9
 
 ![Xnip2022-01-18_13-43-08](MySQL Note.assets/Xnip2022-01-18_13-43-08.jpg)
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day179
+
+## Tag: COUNT() OVER, TIMESTAMPDIFF
+
+![Xnip2022-01-19_10-14-28](MySQL Note.assets/Xnip2022-01-19_10-14-28.jpg)
+
+
+
+![Xnip2022-01-19_10-13-37](MySQL Note.assets/Xnip2022-01-19_10-13-37.jpg)
+
+题意:
+
+给你一张产品信息表，一张订单明细表，一张订单总表，请你查询出近90天中，所有零食类商品中复购率最高的商品
+
+
+
+
+
+思路:
+
+- 首先，对日期的限制是在最近一天的基础上的，所以我们应该先查询出最近一天的日期值，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	MAX(event_time) AS 'last_date'
+FROM
+	tb_order_overall
+```
+
+
+
+- 有了日期基准后，我们再获取每个用户对应购买每种产品的次数即可
+- 获取购买次数的时候可以使用窗口函数，也可以使用GROUP BY，SQL如下
+
+SQL2
+
+```mysql
+SELECT
+		DISTINCT t1.uid,
+		t2.product_id,
+		COUNT(t2.product_id) OVER(
+				PARTITION BY t1.uid, t2.product_id
+		) AS 'purchase_time'
+FROM
+		tb_order_overall AS t1
+INNER JOIN tb_order_detail AS t2 ON t1.order_id = t2.order_id
+INNER JOIN tb_product_info AS t3 ON t2.product_id = t3.product_id AND t3.tag = '零食'
+WHERE TIMESTAMPDIFF(DAY, t1.event_time, (
+		SQL1
+		)) < 90
+```
+
+
+
+- 之后根据购买次数统计对应的次数即可，最终SQL如下
+
+```mysql
+SELECT
+    product_id,
+    ROUND(SUM(IF(purchase_time = 2, 1, 0)) / COUNT(DISTINCT uid), 3) AS 'repurchase_rate'
+FROM (
+	SQL2
+    ) AS t1
+GROUP BY product_id
+ORDER BY repurchase_rate DESC, product_id
+LIMIT 3
+```
 
 
 
