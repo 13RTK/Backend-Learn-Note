@@ -705,7 +705,109 @@ ORDER BY repurchase_rate DESC, product_id
 LIMIT 3
 ```
 
+<hr>
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+# Day180
+
+## Tag: HAVING
+
+![Xnip2022-01-20_10-47-11](MySQL Note.assets/Xnip2022-01-20_10-47-11.jpg)
+
+
+
+题意:
+
+给你一张用户打车记录表，和一张打车记录表，请你查询出2021年国庆7天期间，在北京接单至少三次的司机平均的接单数和平均兼职收入
+
+
+
+
+
+
+
+思路:
+
+- 首先，我们需要查询出的是每个司机的平均接单数和平均的兼职收入，但每个司机的接单数和收入不是既存字段，所以我们需要先获取这两个数据才行
+- 获取这两个数据的同时，我们也要限制订单的时间和接单地点，并在分组后筛选出接单数大于3的，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	t1.driver_id,
+	COUNT(t1.order_id) AS 'order_num',
+	SUM(t1.fare) AS 'income'
+FROM
+	tb_get_car_order AS t1
+	INNER JOIN tb_get_car_record AS t2 ON t1.order_id = t2.order_id
+WHERE DATE(finish_time) BETWEEN '2021-10-01' AND '2021-10-07'
+AND t2.city = '北京'
+GROUP BY driver_id
+HAVING COUNT(t1.order_id) >= 3
+```
+
+
+
+- 有了这两个字段后，我们再统计平均接单数和收入即可，SQL如下
+
+```mysql
+SELECT
+    '北京' AS 'city',
+    ROUND(AVG(t1.order_num), 3) AS 'avg_order_num',
+    ROUND(AVG(t1.income), 3) AS 'avg_income'
+FROM (
+    SQL1
+    ) AS t1
+```
+
+
+
+
+
+
+
+优化:
+
+- 查看执行计划的开销: 10.50
+- 由于我们使用了子查询，而子查询的数据量较大，所以这里使用了物化表(将子查询结果放到临时表中，并建立哈希(较少)/B+索引(较多))，因此后面两个表的select_type为DERIVED，且PRIMARY表的表名为derived2
+- 今天借着这单题整点花活: MySQL5.7的隐式排序(implicit sort)，即MySQL5.7中会在GROUP BY后面默认为分组字段加上一个排序(2019.4在MySQL8.0中已经移除)
+- 因此，明明没有写ORDER BY，但我们的执行计划Extra中有一个"Using filesort"
+- 其余的"Using where"、"Using temporary"和"Using join buffer"就比较常规了，即临时表分组，回表和存储驱动表记录的join buffer
+
+![Xnip2022-01-20_10-42-13](MySQL Note.assets/Xnip2022-01-20_10-42-13.jpg)
+
+
+
+![Xnip2022-01-20_10-46-20](MySQL Note.assets/Xnip2022-01-20_10-46-20.jpg)
+
+
+
+分析
+
+- 先从解决隐式排序开始，我们其实并不需要排序，所以这里我们使用ORDER BY NULL来避免排序，相应的再加上对应的索引，不过对应数据量少，开销并未减少
+
+![Xnip2022-01-20_11-56-20](MySQL Note.assets/Xnip2022-01-20_11-56-20.jpg)
+
+
+
+官方文档:
+
+![Xnip2022-01-20_11-14-24](MySQL Note.assets/Xnip2022-01-20_11-14-24.jpg)
+
+
+
+![Xnip2022-01-20_11-26-23](MySQL Note.assets/Xnip2022-01-20_11-26-23.jpg)
