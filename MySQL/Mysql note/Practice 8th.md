@@ -811,3 +811,77 @@ FROM (
 
 
 ![Xnip2022-01-20_11-26-23](MySQL Note.assets/Xnip2022-01-20_11-26-23.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day181
+
+## Tag: WITH ROLLUP
+
+<img src="MySQL Note.assets/Xnip2022-01-21_15-19-14.jpg" alt="Xnip2022-01-21_15-19-14" style="zoom:50%;" />
+
+
+
+![Xnip2022-01-21_15-18-28](MySQL Note.assets/Xnip2022-01-21_15-18-28.jpg)
+
+题意:
+
+给你一张用户打车记录表，一张打车订单表，请你查询出2021年10月有过取消订单的司机中，所有已经完成的订单对应的平均评分和司机的整体评分
+
+
+
+
+
+
+
+
+
+思路:
+
+- 因为分为整体和各个司机两个部分，因此我们可以使用UNION ALL连接两个SQL来获取结果
+- 但这里我们可以使用ROLLUP，ROLLUP会统计出整体的数据，但其分组字段为NULL，因此我们对分组字段(这里是driver_id)进行判断，就能分为单个司机和整体
+- 但在这之前，我们需要获取对应的driver_id，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	driver_id
+FROM
+	tb_get_car_order
+WHERE DATE(finish_time) BETWEEN '2021-10-01' AND '2021-10-31'
+AND ISNULL(grade)
+```
+
+
+
+- 之后将该表作为物化表即可，并限制查询的记录为已经完成的订单(评分不为NULL)，最终SQL如下
+
+```mysql
+SELECT
+	IFNULL(driver_id, '总体') AS 'driver_id',
+	ROUND(AVG(grade), 1) AS 'avg_grade'
+FROM
+	tb_get_car_order
+WHERE NOT ISNULL(grade)
+AND driver_id IN (
+	SQL1
+)
+GROUP BY driver_id
+WITH ROLLUP
+```
+
