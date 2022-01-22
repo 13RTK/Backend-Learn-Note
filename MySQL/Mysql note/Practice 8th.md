@@ -885,3 +885,105 @@ GROUP BY driver_id
 WITH ROLLUP
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day182
+
+## Tag: DENSE_RANK
+
+![Xnip2022-01-22_12-03-32](MySQL Note.assets/Xnip2022-01-22_12-03-32.jpg)
+
+
+
+![Xnip2022-01-22_12-02-56](MySQL Note.assets/Xnip2022-01-22_12-02-56.jpg)
+
+题意:
+
+给你一张用户打车记录表，一张打车订单表，请你查询出每个城市中评分最高的司机的平均评分、日均接单量和日均里程数。当多个司机评分并列时，需一并查询出来
+
+
+
+
+
+
+
+
+
+思路:
+
+- 首先结果需要不同城市中的司机，所以我们需要按照城市来分类，又因为我们还需要每个司机的平均分，并需要根据这个平均分来排序
+- 所以我们还需要根据城市和司机来分组，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.city,
+	t2.driver_id,
+	ROUND(AVG(t2.grade), 1) AS 'avg_grade'
+FROM
+	tb_get_car_record AS t1
+INNER JOIN tb_get_car_order AS t2 ON t1.order_id = t2.order_id
+GROUP BY t1.city, t2.driver_id
+ORDER BY NULL
+```
+
+
+
+- 有了平均分后，我们再根据分数来获取每个城市中对应司机的排名，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	city,
+	driver_id,
+	DENSE_RANK() OVER(
+		PARTITION BY city
+		ORDER BY avg_grade DESC
+	) AS 'rank',
+	avg_grade
+FROM (
+	SQL1
+) AS t1
+```
+
+
+
+- 最后，我们再限制对应的排名为1，最后连接上述的临时表，再计算出日均接单数和历程即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.city,
+    t2.driver_id,
+    t3.avg_grade,
+    ROUND(COUNT(t2.order_id) / COUNT(DISTINCT DATE(t2.order_time)), 1) AS 'avg_order_num',
+    ROUND(SUM(t2.mileage) / COUNT(DISTINCT DATE(t2.order_time)), 3) AS 'avg_mileage'
+FROM
+    tb_get_car_record AS t1
+INNER JOIN tb_get_car_order AS t2 ON t1.order_id = t2.order_id
+INNER JOIN (
+    SQL2
+    ) AS t3 ON t1.city = t3.city AND t2.driver_id = t3.driver_id AND t3.rank = 1
+GROUP BY t1.city, t2.driver_id
+ORDER BY avg_order_num
+```
+
+
+
+
+
