@@ -144,6 +144,40 @@ Eg:
 
 ![Xnip2021-08-16_10-38-57](MySQL Note.assets/Xnip2021-08-16_10-38-57.jpg)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5) Frame
+
+Explain:
+
+[Cubox](https://cubox.pro/web/reader/ff8080817e719ed8017e857df1e2218b)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ****
 
 

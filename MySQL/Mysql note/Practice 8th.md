@@ -983,6 +983,83 @@ GROUP BY t1.city, t2.driver_id
 ORDER BY avg_order_num
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day183
+
+## Tag: Window Func, Frame
+
+![Xnip2022-01-23_14-26-50](MySQL Note.assets/Xnip2022-01-23_14-26-50.jpg)
+
+
+
+![Xnip2022-01-23_14-27-14](MySQL Note.assets/Xnip2022-01-23_14-27-14.jpg)
+
+题意:
+
+给你一张打车订单表，请你查询出2021年10月1号到3号这三天中，每天近7天的日均订单完成量和取消量
+
+
+
+
+
+思路:
+
+- 因为题目已经给了我们最终查询结果的依据了，那么我只需要在该表上进行查询即可，所以我们需要先查询出对应日期内每天的订单完成量和取消量，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	DATE(finish_time) AS 'date',
+	COUNT(start_time) AS 'finish_num',
+	SUM(CASE WHEN ISNULL(start_time) THEN 1 ELSE 0 END ) AS 'cancel_num' 
+FROM
+	tb_get_car_order 
+WHERE
+	DATE(finish_time) BETWEEN '2021-09-25' AND '2021-10-03' 
+GROUP BY DATE(finish_time)
+```
+
+
+
+- 之后再查询出每天的平均值即可，但需要注意的是，我们这里的平均值是在累加的基础上进行的，所以我们可以利用窗口函数指定ORDER BY字段为累加字段即可
+- 这样就行了吗？注意我们需要的是每天近7日的订单记录，所以这三个日期需要限制对应的累加范围，这该咋办？
+- 其实窗口函数还有一个可选参数即frame: 这里我们使用ROWS 6再使用PRECEDING即可指定累加范围为近7天，具体的解释可以去看这篇文章:
+
+[新特性解读 | MySQL 8.0 窗口函数框架用法 (actionsky.com)](https://opensource.actionsky.com/20210125-mysql/)
+
+
+
+- 最后我们再跳过不需要的那几天即可，因此最终SQL如下
+
+```mysql
+SELECT
+	date,
+	ROUND(AVG(finish_num) OVER(ORDER BY date ROWS 6 PRECEDING), 2) AS 'finish_num_7d',
+	ROUND(AVG(cancel_num) OVER(ORDER BY date ROWS 6 PRECEDING), 2) AS 'cancel_num_7d'
+FROM (
+	SQL1
+	) AS t1
+LIMIT 3 OFFSET 6
+```
+
 
 
 
