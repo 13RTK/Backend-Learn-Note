@@ -1060,6 +1060,120 @@ FROM (
 LIMIT 3 OFFSET 6
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day184
+
+## Tag: DATE_FORMAT
+
+![Xnip2022-01-24_10-12-01](MySQL Note.assets/Xnip2022-01-24_10-12-01.jpg)
+
+
+
+![Xnip2022-01-24_10-11-28](MySQL Note.assets/Xnip2022-01-24_10-11-28.jpg)
+
+题意:
+
+给你一张订单明细表和一张订单总表，请你查询出2021年10月，所有新用户的首单交易金额和平均获客成本
+
+
+
+
+
+思路:
+
+- 因为有日期限制，所以我们需要先获取10月份中对应新用户首单日期，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		uid,
+		MIN(DATE(event_time)) AS 'first_order_date'
+FROM
+		tb_order_overall
+GROUP BY uid
+HAVING DATE_FORMAT(first_order_date, '%Y-%m') = '2021-10'
+```
+
+
+
+- 有了对应的用户id和日期后，我们只需要根据这两个字段查询出对应订单的总金额和每单的优惠金额，SQL如下
+
+SQL2:
+
+```mysql
+SELECT 
+	t1.order_id,
+	t2.total_amount,
+	SUM(t1.price * t1.cnt) - total_amount AS 'discount_amount'
+FROM
+	tb_order_detail AS t1
+LEFT JOIN tb_order_overall AS t2 ON t1.order_id = t2.order_id
+WHERE (t2.uid, DATE(t2.event_time)) IN (
+	SQL1
+	)
+GROUP BY t1.order_id
+```
+
+
+
+- 有了这些数据后我们再求平均值即可，最终SQL如下
+
+```mysql
+SELECT
+	ROUND(AVG(total_amount), 1) AS 'avg_amount',
+	ROUND(AVG(discount_amount), 1) AS 'avg_cost'
+FROM (
+	SQL2
+	) AS temp
+```
+
+
+
+
+
+优化:
+
+
+
+分析:
+
+- 原表中只有主键列id，但id并未出现在我们的条件中，所以暂时无用，此时查询开销为11.50
+- 因为我们使用了子查询的形式，所以id为3的SELECT中的select_type为"DEPENDENT SUBQUERY"即相关子查询，而t2和t1都以物化表的形式执行派生表查询，所以select_type为"DERIVED"
+
+![Xnip2022-01-24_10-38-57](MySQL Note.assets/Xnip2022-01-24_10-38-57.jpg)
+
+
+
+尝试:
+
+- 从里到外，我们先尝试在最内层的查询中添加索引，又因为使用的是MySQL5.7，所以这里在所有的GROUP BY后面写一个ORDER BY NULL
+- 因为我们最终需要按照uid来分组，所以这里我选择在uid上建立索引
+- 此时再看发现除了t2表的Extra列外，其他的都变为null了，但因为表中数据太少，所以并未有什么开销上的收效
+
+![Xnip2022-01-24_11-11-27](MySQL Note.assets/Xnip2022-01-24_11-11-27.jpg)
+
+
+
+
+
+
+
+
+
 
 
 
