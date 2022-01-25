@@ -1166,6 +1166,78 @@ FROM (
 
 ![Xnip2022-01-24_11-11-27](MySQL Note.assets/Xnip2022-01-24_11-11-27.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day185
+
+## Tag: DENSE_RANK
+
+![Xnip2022-01-25_17-04-43](MySQL Note.assets/Xnip2022-01-25_17-04-43.jpg)
+
+
+
+![Xnip2022-01-25_17-07-58](MySQL Note.assets/Xnip2022-01-25_17-07-58.jpg)
+
+题意:
+
+给你一张创作者信息表，一张回答信息表，请你查询出其中最大连续回答天数大于等于3天的用户对应的id、等级和最大的连续回答天数
+
+
+
+
+
+
+
+思路:
+
+- 很明显，这里最大的限制就是最大的连续回答天数，这里可以利用到一个函数即DENSE_RANK，因为它能够在保持连续相同的排名，可以利用它来获取每个用户的连续回答天数，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	answer_date,
+	author_id,
+	DENSE_RANK() OVER(
+		PARTITION BY author_id
+		ORDER BY answer_date
+	) AS 'consecutive_day_num'
+FROM
+	answer_tb
+```
+
+
+
+- 有了连续回答天数后，我们只需要获取每个用户的最大回答天数，并限制从3开始即可，这样再连接上用户的信息表，获取对应的用户等级即可，最终SQL如下
+
+```mysql
+SELECT
+	t1.author_id,
+	t2.author_level,
+	MAX(t1.consecutive_day_num) AS 'day_cnt'
+FROM (
+	SQL1
+	) AS t1
+INNER JOIN author_tb AS t2 ON t1.author_id = t2.author_id
+WHERE t1.consecutive_day_num >= 3
+GROUP BY t1.author_id
+ORDER BY author_id
+```
+
+
+
+
+
+
+
 
 
 
