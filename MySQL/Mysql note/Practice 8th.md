@@ -1232,8 +1232,81 @@ GROUP BY t1.author_id
 ORDER BY author_id
 ```
 
+<hr>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day186
+
+## Tag: TIMESTAMPDIFF, HAVING
+
+![Xnip2022-01-26_10-43-05](MySQL Note.assets/Xnip2022-01-26_10-43-05.jpg)
+
+
+
+![Xnip2022-01-26_10-43-42](MySQL Note.assets/Xnip2022-01-26_10-43-42.jpg)
+
+题意:
+
+给你一张课程信息表，一张用户行为表，一张上课情况表，请你查询出其中每个科目的出勤率(在线时长10分钟及以上)
+
+
+
+
+
+
+
+思路:
+
+- 首先，我们需要查询出有效出勤的用户信息和对应的课程id，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		user_id,
+		course_id,
+		SUM(TIMESTAMPDIFF(MINUTE, in_datetime, out_datetime)) AS 'online_time'
+FROM
+		attend_tb
+GROUP BY user_id, course_id
+HAVING online_time >= 10
+```
+
+
+
+- 有了这个临时表后，我们再根据课程进行分组统计其中的客户id，这样就能统计出其中的出勤人数
+- 再连接其余两表，统计行为表中的if_sign字段获取报名人数，这样我们就获取了出勤率了，最终SQL如下
+
+```mysql
+SELECT
+	t1.course_id,
+	t3.course_name,
+	ROUND(100 * COUNT(t2.user_id) / SUM(t1.if_sign), 2) AS 'attend_rate'
+FROM
+	behavior_tb AS t1
+LEFT JOIN (
+	SQL1
+	) AS t2 ON t1.user_id = t2.user_id AND t1.course_id = t2.course_id
+LEFT JOIN course_tb AS t3 ON t1.course_id = t3.course_id
+GROUP BY t1.course_id, t3.course_name;
+```
 
 
 
