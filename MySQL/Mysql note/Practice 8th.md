@@ -1308,6 +1308,104 @@ LEFT JOIN course_tb AS t3 ON t1.course_id = t3.course_id
 GROUP BY t1.course_id, t3.course_name;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day187
+
+## Tag: UNION ALL, SUM() OVER()
+
+![Xnip2022-01-27_14-18-23](MySQL Note.assets/Xnip2022-01-27_14-18-23.jpg)
+
+
+
+![Xnip2022-01-27_14-19-06](MySQL Note.assets/Xnip2022-01-27_14-19-06.jpg)
+
+题意:
+
+给你一张课程信息表，一张上课情况表，请你查询出每个课程最大同时在线人数
+
+
+
+思路:
+
+- 首先，由上课情况表可知，一个用户可能某时刻进入直播或退出直播，所以我们应该计算进入的同时也计算退出直播，而此时的直播间人数应该以时间为序，依次添加或减少人数
+- 但因为in_datetime和out_datetime字段在同一张表中，所以我们这里要将其放到同一列中，并按照in_datetime和out_datetime进行相反的标记，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	course_id,
+	in_datetime AS 'time',
+	1 AS 'state'
+FROM
+	attend_tb
+UNION ALL
+SELECT
+	course_id,
+	out_datetime AS 'time',
+	-1 AS 'state'
+FROM
+	attend_tb
+```
+
+
+
+- 此时我们再根据课程进行分组，以时间和state为序依次计算人数(应该先计算进入的人数，所以这里以state升序排列)，此时SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	course_id,
+	SUM(state) OVER(
+		PARTITION BY course_id
+		ORDER BY time, state DESC
+	) AS 'num'
+FROM (
+	SQL1
+) AS t1
+```
+
+
+
+- 以该表为基础，再获取其中最大的num值即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.course_id,
+    t1.course_name,
+    MAX(t2.num) AS 'max_num'
+FROM
+    course_tb AS t1
+INNER JOIN (
+    SQL2
+    ) AS t2 ON t1.course_id = t2.course_id
+GROUP BY t1.course_id, t1.course_name
+ORDER BY t1.course_id
+```
+
+
+
+
 
 
 
