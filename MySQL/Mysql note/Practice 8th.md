@@ -1403,6 +1403,7 @@ GROUP BY t1.course_id, t1.course_name
 ORDER BY t1.course_id
 ```
 
+<hr>
 
 
 
@@ -1413,6 +1414,85 @@ ORDER BY t1.course_id
 
 
 
+
+
+
+# Day188
+
+## Tag: 点赞数和转发量
+
+![Xnip2022-01-28_09-27-26](MySQL Note.assets/Xnip2022-01-28_09-27-26.jpg)
+
+
+
+![Xnip2022-01-28_09-27-51](MySQL Note.assets/Xnip2022-01-28_09-27-51.jpg)
+
+题意:
+
+给你一张用户-视频互动表，一张短视频信息表，请你查询出2021年国庆前3天中每类视频每天近一周总点赞量和一周内最大单天转发量
+
+
+
+
+
+思路:
+
+- 因为有官方解释，那么我们按照这个解释来获取结果就行，所以我们先获取这个解释表，即2021-09-25到2021-10-03的数据，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.tag,
+	DATE(t2.start_time) AS 'date',
+	SUM(t2.if_like) AS 'like_cnt',
+	SUM(t2.if_retweet) AS 'retweet_cnt'
+FROM
+	tb_video_info AS t1
+INNER JOIN tb_user_video_log AS t2 ON t1.video_id = t2.video_id
+WHERE DATE(start_time) BETWEEN '2021-09-25' AND '2021-10-03'
+GROUP BY t1.tag, `date`
+```
+
+
+
+- 此时再获取每天对应的数据即可，同Day183一样我们这里使用了窗口函数中的Frame选项，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	t1.tag,
+	t1.date,
+	SUM(t1.like_cnt) OVER(
+		PARTITION BY t1.tag
+		ORDER BY t1.date
+		ROWS 6 PRECEDING
+	) AS 'sum_like_cnt_7d',
+	MAX(t1.retweet_cnt) OVER(
+		PARTITION BY t1.tag
+		ORDER BY t1.date
+		ROWS 6 PRECEDING
+	) AS 'max_retweet_cnt_7d'
+FROM (
+	SQL1
+	) AS t1
+```
+
+
+
+- 此时有人可能会想到加一个WHERE限制日期，但其实不行，因为我们的窗口函数数据是从09-25开始的，此时加上一个WHERE的话就将这些数据排除了，基准数据就出错了
+- 所以我们这里在外面套一层后再限制日期即可，最终SQL如下
+
+```mysql
+SELECT
+    *
+FROM (
+    SQL2
+    ) AS temp
+WHERE date BETWEEN '2021-10-01' AND '2021-10-03'
+ORDER BY tag DESC, date
+```
 
 
 
