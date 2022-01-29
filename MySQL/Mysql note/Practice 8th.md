@@ -1494,6 +1494,72 @@ WHERE date BETWEEN '2021-10-01' AND '2021-10-03'
 ORDER BY tag DESC, date
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day189
+
+## Tag: TIME, DATE_FORMAT
+
+![Xnip2022-01-29_18-59-45](MySQL Note.assets/Xnip2022-01-29_18-59-45.jpg)
+
+
+
+![Xnip2022-01-29_19-07-09](MySQL Note.assets/Xnip2022-01-29_19-07-09.jpg)
+
+题意:
+
+给你一张用户打车记录表，一张订单信息表，请你查询出周一到周五中各个时段的叫车量、平均接单时间和平均调度时间
+
+
+
+
+
+
+
+
+
+
+
+思路:
+
+- 因为时段分为四个，所以我们可以根据时间来划分，这里可以使用CASE，也可以使用IF，获取时间可使用TIME
+- 为了可移植性，我们这里选择CASE，注意不要忘了ELSE(非必需，但可以帮助排错)
+- 又怎么限制日期在周一到周五呢？这里我们使用DATE_FORMAT，参数设为'%w'即可
+- 接单时间即为event_time和order_time的时间差，调度时间即为start_time和order_time的时间差
+- 各位可能会想，这里使用TIMESTAMPDIFF，参数设置为MINUTE不就行了？但这里不行，因为MINUTE会舍弃小数部分，所以这里我们应该使用SECOND再除以60
+- 最终SQL如下
+
+```mysql
+SELECT
+	CASE WHEN TIME(t1.event_time) < '09:00:00' AND TIME(t1.event_time) >= '07:00:00' THEN '早高峰' 
+			 WHEN TIME(t1.event_time) < '17:00:00' AND TIME(t1.event_time) >= '09:00:00' THEN '工作时间'
+			 WHEN TIME(t1.event_time) < '20:00:00' AND TIME(t1.event_time) >= '17:00:00' THEN '晚高峰'
+			 WHEN TIME(t1.event_time) < '07:00:00' OR TIME(t1.event_time) >= '20:00:00' THEN '休息时间'
+			 ELSE NULL END AS 'period',
+	COUNT(t1.order_id) AS 'get_car_num',
+	ROUND(AVG(TIMESTAMPDIFF(SECOND, t1.event_time, t2.order_time) / 60), 1) AS 'avg_wait_time',
+	ROUND(AVG(TIMESTAMPDIFF(SECOND, t2.order_time, t2.start_time) / 60), 1) AS 'avg_dispatch_time'
+FROM
+	tb_get_car_record AS t1
+INNER JOIN tb_get_car_order AS t2 ON t1.uid = t2.uid AND t1.order_id = t2.order_id
+WHERE DATE_FORMAT(t1.event_time, "%w") BETWEEN 1 AND 5 
+GROUP BY period 
+ORDER BY get_car_num
+```
 
 
 
