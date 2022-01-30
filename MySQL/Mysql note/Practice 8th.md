@@ -1561,6 +1561,72 @@ GROUP BY period
 ORDER BY get_car_num
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day190
+
+## Tag: TIMESTAMPDIFF, DATEDIFF
+
+![Xnip2022-01-30_14-48-03](MySQL Note.assets/Xnip2022-01-30_14-48-03.jpg)
+
+
+
+![Xnip2022-01-30_14-48-20](MySQL Note.assets/Xnip2022-01-30_14-48-20.jpg)
+
+题意:
+给你一张视频互动记录表，一张视频信息表，请你查询出近一个月发布的视频中热度前三的视频，热度根据给出的公式和权重来计算即可
+
+
+
+
+
+思路:
+
+- 我们先来分析这个公式:
+- a, b, c, d都是给出的固定数字，所以不需要考虑，其中完播率就是用户观看一个视频的时间是否超过了视频的时长即: end_time - start_time是否大于等于duration
+- 点赞数、评论数和转发数则统计if_like、comment_id和if_retweet即可
+- 个人认为比较难的是新鲜度，因为题目也没说明白，其实我们只需要统计每个视频的最近一个观看时间和最近一次记录之间的日期差值，即为最近无播放天数
+- 在限制上，我们只需要判断发布日期和最近一次观看日期的天数差值在29以内即可，最终SQL如下
+
+```mysql
+SELECT
+	t1.video_id,
+	ROUND(
+	(
+	100 * (SUM(CASE WHEN TIMESTAMPDIFF(SECOND, t1.start_time, t1.end_time) >= t2.duration THEN 1 ELSE 0 END) / COUNT(t1.start_time))
+	+ 
+	5 * SUM(t1.if_like)
+	+ 
+	3 * COUNT(t1.comment_id)
+	+
+	2 * SUM(t1.if_retweet)
+	)
+	*
+	(1 / (DATEDIFF((SELECT DATE(MAX(end_time)) FROM tb_user_video_log), DATE(MAX(t1.end_time))) + 1))
+	) AS 'hot_index'
+FROM
+	tb_user_video_log AS t1
+INNER JOIN tb_video_info AS t2 ON t1.video_id = t2.video_id
+WHERE TIMESTAMPDIFF(DAY, DATE(t2.release_time), DATE((SELECT MAX(end_time) FROM tb_user_video_log))) <= 29
+GROUP BY t1.video_id
+ORDER BY hot_index DESC
+LIMIT 3
+```
+
 
 
 
