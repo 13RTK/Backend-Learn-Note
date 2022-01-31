@@ -1627,6 +1627,104 @@ ORDER BY hot_index DESC
 LIMIT 3
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day191
+
+## Tag: SUM() OVER(), UNION ALL
+
+![Xnip2022-01-31_11-13-10](MySQL Note.assets/Xnip2022-01-31_11-13-10.jpg)
+
+
+
+![Xnip2022-01-31_11-21-38](MySQL Note.assets/Xnip2022-01-31_11-21-38.jpg)
+
+题意:
+
+给你一张打车记录表，一张打车订单表，请你查询出其中每个城市在2021年10月份时，单日最大同时等车的人数
+
+
+
+
+
+思路:
+
+- 这道题目的做法其实和Day187差不多，我们首先需要将数据分为+1和-1，其中开始等车为+1，取消订单和上车为-1，这里我们查询两次后上下连接起来即可
+- 细节方面，注意限制时间，且为了方便后续查询，这里我们将城市也一并查询出来，SQL如下(这里我使用了保留字status，各位不要学我)
+
+SQL1:
+
+```mysql
+SELECT
+	t2.city,
+	t2.event_time AS 'time',
+	1 AS 'status' 
+FROM
+	tb_get_car_order AS t1
+	LEFT JOIN tb_get_car_record AS t2 ON t1.order_id = t2.order_id 
+WHERE DATE_FORMAT(event_time, '%Y-%m') = '2021-10' 
+AND NOT ISNULL(t1.start_time) 
+UNION ALL
+SELECT
+	t2.city,
+	CASE WHEN ISNULL(t1.start_time) THEN t1.finish_time ELSE t1.start_time END AS 'time',
+	-1 AS 'status' 
+FROM
+	tb_get_car_order AS t1
+LEFT JOIN tb_get_car_record AS t2 ON t1.order_id = t2.order_id 
+WHERE DATE_FORMAT(event_time, '%Y-%m') = '2021-10' 
+ORDER BY time, status DESC
+```
+
+
+
+- 有了该临时表后，我们再按照城市和每天进行分组累加，这里只需要使用窗口函数SUM() OVER()，最后再获取最大值即可，最终SQL如下
+
+```mysql
+SELECT
+  city,
+  MAX(instant_wait_cnt) AS 'max_wait_uv'
+FROM (
+  SELECT
+    city,
+    SUM(status) OVER (
+        PARTITION BY city, DATE(time)
+        ORDER BY time, status DESC
+    ) AS 'instant_wait_cnt'
+  FROM (
+     SQ1
+      ) AS temp
+  )AS t1
+GROUP BY city
+ORDER BY max_wait_uv, city
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
