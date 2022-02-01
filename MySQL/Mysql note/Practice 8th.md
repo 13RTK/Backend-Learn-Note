@@ -1725,6 +1725,66 @@ ORDER BY max_wait_uv, city
 
 
 
+# Day192
+
+## Tag: DISTINCT
+
+![Xnip2022-02-01_15-24-48](MySQL Note.assets/Xnip2022-02-01_15-24-48.jpg)
+
+
+
+![Xnip2022-02-01_15-25-25](MySQL Note.assets/Xnip2022-02-01_15-25-25.jpg)
+
+题意:
+
+给你一张关注表，一张音乐喜爱表，一张音乐信息表，请你查询出id为1的用户关注的人习惯的歌曲，作为该用户的音乐推荐(不能推荐该用户已经习惯的歌曲)
+
+
+
+
+
+思路:
+
+- 首先我们自然需要查询出id为1的用户喜欢的音乐来作为排除的依据，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	music_id AS 'user_liked'
+FROM
+	music_likes
+WHERE user_id = 1
+```
+
+
+
+- 之后我们连接三张表，查询出其关注的人习惯的音乐，并以上述临时表作为排除依据即可，注意歌曲去重，SQL如下
+
+```mysql
+SELECT
+	DISTINCT (t3.music_name)
+FROM
+	follow AS t1
+INNER JOIN music_likes AS t2 ON t1.follower_id = t2.user_id
+INNER JOIN music AS t3 ON t2.music_id = t3.id
+WHERE t1.user_id = 1
+AND t3.id NOT IN (
+	SQL1
+	)
+ORDER BY t3.id
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
