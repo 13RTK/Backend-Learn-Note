@@ -1791,3 +1791,74 @@ ORDER BY t3.id
 
 
 
+# Day193
+
+## NTH_VALUE
+
+![Xnip2022-02-02_16-04-03](MySQL Note.assets/Xnip2022-02-02_16-04-03.jpg)
+
+
+
+![Xnip2022-02-02_16-04-08](MySQL Note.assets/Xnip2022-02-02_16-04-08.jpg)
+
+题意:
+
+给你一张试卷信息表，一张试卷作答记录表，请你查询出其中所有慢用时之差大于试卷规定时长一半的试卷信息(满用时之差=第二慢用时 - 第二快用时)
+
+
+
+
+
+思路:
+
+- 
+
+- 因为我们需要用慢用时与试卷时长进行比较，所以这里我们要先获取试卷的满用时之差才行
+- 按照常规做法，我们需要获取每个试卷作答记录，并按照升降序排列后才能获取第二快和第二慢的作答用时
+- 但这里我们可以使用一个窗口函数: NTH_VALUE，其可以获取对应排序数据中的第N个数据，具体说明见图中的官方文档说明，所以这里，我们可以直接获取每个作答记录对应的第二快和第二慢用时和对应的试卷信息，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	DISTINCT t1.exam_id,
+	t1.duration,
+	t1.release_time,
+	NTH_VALUE(TIMESTAMPDIFF(SECOND, t2.start_time, t2.submit_time) / 60, 2) OVER(
+		PARTITION BY t1.exam_id
+		ORDER BY TIMESTAMPDIFF(SECOND, t2.start_time, t2.submit_time) DESC
+	) AS 'second_max_cost_time',
+	NTH_VALUE(TIMESTAMPDIFF(SECOND, t2.start_time, t2.submit_time) / 60, 2) OVER(
+		PARTITION BY t1.exam_id
+		ORDER BY TIMESTAMPDIFF(SECOND, t2.start_time, t2.submit_time)
+	) AS 'second_min_cost_time'
+FROM
+	examination_info AS t1
+INNER JOIN exam_record AS t2 ON t1.exam_id = t2.exam_id
+WHERE NOT ISNULL(t2.submit_time)
+```
+
+
+
+- 之后再比较慢用时之差和duraion的一半即可，最终SQL如下
+
+```mysql
+SELECT
+    exam_id,
+    duration,
+    release_time
+FROM (
+    SQL1
+    ) AS t1
+WHERE second_max_cost_time - second_min_cost_time > duration / 2
+ORDER BY exam_id DESC
+```
+
+
+
+
+
+
+
+
+
