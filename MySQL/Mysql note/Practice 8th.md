@@ -1854,7 +1854,93 @@ WHERE second_max_cost_time - second_min_cost_time > duration / 2
 ORDER BY exam_id DESC
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day194
+
+## Tag: MAX
+
+![Xnip2022-02-03_15-25-20](MySQL Note.assets/Xnip2022-02-03_15-25-20.jpg)
+
+
+
+![Xnip2022-02-03_15-31-10](MySQL Note.assets/Xnip2022-02-03_15-31-10.jpg)
+
+题意:
+给你一张订单明细表，请你查询出其中最大订单数大于最大平均订单数的订单id
+
+
+
+
+
+思路:
+
+- 因为需要大于最大的平均订单数，所以我们需要做的是获取最大的平均数，那么只需要获取每个订单的平均数排序后取第一个即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	AVG(quantity) AS 'avg_quantity'
+FROM
+	OrdersDetails
+GROUP BY order_id
+ORDER BY avg_quantity DESC
+LIMIT 1
+```
+
+
+
+- 最后再获取每个订单的最大数量并与最大平均数比较即可，最终SQL如下
+
+```mysql
+SELECT
+    order_id
+FROM
+    OrdersDetails
+GROUP BY order_id
+HAVING MAX(quantity) > (
+    SQL1
+)
+```
+
+
+
+
+
+
+
+优化:
+
+
+
+分析:
+
+- 由查询计划可知，因为没有索引，且用到了排序和分组，因此Extra列中有"Using temporary"和"Using filesort"，此时开销为17.80
+
+![Xnip2022-02-03_15-37-57](MySQL Note.assets/Xnip2022-02-03_15-37-57.jpg)
+
+
+
+- 解决方法很简单，在分组列"order_id"上建立索引即可，此时开销为3.80，但子查询表的Extra列信息没有变化，这是因为我们排序使用的是分组后得到的数据而不是表中的既存字段
+
+![Xnip2022-02-03_15-39-02](MySQL Note.assets/Xnip2022-02-03_15-39-02.jpg)
+
+
+
+- 这时就应该想到使用虚拟列了！但这里的平均数字段需要分组，所以无法建立
 
 
 
