@@ -1942,6 +1942,105 @@ HAVING MAX(quantity) > (
 
 - 这时就应该想到使用虚拟列了！但这里的平均数字段需要分组，所以无法建立
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day195
+
+## Tag: IN
+
+![Xnip2022-02-04_18-34-08](MySQL Note.assets/Xnip2022-02-04_18-34-08.jpg)
+
+
+
+![Xnip2022-02-04_18-33-33](MySQL Note.assets/Xnip2022-02-04_18-33-33.jpg)
+
+
+
+![Xnip2022-02-04_18-38-45](MySQL Note.assets/Xnip2022-02-04_18-38-45.jpg)
+
+题意:
+给你一张顾客信息表，一张订单信息表，请你查询出买过产品A和B，但没买过C的顾客信息
+
+
+
+
+
+
+
+思路:
+
+- 
+
+- 最简单的方法就是单独查询出所有买过产品A、B、C的客户，将这三个临时表作为条件进行限制即可，SQL如下
+
+```mysql
+SELECT
+    customer_id,
+    customer_name
+FROM
+    Customers
+WHERE customer_id IN (
+    SELECT
+        customer_id
+    FROM
+        Orders
+    WHERE product_name = 'A'
+)
+AND customer_id IN (
+    SELECT
+        customer_id
+    FROM
+        Orders
+    WHERE product_name = 'B'
+)
+AND customer_id NOT IN (
+    SELECT
+        customer_id
+    FROM
+        Orders
+    WHERE product_name = 'C'
+)
+```
+
+
+
+- 当然我们也可以通过统计顾客订单中对应product_name为A和B的数量，如果两者数量成绩为正数则说明买过A和B，而如果C的数量为0则说明没买过C，此时SQL如下
+
+```mysql
+SELECT
+    t1.customer_id,
+    t1.customer_name
+FROM
+    Customers t1
+INNER JOIN Orders AS t2 ON t1.customer_id = t2.customer_id
+GROUP BY t1.customer_id
+HAVING SUM(t2.product_name = 'A') * SUM(t2.product_name = 'B') > 0 
+AND SUM(t2.product_name = 'C') = 0
+ORDER BY t1.customer_id
+```
+
+
+
+
+
+
+
 
 
 
