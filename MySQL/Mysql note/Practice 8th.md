@@ -2035,6 +2035,72 @@ AND SUM(t2.product_name = 'C') = 0
 ORDER BY t1.customer_id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day196
+
+## Tag: UNION ALL
+
+![Xnip2022-02-05_14-34-43](MySQL Note.assets/Xnip2022-02-05_14-34-43.jpg)
+
+
+
+![Xnip2022-02-05_14-34-54](MySQL Note.assets/Xnip2022-02-05_14-34-54.jpg)
+
+题意:
+
+给你一张账户信息表，请你按照薪资水平查询出对应水平的人数
+
+
+
+
+
+
+
+思路:
+
+- 
+
+- 系统学过CASE的老哥可能下意识会想到用CASE加GROUP BY解决，但不幸的是，这样并不能统计出数量为0的类别，所以这里还是只能用UNION ALL进行连接，SQL如下
+
+```mysql
+SELECT
+    'High Salary' AS 'category',
+    SUM(CASE WHEN income > 50000 THEN 1 ELSE 0 END) AS 'accounts_count'
+FROM
+    Accounts
+UNION ALL
+SELECT
+    'Low Salary' AS 'category',
+    SUM(CASE WHEN income < 20000 THEN 1 ELSE 0 END) AS 'accounts_count'
+FROM
+    Accounts
+UNION ALL
+SELECT
+    'Average Salary' AS 'category',
+    SUM(CASE WHEN income >= 20000 AND income <= 50000 THEN 1 ELSE 0 END) AS 'accounts_count'
+FROM
+    Accounts
+```
+
+
+
+
+
 
 
 
