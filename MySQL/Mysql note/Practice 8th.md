@@ -2097,6 +2097,7 @@ FROM
     Accounts
 ```
 
+<hr>
 
 
 
@@ -2108,6 +2109,78 @@ FROM
 
 
 
+
+
+
+
+# Day197
+
+## Tag: IFNULL
+
+![Xnip2022-02-06_12-41-15](MySQL Note.assets/Xnip2022-02-06_12-41-15.jpg)
+
+
+
+![Xnip2022-02-06_12-54-45](MySQL Note.assets/Xnip2022-02-06_12-54-45.jpg)
+
+题意:
+
+给你一张注册统计表，一张记录确认表，请你查询出每个账户的确认率(注意题目中的表名采用大驼峰，并不规范)
+
+
+
+
+
+思路:
+
+- 首先题目要求是以注册表中用户id为准的，所以我们应该以注册表为驱动表进行外连接
+- 确认率无非就是确认的次数 / 尝试的所有次数，需要注意的是，部分用户可能并没有记录，所以结果为NULL，结果为null的需要输出0.00，这里我们套一个IFNULL处理一下即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.user_id,
+    IFNULL(ROUND(
+        SUM(CASE WHEN t2.action = 'confirmed' THEN 1 ELSE 0 END) 
+    / 
+        COUNT(t2.action)
+    , 2), 0.00) AS 'confirmation_rate'
+FROM
+    Signups AS t1
+LEFT JOIN confirmations AS t2 ON t1.user_id = t2.user_id
+GROUP BY t1.user_id
+```
+
+
+
+
+
+
+
+优化
+
+
+
+分析:
+
+- 原表中只有"Signups"表中有主键(聚簇索引)，此时查看查询计划:
+- 因为MySQL5.7有隐式排序，所以t1的Extra列中有"Using temporary"和"Using filesort"，这里我们加上ORDER BY NULL就能去掉"Using filesort"
+- 而t2因为没有任何索引，所以需要回表，且这里使用了join buffer，此时该SQL的开销为36.40
+
+![Xnip2022-02-06_13-01-25](MySQL Note.assets/Xnip2022-02-06_13-01-25.jpg)
+
+
+
+
+
+
+
+- 加上ORDER BY NULL，为order_id和action列加上联合索引后，此时t2表就能走覆盖索引了，此时我们的开销直接降为7.67 芜湖～
+
+![Xnip2022-02-06_13-04-58](MySQL Note.assets/Xnip2022-02-06_13-04-58.jpg)
+
+
+
+![Xnip2022-02-06_13-04-51](MySQL Note.assets/Xnip2022-02-06_13-04-51.jpg)
 
 
 
