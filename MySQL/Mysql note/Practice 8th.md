@@ -2182,7 +2182,94 @@ GROUP BY t1.user_id
 
 ![Xnip2022-02-06_13-04-51](MySQL Note.assets/Xnip2022-02-06_13-04-51.jpg)
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day198
+
+## Tag: CTE, HAVING
+
+![Xnip2022-02-07_13-58-18](MySQL Note.assets/Xnip2022-02-07_13-58-18.jpg)
+
+
+
+![Xnip2022-02-07_13-57-56](MySQL Note.assets/Xnip2022-02-07_13-57-56.jpg)
+
+题意:
+
+给你一张好友关系表，请你查询出所有互为好友的用户中有三个及以上共同好友的好友关系
+
+
+
+
+
+
+
+思路:
+
+- 
+
+- 因为每个用户都有可能出现，所以表中的user1_id和user2_id都需要进行判断
+- 这里我们先使用UNION ALL该一下格式，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+	user1_id,
+	user2_id 
+FROM
+	Friendship 
+UNION ALL
+SELECT
+	user2_id,
+	user1_id 
+FROM
+	Friendship
+```
+
+
+
+- 将该表作为CTE临时表，再以原表为驱动表，连接两次该表
+- 第一连接是判断user1_id的好友，第二次连接是判断user2_id的好友
+- 最后再限定两次连接后的t2.user2_id = t3.user3_id，也就是限制两人的共同好友
+- 最后使用COUNT(*)统计人数即可，最终SQL如下
+
+```mysql
+WITH temp AS (
+    SQL1
+)
+
+SELECT
+    t1.user1_id,
+    t1.user2_id,
+    COUNT(*) AS 'common_friend'
+FROM
+    Friendship AS t1
+LEFT JOIN temp AS t2 ON t1.user1_id = t2.user1_id
+LEFT JOIN temp AS t3 ON t1.user2_id = t3.user1_id
+WHERE t2.user2_id = t3.user2_id
+GROUP BY t1.user1_id, t1.user2_id
+HAVING COUNT(*) >= 3
+```
+
+
+
+拓展:
+
+- 在统计行数时，最好使用COUNT(*)
+- 因为它在遍历整张表的时候不会取出具体的数据进行NULL的判断，所以效率比较高，且MySQL为COUNT(*)做了专门的优化
 
 
 
