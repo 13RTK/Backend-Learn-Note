@@ -2271,5 +2271,92 @@ HAVING COUNT(*) >= 3
 - 在统计行数时，最好使用COUNT(*)
 - 因为它在遍历整张表的时候不会取出具体的数据进行NULL的判断，所以效率比较高，且MySQL为COUNT(*)做了专门的优化
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day199
+
+## Tag: Sub Query
+
+![Xnip2022-02-08_12-17-57](MySQL Note.assets/Xnip2022-02-08_12-17-57.jpg)
+
+
+
+![Xnip2022-02-08_12-18-21](MySQL Note.assets/Xnip2022-02-08_12-18-21.jpg)
+
+
+
+题意:
+
+给你两张表，一张是纽约大学学生的成绩表，一张是加州大学学生的成绩表，请你判断两个学校中哪所的优秀学生人数最多，将最多的那个作为胜者输出，如果是平局则没有胜者
+
+
+
+
+
+思路:
+
+- 
+
+- 很明显，这里的判断依据是两个大学的优秀学生人数，所以我们只需要查询出两所大学对应的优秀学生人数即可，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+    SUM(CASE WHEN t1.score >= 90 THEN 1 ELSE 0 END) AS 'newyork',
+    SUM(CASE WHEN t2.score >= 90 THEN 1 ELSE 0 END) AS 'california'
+FROM
+    NewYork AS t1,
+    California AS t2
+```
+
+
+
+- 将其作为子查询，根据人数关系输出对应的大学即可，最终SQL如下
+
+```mysql
+SELECT
+	CASE WHEN newyork > california
+	THEN 'New York University'
+	WHEN newyork < california
+	THEN 'California University'
+	WHEN newyork = california
+	THEN 'No Winner'
+	ELSE NULL END AS 'winner'
+FROM (
+	SQL1
+    ) AS temp
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
