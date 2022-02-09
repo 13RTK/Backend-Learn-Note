@@ -2344,6 +2344,7 @@ FROM (
     ) AS temp
 ```
 
+<hr>
 
 
 
@@ -2355,6 +2356,82 @@ FROM (
 
 
 
+
+
+
+
+
+
+
+
+# Day200
+
+## Tag: UNION ALL
+
+![Xnip2022-02-09_17-25-10](MySQL Note.assets/Xnip2022-02-09_17-25-10.jpg)
+
+
+
+![Xnip2022-02-09_17-30-51](MySQL Note.assets/Xnip2022-02-09_17-30-51.jpg)
+
+题意:
+
+给你一张好友关系表，一张喜欢表，请你向id为1的用户推荐其好友喜欢的页面，同时注意不能向他推荐他喜欢的页面
+
+
+
+
+
+
+
+思路:
+
+- 该题目其实和Day192的那道网易的音乐推荐题差不多，但稍微难一点:
+- 因为该题目中的好友信息表内的有两种可能: 要么user1_id为1，要么user2_id为1，所以我们需要将两种情况下的好友id都查询出来
+- 这里大部分人会第一时间想到UNION ALL，但其实用CASE WHEN就可以，而且CASE的效率更高，更优雅，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    CASE WHEN user1_id = 1
+    THEN user2_id
+    WHEN user2_id = 1
+    THEN user1_id
+    ELSE NULL END AS 'user_id'
+FROM
+    Friendship
+```
+
+
+
+- 之后为了排除该用户喜欢的页面，我们需要查询出他喜欢的页面才行，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+    page_id
+FROM
+    Likes
+WHERE user_id = 1
+```
+
+
+
+- 最后运用所有的条件，查询结果即可，注意去重，最终SQL如下
+
+```mysql
+SELECT
+    DISTINCT t2.page_id AS 'recommended_page'
+FROM (
+	SQL1
+) AS t1
+INNER JOIN Likes AS t2 ON t1.user_id = t2.user_id
+WHERE NOT IN (
+	SQL2
+)
+```
 
 
 
