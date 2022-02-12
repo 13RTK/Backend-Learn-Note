@@ -93,6 +93,73 @@ AND t1.ip_address != t2.ip_address
 AND t1.login BETWEEN t2.login AND t2.logout
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day203
+
+## Tag: HAVING, DENSE_RANK
+
+![Xnip2022-02-12_13-08-30](MySQL Note.assets/Xnip2022-02-12_13-08-30.jpg)
+
+
+
+![Xnip2022-02-12_13-08-42](MySQL Note.assets/Xnip2022-02-12_13-08-42.jpg)
+
+题意:
+
+给你一张员工信息表，请你将相同工资人数大于1的员工分为一组，并获取每组的排序
+
+
+
+
+
+思路:
+
+- 因为查询的数据必需为相同人数大于1，所以我们需要先查询出相同人数大于1的工资金额，这里用自连接后再分组统计人数后使用HAVING限制即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.salary,
+    DENSE_RANK() OVER(
+        ORDER BY t1.salary
+    ) AS 'team_id'
+FROM
+    Employees AS t1
+INNER JOIN Employees AS t2 ON t1.employee_id = t2.employee_id
+GROUP BY t1.salary
+HAVING COUNT(t1.employee_id) > 1
+```
+
+
+
+- 有了该临时表后，我们再用对应的金额进行连接即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.employee_id,
+    t1.name,
+    t1.salary,
+    t2.team_id
+FROM
+    Employees AS t1
+INNER JOIN (
+	SQL1
+) AS t2 ON t1.salary = t2.salary
+ORDER BY t2.team_id, t1.employee_id
+```
+
+
+
 
 
 
