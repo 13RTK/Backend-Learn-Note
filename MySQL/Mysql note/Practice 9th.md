@@ -321,7 +321,87 @@ ORDER BY t1.product_name, t2.product_id, t2.order_id
 
 ![Xnip2022-02-13_13-55-47](MySQL Note.assets/Xnip2022-02-13_13-55-47.jpg)
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day205
+
+## Tag: Window Func, Frame
+
+![Xnip2022-02-14_12-33-43](MySQL Note.assets/Xnip2022-02-14_12-33-43.jpg)
+
+
+
+![Xnip2022-02-14_12-34-07](MySQL Note.assets/Xnip2022-02-14_12-34-07.jpg)
+
+题意:
+
+给你一张消费记录表，请你查询出最近几天中各自6天内的总营业额和日均营业额
+
+
+
+
+
+
+
+思路:
+
+- 该题目其实类似Day183，只不过这道题目的日期需要我们自己获取
+- 首先因为表中的记录是分为单个订单的，所以我们要将其整理为每天的营业额，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    visited_on,
+    SUM(amount) AS 'single_day_sum'
+FROM
+    Customer
+GROUP BY visited_on
+```
+
+
+
+- 之后我们直接获取每天近6日的营业额总和，这里使用了窗口函数的Frame选项，SQL如下
+
+SQL2
+
+```mysql
+SELECT
+    visited_on,
+    SUM(single_day_sum) OVER(
+        ORDER BY visited_on
+        ROWS 6 PRECEDING
+    ) AS 'amount_sum'
+FROM (
+		SQL1
+    ) AS t1
+```
+
+
+
+- 最后我们再对日期进行限制即可，这里只需要保证日期与表中最小日期的差值≥6即可，SQL如下
+
+```mysql
+SELECT
+    visited_on,
+    amount_sum AS 'amount',
+    ROUND(amount_sum / 7, 2) AS 'average_amount'
+FROM (
+		SQL2
+) AS temp
+WHERE TIMESTAMPDIFF(DAY, (SELECT MIN(visited_on) FROM Customer), visited_on) >= 6
+ORDER BY visited_on
+```
 
