@@ -220,6 +220,10 @@ GROUP BY pref_name
 
 - **在MySQL中CHECK约束不会起任何作用**，可以使用触发器、Set、ENUM来代替
 
+
+
+示例: 规定女性员工的工资必须在20万以下
+
 ```mysql
 CONSTRAINT check_salary CHECK
 						(CASE WHEN sex = '2'
@@ -228,6 +232,53 @@ CONSTRAINT check_salary CHECK
                  ELSE 1 END = 1)
 ```
 
+- 这里使用的逻辑表达式为蕴含式(conditional)，记为P -> Q
+- 逻辑与(logical product)也是一种逻辑表达式，但其与蕴含式不同，逻辑与记为
+
+$$
+P\bigwedge Q
+$$
+
+
+
+- 用逻辑与改写后的CHECK约束:
+
+```mysql
+CONSTRAINT check_salary CHECK (sex = '2' AND salary <= 20000)
+```
+
+
+
+
+
+两种写法造成的约束并不一致:
+
+- 逻辑与要求既为女性，且工资低于20000
+
+
+
+- 逻辑与为真: 需要P和Q都为真(女性且工资低于20000)，或者其中一个条件不确定
+- 蕴含式为真: 需要P和Q都为真，或者P为假或者P无法判断。即如果不满足为女性则不做限制(ELSE 1 END)
+
+
+
+逻辑与和蕴含式的真值表:
+
+(U: Unknown)
+
+|  P   |  Q   | P AND Q |  P   |  Q   | p -> Q |
+| :--: | :--: | :-----: | :--: | :--: | :----: |
+|  T   |  T   |    T    |  T   |  T   |   T    |
+|  T   |  F   |    F    |  T   |  F   |   F    |
+|  T   |  U   |    U    |  T   |  U   |   F    |
+|  F   |  T   |    F    |  F   |  T   |   T    |
+|  F   |  F   |    F    |  F   |  F   |   T    |
+|  F   |  U   |    F    |  F   |  U   |   T    |
+|  U   |  T   |    U    |  U   |  T   |   T    |
+|  U   |  F   |    F    |  U   |  F   |   T    |
+|  U   |  U   |    U    |  U   |  U   |   T    |
+
+- 可以说在前一个条件P(性别)为F的时候，蕴含式要比逻辑与更加宽松
 
 
 
@@ -243,6 +294,102 @@ CONSTRAINT check_salary CHECK
 
 
 
+### 1.5 在UPDATE中进行条件分支
+
+
+
+示例表：
+
+![Xnip2022-02-14_21-43-30](../SQL.assets/Xnip2022-02-14_21-43-30.jpg)
+
+
+
+需求: 按照以下条件对表的数据进行更新
+
+1. 对当前工资为30万元以上的员工，降薪10%
+2. 对当前工资为25万元以上，但不满28万元的，加薪20%
+
+
+
+- 如果直接使用两个UPDATE语句会出错:
+
+```mysql
+-- 条件1
+UPDATE Salaries SET salary = salary * 0.9 WHERE salary >= 300000
+
+-- 条件2
+UPDATE Salaries SET salary = salary * 1.2 WHERE salary >= 250000 AND salary < 280000
+```
+
+
+
+- 这样的两个UPDATE语句彼此分开执行，不具有原子性(在第二条UPDATE处理前，数据已经被第一条UPDATE语句修改了)，此时发生了类似脏写的一致性问题
+
+
+
+
+
+利用CASE的正确写法:
+
+```mysql
+UPDATE Salaries
+	SET salary = CASE WHEN salary >= 300000
+										 THEN salary * 0.9
+										 WHEN salary >= 250000 AND salary < 280000
+										 THEN salary * 1.2
+										 ELSE salary END;
+```
+
+- 注意：**这里的ELSE一定不能省略**，如果CASE中**没有明确指定ELSE子句的话**，**不满足前面条件的数据就会被更新为NULL**
+
+![Xnip2022-02-14_21-57-59](../SQL.assets/Xnip2022-02-14_21-57-59.jpg)
+
+
+
+
+
+
+
+- 在中间值调换上的应用:
+
+示例表
+
+![Xnip2022-02-14_22-01-51](../SQL.assets/Xnip2022-02-14_22-01-51.jpg)
+
+- 不使用CASE调换主键值a和b
+
+```mysql
+-- 设置为一个中间值
+UPDATE SomeTable
+	SET p_key = 'd'
+WHERE p_key = 'a';
+
+-- 将b调换为a
+UPDATE SomeTable
+ SET p_key = 'a'
+WHERE p_key = 'b'
+
+-- 再将d调换为b
+UPDATE SomeTable
+ SET p_key = 'b'
+WHERE p_key = 'd'
+```
+
+
+
+
+
+- 使用CASE则只需要执行一次
+
+```mysql
+UPDATE SomeTable
+	SET p_key = CASE WHEN p_key ='a'
+					          THEN 'b'
+					          WHEN p_key = 'b'
+					          THEN 'a'
+					          ELSE p_key END
+WHERE p_key IN ('a', 'b');
+```
 
 
 

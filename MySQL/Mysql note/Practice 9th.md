@@ -405,3 +405,106 @@ WHERE TIMESTAMPDIFF(DAY, (SELECT MIN(visited_on) FROM Customer), visited_on) >= 
 ORDER BY visited_on
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day206
+
+## Tag: LEFT JOIN, ISNULL
+
+![Xnip2022-02-15_13-00-10](MySQL Note.assets/Xnip2022-02-15_13-00-10.jpg)
+
+
+
+![Xnip2022-02-15_13-22-34](MySQL Note.assets/Xnip2022-02-15_13-22-34.jpg)
+
+题意:
+
+给你一张订单信息表，请你根据题目对应的条件查询出订单信息
+
+
+
+
+
+思路:
+
+- 最容易的想到方法的就是查询出有类型为0的订单对应的客户id，再用IN或者EXISTS结合UNION来做查询，这种写法的SQL如下
+
+```mysql
+SELECT
+    t1.order_id,
+    t1.customer_id,
+    t1.order_type
+FROM
+    Orders AS t1
+WHERE NOT EXISTS (
+    SELECT
+        t2.customer_id
+    FROM
+        Orders AS t2
+    WHERE t2.order_type = 0
+    GROUP BY t2.customer_id
+    HAVING t1.customer_id = t2.customer_id
+)
+UNION
+SELECT
+    t1.order_id,
+    t1.customer_id,
+    t1.order_type
+FROM
+    Orders AS t1
+WHERE order_type = 0
+AND EXISTS (
+    SELECT
+        t2.customer_id
+    FROM
+        Orders AS t2
+    WHERE t2.order_type = 0
+    GROUP BY t2.customer_id
+    HAVING t1.customer_id = t2.customer_id
+)
+```
+
+
+
+- 但其实可以通过自连接得到一种简单的写法:
+- 自连接时指定两表的"order_type"字段不同(该字段只有两个值)，且连接使用外连接
+- 此时查询出来的结果有两种情况: 要么该客户只有一种类型的订单(只有0或者只有1)，此时他的order_type字段就为NULL；要么该客户有两种类型的订单，此时其order_type自度就不为NULL
+- 此时如果该用户只有一种类型的订单，那么直接输出其记录即可。但如果有两种，那么不能输出类型为1的订单，这在SQL中如何体现呢？
+- 这就是这种写法最巧妙也是最费解的地方了，我们输出的字段数据是来自表t1的，而WHERE子句中限制的是t2表的字段，此时WHERE子句的内容为:
+
+```mysql
+WHERE ISNULL(t2.order_type) OR t2.order_type = 1;
+```
+
+
+
+- 前面判断NULL很容易理解，那后面是啥？这里可以这样理解:
+- 这里我们使用的是逻辑OR，如果该字段不为NULL，那么此时就会判断其值是否为1
+- 如果其值为1，说明t1.order_type = 0(两表连接时的条件为"order_type"字段不同)，此时直接输入就能保证t1.order_type全为0了！
+- 最终SQL如下
+
+```mysql
+SELECT
+    DISTINCT t1.order_id,
+    t1.customer_id,
+    t1.order_type
+FROM
+    Orders AS t1
+LEFT JOIN Orders AS t2 ON t1.customer_id = t2.customer_id AND t1.order_type != t2.order_type
+WHERE ISNULL(t2.order_type) OR t2.order_type = 1
+```
+
