@@ -508,3 +508,57 @@ LEFT JOIN Orders AS t2 ON t1.customer_id = t2.customer_id AND t1.order_type != t
 WHERE ISNULL(t2.order_type) OR t2.order_type = 1
 ```
 
+<hr>
+
+
+
+
+
+
+
+# Day207
+
+## Tag: HAVING, ABS
+
+![Xnip2022-02-16_13-41-40](MySQL Note.assets/Xnip2022-02-16_13-41-40.jpg)
+
+
+
+![Xnip2022-02-16_13-43-40](MySQL Note.assets/Xnip2022-02-16_13-43-40.jpg)
+
+题意:
+
+给你一张点的坐标表，请你查询出其中任意两个点可以形成的面积不为0的矩形面积
+
+
+
+
+
+思路:
+
+- 从题目的示例来看，矩形的计算方法就是横纵坐标之差的乘积的绝对值
+- 而确保任意两点的方法就是自连接后让两表的id列值不同，但简单的使用id不相等还不够，这里ing更改使用<以保证不会重复计算
+- 最后只需要使用HAVING排除掉面积为0的组合并按规则排序即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.id AS 'p1',
+    t2.id AS 'p2',
+    ABS((t1.x_value - t2.x_value) * (t1.y_value - t2.y_value)) AS 'area'
+FROM
+    Points AS t1
+INNER JOIN Points AS t2 ON t1.id < t2.id
+HAVING area > 0
+ORDER BY area DESC, p1, p2
+```
+
+
+
+
+
+
+
+
+
+
+
