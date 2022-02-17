@@ -388,8 +388,123 @@ UPDATE SomeTable
 					          WHEN p_key = 'b'
 					          THEN 'a'
 					          ELSE p_key END
-WHERE p_key IN ('a', 'b');
+	WHERE p_key IN ('a', 'b');
 ```
+
+
+
+**注意：**该条SQL**在MySQL和PostgreSQL中**，会因为中间重复而报错，然而在Oracle、DB2、SQL Server中则能够正常执行
+
+
+
+Eg:
+
+![Xnip2022-02-16_16-06-54](../SQL.assets/Xnip2022-02-16_16-06-54.jpg)
+
+// 如果需要这样的调换，说明表的设计有问题，需要重新审视表的设计
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 1.6 表之间的数据匹配
+
+- CASE的一大优势为能够判断表达式
+
+即在CASE表达式中，我们能够使用BETWEEN、LIKE等谓词组合，以及能够嵌套子查询的IN和EXISTS谓词
+
+
+
+Eg Tables:
+
+![Xnip2022-02-16_16-14-58](../SQL.assets/Xnip2022-02-16_16-14-58.jpg)
+
+通过这两张表生成一张交叉表，以便了解每个月开设的课程
+
+![IMG_614C4E5E1EA1-1](../SQL.assets/IMG_614C4E5E1EA1-1.jpeg)
+
+
+
+
+
+```mysql
+-- IN谓词
+SELECT
+	course_name,
+	CASE WHEN course_id IN
+								(SELECT course_id FROM OpenCourses
+                WHERE month = 200706) THEN '◯'
+				ELSE '✕' END AS '6月',
+	CASE WHEN course_id IN
+								(SELECT course_id FROM OpenCourses
+                WHERE month = 200707) THEN '◯'
+				ELSE '✕' END AS '7月',
+	CASE WHEN course_id IN
+								(SELECT course_id FROM OpenCourses
+                WHERE month = 200708) THEN '◯'
+				ELSE '✕' END AS '8月')
+FROM
+	CourseMaster
+	
+-- EXISTS谓词
+SELECT
+	CM.course_name,
+CASE
+		WHEN EXISTS ( SELECT course_id FROM OpenCourses OC WHERE MONTH = 200706 AND OC.course_id = CM.course_id) THEN
+		'◯' ELSE '✕' END AS '6月',
+CASE
+		WHEN EXISTS ( SELECT course_id FROM OpenCourses OC WHERE MONTH = 200707 AND OC.course_id = CM.course_id) THEN
+		'◯' ELSE '✕' END AS '7月',
+CASE
+		WHEN EXISTS ( SELECT course_id FROM OpenCourses OC WHERE MONTH = 200708 AND OC.course_id = CM.course_id) THEN
+		'◯' ELSE '✕' END AS '8月'
+FROM
+	CourseMaster CM
+```
+
+
+
+![Xnip2022-02-16_16-26-51](../SQL.assets/Xnip2022-02-16_16-26-51.jpg)
+
+
+
+- 这样的SQL没有聚合，不需要排序，月份增加时只需要修改SELECT列表，**扩展性好**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 1.7 在CASE中使用聚合函数
+
+Eg Table
+
+![Xnip2022-02-16_16-37-25](../SQL.assets/Xnip2022-02-16_16-37-25.jpg)
 
 
 

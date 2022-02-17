@@ -552,6 +552,67 @@ HAVING area > 0
 ORDER BY area DESC, p1, p2
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day208
+
+## Tag: CASE, OR, Boolean
+
+![Xnip2022-02-17_14-01-39](MySQL Note.assets/Xnip2022-02-17_14-01-39.jpg)
+
+
+
+![Xnip2022-02-17_14-01-47](MySQL Note.assets/Xnip2022-02-17_14-01-47.jpg)
+
+题意:
+
+给你一张变量取值表，一张表达式表，请你查询出表达式表中每条数据对应的boolean结果
+
+
+
+
+
+
+
+思路:
+
+- 因为表中只有两个变量，而符号有三种，所以一共有六种情况
+- 当然，我们可以将6种情况都一一列出再用CASE来做分支，但其实不用这么麻烦
+- 我们只需要将为true或者为false的所有情况都列出来并用OR连接即可，剩下的情况就是false了
+- 需要注意的是，在比较值的时候，我们不能比较同一张variables表中的字段值，所以这里需要分别用left_operand和right_operand连接variables表两次，所以最终SQL如下
+
+```mysql
+SELECT
+    t1.left_operand,
+    t1.operator,
+    t1.right_operand,
+    CASE WHEN (t1.operator = '>' AND t2.value > t3.value) 
+    OR 
+    (t1.operator = '<' AND t2.value < t3.value)
+    OR
+    (t1.operator = '=' AND t2.value = t3.value)
+    THEN 'true'
+    ELSE 'false' END AS 'value'
+FROM
+    Expressions AS t1
+INNER JOIN Variables AS t2 ON t1.left_operand = t2.name
+INNER JOIN Variables AS t3 ON t1.right_operand = t3.name
+```
+
 
 
 
