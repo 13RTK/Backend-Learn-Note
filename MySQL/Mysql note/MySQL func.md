@@ -886,5 +886,3 @@ CAST(colume AS new_type);
 
 
 
-
-

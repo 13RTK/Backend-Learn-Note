@@ -613,7 +613,94 @@ INNER JOIN Variables AS t2 ON t1.left_operand = t2.name
 INNER JOIN Variables AS t3 ON t1.right_operand = t3.name
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day209
+
+## Tag: CTE
+
+![Xnip2022-02-18_09-40-09](MySQL Note.assets/Xnip2022-02-18_09-40-09.jpg)
+
+
+
+![Xnip2022-02-18_09-40-35](MySQL Note.assets/Xnip2022-02-18_09-40-35.jpg)
+
+题意:
+
+给你一张飞机起降记录表，请你查询出其中承载最多飞机的机场id
+
+
+
+
+
+
+
+思路:
+
+- 由表可知: 每条记录中记录的是离港的机场id、降落的机场id和架次
+- 因为离港的和降落的机场id都要统计，所以这里我们首先需要将两张表连接起来，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    departure_airport AS 'airport_id',
+    flights_count
+FROM
+    Flights
+UNION ALL
+SELECT
+    arrival_airport AS 'airport_id',
+    flights_count
+FROM
+    Flights
+```
+
+
+
+- 之后再统计每个机场对应的架次，且为了之后好找出最大承载量，按照架次进行排序，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+    airport_id,
+    SUM(flights_count) AS 'num'
+FROM (
+		SQL1
+) AS t1
+GROUP BY airport_id
+ORDER BY num DESC
+```
+
+
+
+- 最后我们再通过取第一条记录的num字段，就能获取最大的承载量了，再用这个承载量去匹配对应的机场id即可
+- 这里需要将SQL2生成的表使用两次，如果是MySQL5.7的话写两次确实很难看，所以这里我们可以运用MySQL8.0的特性: CTE，这样就只需要写一次了，最终SQL如下
+
+```mysql
+WITH temp AS (
+		SQL2
+)
+
+SELECT
+    airport_id
+FROM 
+    temp
+WHERE num = (SELECT num FROM temp LIMIT 1)
+```
 
 
 
