@@ -508,3 +508,205 @@ Eg Table
 
 
 
+1. 获取只加入了一个社团的学生的社团id
+2. 获取加入了多个社团学生的主社团id
+
+
+
+常规方法:
+
+- 分两次写，先查询出只加入一个社团的学生对应的社团id
+
+```mysql
+SELECT
+	std_id,
+	MAX(club_id) AS 'main_club'
+FROM
+	StudentClub
+GROUP BY std_id
+HAVING COUNT(*) = 1;
+```
+
+
+
+- 再查询出其余学生的主社团id
+
+```mysql
+SELECT
+	std_id,
+	club_id
+FROM
+	StudentClub
+WHERE main_club_flg = 'Y'
+```
+
+
+
+
+
+使用CASE的方式
+
+```mysql
+SELECT
+	std_id,
+	CASE WHEN COUNT(*) = 1
+	  	 THEN MAX(club_id)
+	  	 ELSE MAX(CASE WHEN main_club_flg = 'Y'
+                     THEN club_id
+               			 ELSE NULL END)
+	END AS 'main_club'
+FROM
+	StudentClub
+GROUP BY std_id;
+```
+
+
+
+Eg:
+
+![Xnip2022-02-18_20-50-37](../SQL.assets/Xnip2022-02-18_20-50-37.jpg)
+
+
+
+
+
+
+
+### 小结
+
+1. 在GROUP BY中使用CASE，可以自定义分组的单位
+2. 在聚合函数中使用CASE，可以将行结构变为列结构(1.3)
+3. 聚合函数也可以嵌套在CASE中使用(1.7)
+4. CASE的表达能力更强，且移植性更好(不依赖具体的数据库)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 自连接
+
+- 自连接: 针对同一张表进行的连接称为自连接
+- SQL为面向集合语言
+
+
+
+### 2.1 可重排列/排列/组合
+
+Eg Table:
+
+![Xnip2022-02-18_21-08-15](../SQL.assets/Xnip2022-02-18_21-08-15.jpg)
+
+
+
+组合分为两种: 有顺序的有序对<1, 2>，无顺序的无序对{1, 2}
+
+
+
+在有序对中，元素顺序不同也是不同的对: <1, 2> ≠ <2, 1> (P: permutation/排列)
+
+无序对中，元素顺序无关: {1, 2} = {2, 1} (C: combination/组合)
+
+
+
+
+
+生成交叉连接生成笛卡尔积(直积)，从而获取有序对(顺序不同则算做不同的)
+
+```mysql
+SELECT
+	P1.name AS 'name_1',
+	P2.name AS 'name_2'
+FROM
+	Products AS P1,
+	Products AS P2;
+```
+
+
+
+![Xnip2022-02-18_21-26-16](../SQL.assets/Xnip2022-02-18_21-26-16.jpg)
+
+
+
+
+
+- 添加一个条件获取两个列值不同的组合:
+
+```mysql
+SELECT
+	P1.name AS 'name_1',
+	P2.name AS 'name_2'
+FROM
+	Products AS P1,
+	Products AS P2
+WHERE P1.name != P2.name;
+```
+
+Eg:
+
+![Xnip2022-02-18_21-40-22](../SQL.assets/Xnip2022-02-18_21-40-22.jpg)
+
+- 在SQL中，只要被赋予了不同的别名，即使是相同的表也应该看作不同的表
+
+
+
+
+
+
+
+- 再处理只是调换了顺序的对，获取对应的排列:
+
+```mysql
+SELECT
+	P1.name AS 'name_1',
+	P2.name AS 'name_2'
+FROM
+	Products AS P1,
+	Products AS P2
+WHERE P1.name > P2.name;
+```
+
+
+
+![Xnip2022-02-18_21-47-25](../SQL.assets/Xnip2022-02-18_21-47-25.jpg)
+
+- 此时只与"字符顺序比自己靠前"的商品进行匹配
+- 同样获取三个元素的排列:
+
+```mysql
+SELECT
+	P1.name AS 'name_1',
+	P2.name AS 'name_2',
+	P3.name AS 'name_3'
+FROM
+	Products AS P1,
+	Products AS P2,
+	Products AS P3
+WHERE P1.name > P2.name
+AND P2.name > P3.name
+```
+
+
+
+- 使用**除了"="外的比较运算符**进行的连接称为"**非等值连接**"
+- 这里和自连接结合，因此称为"非等值自连接"，**这是获取组合的惯用套路**
+
+
+
+
+
+
+

@@ -702,6 +702,7 @@ FROM
 WHERE num = (SELECT num FROM temp LIMIT 1)
 ```
 
+<hr>
 
 
 
@@ -710,3 +711,100 @@ WHERE num = (SELECT num FROM temp LIMIT 1)
 
 
 
+
+
+
+
+
+
+
+# Day210
+
+## Tag: EXISTS, IN, JOIN
+
+![Xnip2022-02-19_10-08-00](MySQL Note.assets/Xnip2022-02-19_10-08-00.jpg)
+
+
+
+![Xnip2022-02-19_10-08-36](MySQL Note.assets/Xnip2022-02-19_10-08-36.jpg)
+
+
+
+![Xnip2022-02-19_10-09-50](MySQL Note.assets/Xnip2022-02-19_10-09-50.jpg)
+
+题意:
+
+给你一张订阅信息表，一张流媒体访问记录表，请你查询出2021年有订阅但2021没有访问流媒体的用户数量
+
+
+
+思路:
+
+- 这里存在两种限制关系，这里我们需要的是订阅表中的用户信息，所以我们需要先查询出2021年没有访问流媒体的用户id，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t2.account_id
+FROM
+    Streams AS t2
+WHERE YEAR(t2.stream_date) = 2021
+```
+
+
+
+- 之后再以此作为WHERE子句的参数，使用NOT IN即可，最终SQL如下
+
+```mysql
+SELECT
+    COUNT(*) AS 'accounts_count'
+FROM
+    Subscriptions AS t1
+WHERE (YEAR(t1.start_date) = 2021 OR YEAR(t1.end_date) = 2021)
+AND account_id NOT IN (
+		SQL1
+)
+```
+
+
+
+
+
+拓展:
+
+- 从解题的角度来说，这样其实就完结了，但从实用的角度呢？
+- 这里我们使用到了IN，在实际生产/业务中，如果IN中的数据个数一旦超过了1000个，那么就会出问题，在《阿里巴巴Java开发手册》中也有类似的建议
+- 那么为什么不建议使用IN，且用的时候需要限制参数个数在1000个以内呢？
+- 我们先来查看一个MySQL系统变量: max_allowed_packet，它代表了任何生成值/中间值/参数的最大大小，其默认值为4MB，官方文档如图:
+
+![Xnip2022-02-19_10-30-45](MySQL Note.assets/Xnip2022-02-19_10-30-45.jpg)
+
+- 再发挥一下想象力，MySQL中单个字符最多占用4个字节(utf8mb4)，那么1000个参数*4不就是4000bytes了吗？刚好4MB！
+
+
+
+- 所以在实际业务中，如果没有在配置文件中修改max_allowed_packet这个变量的话，最好不要在SQL中使用IN查询
+- 因此这里我们将其改为使用EXISTS
+
+```mysql
+SELECT
+    COUNT(*) AS 'accounts_count'
+FROM
+    Subscriptions AS t1
+WHERE (YEAR(t1.start_date) = 2021 OR YEAR(t1.end_date) = 2021)
+AND NOT EXISTS (
+    SELECT
+        t2.account_id
+    FROM
+        Streams AS t2
+    WHERE t1.account_id = t2.account_id
+    AND YEAR(t2.stream_date) = 2021
+)
+```
+
+
+
+最后推荐各位阅读一篇运维老哥写的文章，相信能对IN的使用有更深的理解:
+
+[技术分享｜mysql in溢出bug和排查经历 - 力扣（LeetCode） (leetcode-cn.com)](https://leetcode-cn.com/circle/discuss/c40Pde/)
