@@ -808,3 +808,73 @@ AND NOT EXISTS (
 最后推荐各位阅读一篇运维老哥写的文章，相信能对IN的使用有更深的理解:
 
 [技术分享｜mysql in溢出bug和排查经历 - 力扣（LeetCode） (leetcode-cn.com)](https://leetcode-cn.com/circle/discuss/c40Pde/)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day211
+
+## Tag: EXISTS
+
+![Xnip2022-02-20_15-41-41](MySQL Note.assets/Xnip2022-02-20_15-41-41.jpg)
+
+
+
+![Xnip2022-02-20_15-45-28](MySQL Note.assets/Xnip2022-02-20_15-45-28.jpg)
+
+题意:
+
+给你一张员工信息表，请你查询出直接或间接向老板汇报的员工id
+
+
+
+
+
+思路:
+
+- 如果是有多个中间层的话，其实这道题目很难，但题目中指明最多只有3层间接关系
+- 所以最简单的方法就是三次IN子查询或者连接三张表，但其中IN有参数个数限制，连接时驱动表对应的结果集也可能会很大，所以两种方式都不太好
+- 这里我们可以改为使用EXISTS，依次查询每层即可，SQL如下
+
+```mysql
+SELECT
+	t1.employee_id
+FROM
+	Employees AS t1
+WHERE EXISTS (
+	SELECT
+		t2.employee_id
+	FROM
+		Employees AS t2
+	WHERE EXISTS (
+    SELECT
+      t3.employee_id
+    FROM
+      Employees AS t3
+    WHERE t3.manager_id = 1
+    AND t2.manager_id = t3.employee_id
+		)
+	AND t1.manager_id = t2.employee_id
+	)
+AND t1.employee_id != 1
+```
+
