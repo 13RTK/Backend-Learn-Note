@@ -878,3 +878,58 @@ WHERE EXISTS (
 AND t1.employee_id != 1
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day212
+
+## Tag: CASE
+
+![Xnip2022-02-21_08-33-52](MySQL Note.assets/Xnip2022-02-21_08-33-52.jpg)
+
+
+
+![Xnip2022-02-21_08-34-21](MySQL Note.assets/Xnip2022-02-21_08-34-21.jpg)
+
+题意:
+
+给你一张股票交易记录表，请你计算出每支股票对应的盈亏
+
+
+
+
+
+思路:
+
+- 因为需要的是每支股票的情况，所以很明显需要分组，而判断买卖只需要使用CASE判断operation字段即可，最终SQL如下
+
+```mysql
+SELECT
+    stock_name,
+    SUM(
+    CASE WHEN operation = 'Buy'
+    THEN -price
+    WHEN operation = 'Sell'
+    THEN price
+    ELSE NULL END
+    ) AS 'capital_gain_loss'
+FROM
+    Stocks
+GROUP BY stock_name
+```
+
