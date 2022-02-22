@@ -933,3 +933,99 @@ FROM
 GROUP BY stock_name
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day213
+
+## Tag: Self Join, CTE
+
+![Xnip2022-02-22_09-36-34](MySQL Note.assets/Xnip2022-02-22_09-36-34.jpg)
+
+
+
+![Xnip2022-02-22_09-37-01](MySQL Note.assets/Xnip2022-02-22_09-37-01.jpg)
+
+题意:
+
+给你一张用户信息表，一张交易记录表，请你查询出其中的可疑用户id(连续两个月的总收入超过其最大收入)
+
+
+
+
+
+思路:
+
+- 因为交易表中的记录是分散的，而我们需要的是判断每个月对应的总收入，所以需要按照用户id和月份先分组，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    account_id,
+    DATE_FORMAT(day, '%Y%m') AS 'month',
+    SUM(CASE WHEN type = 'Creditor' THEN amount ELSE 0 END) AS 'sum'
+FROM
+    Transactions
+GROUP BY account_id, month
+```
+
+
+
+- 之后再通过连接，查询出其中超过最大收入的用户id和对应的月份，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+    t2.account_id,
+    t2.month
+FROM
+    Accounts AS t1
+INNER JOIN (
+    SQL1
+) AS t2 ON t1.account_id = t2.account_id
+WHERE t1.max_income < t2.sum
+```
+
+
+
+
+
+- 最后我们只需要对该表进行自连接，查询出有连续月份的id即可
+- 为了不重复写，这里用到了MySQL8.0的新特性: CTE，最终SQL如下
+
+```mysql
+WITH temp AS (
+	SQL2
+)
+
+SELECT
+	DISTINCT t1.account_id
+FROM
+	temp AS t1
+INNER JOIN temp AS t2 ON t1.account_id = t2.account_id
+WHERE t1.month = t2.month + 1
+```
+
+
+
+
+
+
+
+
+

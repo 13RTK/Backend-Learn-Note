@@ -710,3 +710,128 @@ AND P2.name > P3.name
 
 
 
+
+
+### 2.2 删除重复行
+
+Eg Table:
+
+![Xnip2022-02-21_16-12-56](../SQL.assets/Xnip2022-02-21_16-12-56.jpg)
+
+
+
+- 如果像这样所有的列都有重复的话，则需要使用数据库自带的行id(MySQL里的DB_ROW_ID)
+
+```sql
+-- 以Oracle中的rowid为例
+DELETE FROM product P1
+	WHERE rowid < (SELECT
+                	MAX(P2.rowid)
+                 FROM
+                	product P2
+                 WHERE P1.name = P2.name
+                 AND P1.price = P2.price)
+```
+
+**注意:** 只有Oracle(rowid)和PostgreSQL(oid)提供了可用的行id；在PostgreSQL中需要在建表时指定WITH OID才能使用；其余数据库则只能自行创建主键列或者存入临时表
+
+
+
+- 无论是表还是视图，本质上都是集合——**集合是SQL唯一能够处理的数据结构**
+
+
+
+
+
+
+
+
+
+### 2.3 查找局部不一致的列
+
+Eg Table:
+
+![Xnip2022-02-21_17-10-36](../SQL.assets/Xnip2022-02-21_17-10-36.jpg)
+
+
+
+其中前田夫妇中有一个人的地址错误，但family_id相同
+
+```mysql
+SELECT
+	DISTINCT A1.name,
+	A1.address
+FROM
+	Addresses A1,
+	Addresses A2
+WHERE A1.family_id = A2.family_id
+AND A1.address != A2.address;
+```
+
+
+
+![Xnip2022-02-21_17-13-41](../SQL.assets/Xnip2022-02-21_17-13-41.jpg)
+
+
+
+​	Eg Table:
+
+![Xnip2022-02-21_17-24-00](../SQL.assets/Xnip2022-02-21_17-24-00.jpg)
+
+
+
+```mysql
+-- 用于查找价格相等但商品名称不同的记录
+SELECT
+	DISTINCT P1.name,
+	P1.price
+FROM
+	Products P1,
+	Products P2
+WHERE P1.price = P2.price
+AND P1.name != P2.name;
+```
+
+![Xnip2022-02-21_17-27-46](../SQL.assets/Xnip2022-02-21_17-27-46.jpg)
+
+
+
+- 因为表中有多条价格相同的记录，所以查询结果需要去重
+
+- 改用相关/关联子查询则不需要去重了:
+
+```mysql
+SELECT
+	t1.name,
+	t1.price
+FROM
+	Products AS t1
+WHERE EXISTS (
+  SELECT
+    t2.name,
+    t2.price
+  FROM
+    Products AS t2
+  WHERE t1.`name` != t2.`name`
+  AND t1.price = t2.price
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
