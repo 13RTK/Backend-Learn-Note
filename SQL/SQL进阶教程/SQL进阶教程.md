@@ -831,6 +831,265 @@ WHERE EXISTS (
 
 
 
+### 2.4 排序
+
+Eg Table:
+
+![Xnip2022-02-22_14-32-56](../SQL.assets/Xnip2022-02-22_14-32-56.jpg)
+
+
+
+将商品按照价格排序，如果价格相同，给出跳过和不跳过之后次序的排序位次
+
+```mysql
+-- MySQL8.0才支持
+SELECT
+	name,
+	price,
+	RANK() OVER(
+    ORDER BY price DESC
+  ) AS rank_1,
+  DENSE_RANK() OVER(
+    ORDER BY price DESC
+  ) AS rank_2
+FROM
+	Products
+```
+
+
+
+
+
+不依赖具体数据库进行非分组排序的做法:
+
+```mysql
+-- 如果出现相同次序，则跳过之后的次序
+SELECT
+	P1.name,
+	P1.price,
+	(
+  SELECT
+  	COUNT(P2.price)
+  FROM
+  	Products P2
+  WHERE P2.price > P1.price) + 1 AS rank_1
+  )
+FROM
+	Products P1
+ORDER BY rank_1;
+```
+
+
+
+Res:
+
+![Xnip2022-02-22_14-38-53](../SQL.assets/Xnip2022-02-22_14-38-53.jpg)
+
+
+
+- 如果加上DISTINCT去重，那么遇到相同位次时就不会跳过之后的位次(相当于DENSE_RANK)
+
+```mysql
+SELECT
+	P1.name,
+	P1.price,
+	(SELECT
+  	COUNT(P2.price)
+  FROM
+  	Products P2
+  WHERE P2.price > P1.price) + 1 AS rank_1,
+	(SELECT
+  	COUNT(DISTINCT P3.price)
+  FROM
+  	Products P3
+  WHERE P3.price > P1.price) + 1 AS rank_2
+FROM
+	Products P1
+ORDER BY rank_1, rank_2
+```
+
+
+
+- 自连接的写法
+
+```mysql
+SELECT
+	P1.name,
+	MAX(P1.price) AS price,
+	COUNT(P2.name) + 1 AS rank_1
+FROM
+	Products P1
+LEFT JOIN Products P2 ON P1.price < P2.price
+GROUP BY P1.name
+ORDER BY rank_1
+```
+
+
+
+
+
+- 去掉聚合查看包含关系
+
+```mysql
+SELECT
+	P1.name,
+	P2.name
+FROM
+	Products P1
+LEFT JOIN Products P2 ON P1.price < P2.price
+```
+
+
+
+![Xnip2022-02-22_14-54-16](../SQL.assets/Xnip2022-02-22_14-54-16.jpg)
+
+
+
+
+
+- 一旦改为内连接则会跳过第一名(被WHERE子句的条件排除了)
+
+```mysql
+SELECT
+	P1.name,
+	MAX(P1.price) AS price,
+	COUNT(P2.name) + 1 AS rank_1
+FROM
+	Products P1
+INNER JOIN Products P2 ON P1.price < P2.price
+GROUP BY P1.name
+ORDER BY rank_1
+```
+
+
+
+
+
+
+
+
+
+
+
+### 2.5 小结
+
+- 自连接的性能开销比多表连接要大，用于自连接的列最好是主键或者建立了索引的列
+
+
+
+要点
+
+1. 自连接与非等值连接使用
+2. 自连接与GROUP BY结合生成递归集合
+3. **把表看作行的集合**，用面向集合的方式来思考
+4. 自连接开销大，经历在用于连接的列上建立索引
+
+
+
+
+
+
+
+### 2.6 练习:
+
+
+
+1-2-1
+
+Table:
+
+![Xnip2022-02-22_15-07-39](../SQL.assets/Xnip2022-02-22_15-07-39.jpg)
+
+查询出对应的组合(combination)
+
+```mysql
+SELECT
+	t1.name AS 'name_1',
+	t2.name AS 'name_2'
+FROM
+	Products AS t1
+INNER JOIN Products AS t2
+WHERE t1.name >= t2.name
+```
+
+
+
+
+
+
+
+
+
+1-2-2
+
+Table:
+
+![Xnip2022-02-22_15-17-34](../SQL.assets/Xnip2022-02-22_15-17-34.jpeg)
+
+查询不同地区对应水果的价格和位次
+
+
+
+```mysql
+-- 不使用窗口函数，使用标量子查询
+SELECT
+	t1.district,
+	t1.name,
+	t1.price,
+	(
+	SELECT
+		COUNT(t2.name)
+	FROM
+		DistrictProducts AS t2
+	WHERE t1.district = t2.district
+	AND t2.price > t1.price
+	) + 1 AS 'rank_1'
+FROM
+	DistrictProducts AS t1
+	
+-- 自连接查询
+SELECT
+	t1.district,
+	t1.name,
+	MAX(t1.price) AS 'price',
+	COUNT(t2.name) + 1 AS 'rank_1'
+FROM
+	DistrictProducts AS t1
+LEFT JOIN DistrictProducts AS t2 ON t1.district = t2.district
+AND t2.price > t1.price
+GROUP BY t1.district, t1.name
+```
+
+
+
+
+
+1-2-3
+
+Table:
+
+![Xnip2022-02-22_15-30-09](../SQL.assets/Xnip2022-02-22_15-30-09.jpg)
+
+
+
+填充其中的ranking列值
+
+```mysql
+UPDATE DistrictProducts2 P1
+SET ranking = (
+	SELECT
+		COUNT(P2.price) + 1 
+	FROM
+		DistrictProducts2 P2 
+	WHERE P1.district = P2.district 
+	AND P2.price > P1.price
+);
+```
+
+
+
+
+
 
 
 

@@ -1021,6 +1021,63 @@ INNER JOIN temp AS t2 ON t1.account_id = t2.account_id
 WHERE t1.month = t2.month + 1
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day214
+
+## Tag: SUM() OVER
+
+![Xnip2022-02-23_09-28-06](MySQL Note.assets/Xnip2022-02-23_09-28-06.jpg)
+
+
+
+![Xnip2022-02-23_09-28-16](MySQL Note.assets/Xnip2022-02-23_09-28-16.jpg)
+
+题意:
+
+给你一张交易记录表，请你查询出每个用户每个交易日对应的账户余额
+
+
+
+
+
+思路:
+
+- 因为是按照用户划分的，所有需要分组，但余额是随日期变化的，简单的使用SUM和GROUP BY不能达到这样的效果
+- 我们需要实现分组累加的效果，但这恰恰是SUM() OVER()这个窗口函数擅长的，所以如果熟悉它的话，就能轻松秒杀，最终SQL如下
+
+```mysql
+SELECT
+    account_id,
+    day,
+    SUM(
+        CASE WHEN type = 'Deposit' 
+        THEN amount
+        WHEN type = 'withdraw'
+        THEN -amount
+        ELSE NULL END
+    ) OVER (
+        PARTITION BY account_id
+        ORDER BY day
+    ) AS 'balance'
+FROM
+    Transactions
+```
+
+
+
 
 
 
