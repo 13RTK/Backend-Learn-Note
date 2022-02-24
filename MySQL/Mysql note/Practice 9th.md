@@ -1076,9 +1076,87 @@ FROM
     Transactions
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day215
+
+## Tag: CTE, SQL recursive
+
+![Xnip2022-02-24_07-58-43](MySQL Note.assets/Xnip2022-02-24_07-58-43.jpg)
+
+
+
+![Xnip2022-02-24_07-59-06](MySQL Note.assets/Xnip2022-02-24_07-59-06.jpg)
+
+题意:
+
+给你一张顾客信息表，请你查询出其中遗失的顾客id
+
+
+
+
+
+思路:
+
+- 按照题目的说法，我们需要的客户id在1到100之间，且不能出现在顾客表中，且不大于最大的客户id
+- 首先我们需要生成1到100，这里我们可以使用CTE来简单的递归构造，SQL如下
+
+SQL1:
+
+```mysql
+WITH recursive temp AS (
+    SELECT
+        1 AS 'n'
+    UNION ALL
+    SELECT
+        n + 1
+    FROM
+        temp
+    WHERE n < 100
+)
+```
+
+
+
+- 之后我们只需要查询出原表中的最大Id和所有出现的id，再代入条件即可，最终SQL如下
+
+```mysql
+SQL1
+
+SELECT
+    n AS 'ids'
+FROM
+    temp
+WHERE NOT EXISTS (
+    SELECT
+        customer_id
+    FROM
+        Customers
+    WHERE n = customer_id
+)
+AND n < (
+    SELECT
+        MAX(customer_id)
+    FROM
+        Customers
+)
+```
 
 
 

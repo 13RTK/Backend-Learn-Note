@@ -1086,6 +1086,7 @@ SET ranking = (
 );
 ```
 
+<hr>
 
 
 
@@ -1093,4 +1094,694 @@ SET ranking = (
 
 
 
+
+
+
+
+
+
+
+
+
+
+## 3. 三值逻辑和NULL
+
+- 在编程语言中，布尔型一般只有true和false两个值
+- 但在SQL中还有第三个值: unknown，这种逻辑体系被称为三值逻辑(three-value logic)
+- 因为关系型数据库中引入了NULL，所以不得不同时引进第三个值
+
+
+
+
+
+### 3.1 理论
+
+- NULL其实有两种:
+    - 未知unknown
+    - 不适用not applicable/inapplicable
+
+
+
+- 未知(unknown):
+
+是指虽然现在不知道，但加上某些条件后就能知道了(不知道戴墨镜的人眼睛是什么颜色的)
+
+
+
+- 不适用(inapplicable):
+
+无意义，不管怎么努力都无法知道(冰箱眼睛的颜色)
+
+
+
+
+
+
+
+- 不能使用"= NULL"
+
+像下面这样查找列中值为NULL的行是不行的:
+
+```mysql
+SELECT
+	*
+FROM
+	tbl_A
+WHERE col_1 = NULL;
+```
+
+
+
+**注：**对NULL使用比较谓词后得到的结果总是unknown(NULL的一种)，**而查询结果只会包含WHERE子句里判断为true的行，不会包含结果为false和unknown的行**
+
+所以这里无论col_1是否为NULL，比较结果都为unknown
+
+
+
+下列式子都会判断为unknown:
+
+```mysql
+1 = NULL
+2 > NULL
+3 < NULL
+4 <> NULL
+NULL = NULL
+```
+
+
+
+解释:
+
+- NULL既不是值也不是变量
+- NULL**只是一个表示"没有值"的标记**，所以对NULL只用比较谓词本身就是无意义的
+
+
+
+- "列的值为NULL"，"NULL值"这样的说法本身就是错误的，因为NULL不是值
+- 在SQL里的NULL和其他编程语言的NULL是完全不同的东西
+- IS NULL是一个完整的谓词，不能将IS看作谓词，而将NUL看作值(MySQL值为ISNULL)
+
+
+
+
+
+
+
+- unknown、第三个真值
+
+真值unknown和作为NULL的一种的UNKOWN是不同的
+
+```mysql
+-- 明确的真值比较
+unknown = unknown -> true
+
+-- 相当于NULL = NULL
+UNKNOWN = UNKNOWN -> unknown
+```
+
+unknown是明确的布尔型真值，而UNKNOWN既不是值也不是变量
+
+
+
+三值逻辑的真值表:
+
+|  x   | NOT x |
+| :--: | :---: |
+|  t   |   f   |
+|  u   |   u   |
+|  f   |   t   |
+
+
+
+| AND  |  t   |  u   |  f   |
+| :--: | :--: | :--: | :--: |
+|  t   |  t   |  u   |  f   |
+|  u   |  u   |  u   |  f   |
+|  f   |  f   |  f   |  f   |
+
+
+
+|  OR  |  t   |  u   |  f   |
+| :--: | :--: | :--: | :--: |
+|  t   |  t   |  t   |  t   |
+|  u   |  t   |  u   |  u   |
+|  f   |  t   |  u   |  f   |
+
+
+
+中间涉及到和u的运算是三值逻辑中独有的运算，其余的SQL谓词全部都能够由这三个逻辑运算组合而来，该矩阵可以说是SQL的母体(matrix)
+
+
+
+
+
+三个真值之间的优先级:
+
+- AND: false > unknown > true
+- OR: true > unknown > false
+
+优先级高的会决定计算的结果
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3.2 实践
+
+
+
+#### 1) 比较谓词和NULL(1): 排中律不成立
+
+
+
+P: john是20岁，或者不是20岁，二者必居其一
+
+- 这是一个真命题，这样将命题和它的否命题通过'或者'连接而成的命题全都是真命题
+- 这个命题在二值逻辑中被称为排中律(Law of Excluded Middle)，即不认可中间状态
+- 排中律被认为是古典逻辑学和非古典逻辑学的分界线
+
+
+
+Eg Table:
+
+![Xnip2022-02-23_14-00-35](../SQL.assets/Xnip2022-02-23_14-00-35.jpg)
+
+
+
+因为约翰的年龄不详，所以无法查询出来，查询步骤如下:
+
+```mysql
+-- 1
+SELECT
+	*
+FROM
+	Students
+WHERE age = NULL
+OR age != NULL
+
+-- 2. 对NULL使用谓词后，结果为unknown
+SELECT
+	*
+FROM
+	Students
+WHERE unknown
+OR unknown;
+
+-- 3. unknown OR unknown的结果为unknown
+SELECT
+	*
+FROM
+WHERE unknown;
+```
+
+- 因为SQL的查询结果里只有判断结果为true的行，想要让约翰出现在结果中，需要添加"第3个条件":
+
+```mysql
+SELECT
+	*
+FORM
+	Students
+WHERE age = 20
+OR age != 20
+OR age IS NULL;
+```
+
+
+
+实际上这个人有年龄，但我们无法从这条表知道
+
+实际上，**关系模型不是用来描述现实世界的模型，而是用于描述人类认知状态的核心的模型，我们有限且不完备的只是也会直接反映在表里**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 2) 比较谓词和NULL(2): CASE表达式和NULL
+
+在CASE中将NULL作为条件使用时经常会出现错误
+
+``` mysql
+CASE col_1
+	WHEN 1 THEN '◯'
+	WHEN NULl THEN 'X'
+END
+```
+
+该表达式一定不会返回X
+
+第二个WHEN子句是col_1 = NULL的缩写形式，**这个式子的真值永远是unknown**
+
+CASE表达式的判断方法和WHERE子句一样，只认可真值为true的条件
+
+
+
+正确的写法:
+
+```mysql
+CASE WHEN col_1 = 1 THEN '◯'
+     WHEN col_1 IS NULL THEN 'X'
+END
+```
+
+
+
+这种错误的原因是将NULL误解为了值
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3) NOT IN和NOT EXISTS不是等价的
+
+在对SQL语句优化的时候，常用的技巧是将IN改写为EXISTS，这是等价改写
+
+但将NOT IN改写成NOT EXISTS时，结果则未必
+
+
+
+Eg Table:
+
+![Xnip2022-02-23_14-00-35](../SQL.assets/Xnip2022-02-23_14-00-35.jpg)
+
+
+
+查询出如何根据这两张表查询"与B班住在东京的学生年龄不同的A班学生"
+
+```mysql
+SELECT
+	*
+FROM
+	Class_A
+WHERE age NOT IN (
+	SELECT
+  	age
+  FROM
+  	Class_B
+  WHERE city = '东京'
+)
+```
+
+该条语句并不能顺利查询出结果:
+
+```mysql
+-- 1 子查询获取年龄列表
+SELECT
+	*
+FROM
+	Class_A
+WHERE age NOT IN (
+	22, 23, NULL
+)
+
+-- 2 用NOT和IN改写NOT IN
+SELECT
+	*
+FROM
+	Class_B
+WHERE NOT age IN (22, 23, NULL)
+
+-- 3 用OR等价改写谓词IN
+SELECT
+	*
+FROM
+	Class_A
+WHERE NOT ((age = 22) OR (age = 23) OR (age == NULL))
+
+-- 4 使用德·摩根定律等价改写
+SELECT
+	*
+FROM
+	Class_A
+WHERE NOT (age == 22) AND NOT (age == 23) AND NOT (age == NULL)
+
+-- 5 使用!=等价改写NOT和=
+SELECT
+	*
+FROM
+	Class_A
+WHERE (age != 22) AND (age != 23) AND (age != NULL)
+
+-- 6 对NULL使用!=后结果为unknown
+SELECT
+	*
+FROM
+	Class_a
+WHERE (age != 22) AND (age != 23) AND unknown
+
+-- 7 如果AND运算里包含unknown，则结果不为true
+SELECT
+	*
+FROM
+	Class_a
+WHERE false OR unknown
+```
+
+- 如果NOT IN子查询中用到的表里被选择的列中存在NULL，则SQL语句整体的查询结果永远为空
+- 为了获取正确结果，我们需要使用EXISTS谓词
+
+```mysql
+SELECT
+	*
+FROM
+	Class_A A
+WHERE NOT EXISTS (
+	SELECT
+  	*
+ FROM
+  	Class_B B
+ WHERE A.age = B.age
+ AND B.city = '东京'
+)
+```
+
+
+
+改写后的处理过程:
+
+```mysql
+-- 1 和NULL进行比较运算
+SELECT
+	*
+FROM
+	Class_A A
+WHERE NOT EXISTS (
+	SELECT
+  	*
+ FROM
+  	Class_B B
+ WHERE A.age = NULl
+ AND B.city = '东京'
+)
+
+
+-- 2 对NULL使用"="后，结果为unknown"
+SELECT
+	*
+FROM
+	Class_A A
+WHERE NOT EXISTS (
+	SELECT
+  	*
+ FROM
+  	Class_B B
+ WHERE unknown
+ AND B.city = '东京'
+)
+
+
+-- 3 AND中包含unknown，则结果不会为true
+SELECT
+	*
+FROM
+	Class_A A
+WHERE NOT EXISTS (
+	SELECT
+  	*
+ FROM
+  	Class_B B
+ WHERE false OR unknown
+)
+
+
+-- 4 子查询没有返回结果，而相反的，NOT EXISTS为true
+SELECT
+	*
+FROM
+	Class_A A
+WHERE true
+```
+
+- EXISTS谓词永远不会返回unknown，EXISTS只会返回true或者false，因此IN和EXISTS可以相互替换，但NOT IN和NOT EXISTS不能互换
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 4) 限定谓词和NULL
+
+- SQL的限定谓词: ALl/ANY，其中ANY和IN是等价的，主要看一下ALL的注意事项
+
+
+
+Eg Table:
+
+![Xnip2022-02-23_14-00-35](../SQL.assets/Xnip2022-02-23_14-00-35.jpg)
+
+
+
+使用ALL谓词时，SQL的写法:
+
+```mysql
+SELECT
+	*
+FROM
+	Class_A
+WHERE age < ALL (
+	SELECT
+  	age
+ 	FROM
+  	Class_B
+ 	WHERE city = '东京'
+)
+```
+
+但该条语句的结果还是空
+
+![Xnip2022-02-23_14-57-35](../SQL.assets/Xnip2022-02-23_14-57-35.jpg)
+
+
+
+
+
+
+
+因为ALL谓词是以AND连接的逻辑表达式的省略写法，分析步骤:
+
+```mysql
+-- 1 执行子查询获取年龄列表
+SELECT
+	*
+FROM
+	Class_A
+WHERE age < ALL (22, 23, NULL)
+
+
+-- 2 将ALL谓词等价改写为AND
+SELECT
+	*
+FROM
+	Class_A
+WHERE age < 22 AND age < 23 AND age < NULL
+
+
+-- 3 对NULL使用 < 后会变为unknown
+SELECT
+	*
+FROM
+	Class_A
+WHERE age < 22 AND age < 23 AND unknown
+
+
+-- 4 AND中包含unknown，则结果不会为true
+SELECT
+	*
+FROM
+	Class_A
+WHERE false OR unknown
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 5) 限定谓词和极值函数不是等价的
+
+
+
+用极值函数改写后的SQL:
+
+```mysql
+SELECT
+	*
+FROM
+	Class_A
+WHERE age < (
+	SELECT
+  	MIN(age)
+ 	FROM
+  	Class_B
+  WHERE city = '东京'
+)
+```
+
+这种写法可以正确查询出结果，因为极值函数在统计的时候会自动排除掉为NULL的数据
+
+- ALL谓词: 他的年龄比在东京住的所有学生都小
+- 极值函数: 他的年龄比在东京住的年龄最小的学生还要小
+
+
+
+如果表中存在NULL时，它们是不等价的
+
+如果谓词的输入为空集的情况下(没有住在东京的B班同学):
+
+![Xnip2022-02-23_15-15-15](../SQL.assets/Xnip2022-02-23_15-15-15.jpg)
+
+此时使用ALL的SQL会查询A班的所有学生，而用极值函数查询时一行数据都无法查询出来
+
+**极值函数在输入为空表(空集)时会返回NULL**
+
+
+
+
+
+使用极值函数的SQL的执行步骤:
+
+```mysql
+-- 1 极值函数返回NULL
+SELECT
+	*
+FROM
+	Class_A
+WHERE age < NULL
+
+-- 2 对NULL使用"<"后结果为unknown
+SELECT
+	*
+FROM
+	Class_B
+WHERE unknown
+```
+
+
+
+**比较对象原本就不存在时，需要返回所有行时**，需要**使用ALL谓词或者使用COALESCE函数**将极值函数返回的NULL处理成合适的值
+
+
+
+
+
+
+
+
+
+
+
+#### 6) 聚合函数和NULL
+
+COUNT以外的聚合函数也会返回NULL
+
+```mysql
+SELECT
+	*
+FROM
+	Class_A
+WHERE age < (
+	SELECT
+  	AVG(age)
+	FROM
+  	Class_B
+  WHERE city = '东京'
+)
+```
+
+- 聚合函数和极值函数的这个陷阱是函数本身带来的，仅靠为列加上NOT NULL约束是无法从根本上消除的，所以需要在编写时注意
+
+
+
+
+
+
+
+### 小结
+
+1. NULL不是值
+2. 不能对NULL使用谓词
+3. 对NULL使用谓词后的结果都是unknown
+4. unknown参与到逻辑运算后，SQL的运行会和预想的不一样
+5. 按步骤追踪SQL的执行过程可以应对4中的情况
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. HAVING子句的力量
 
