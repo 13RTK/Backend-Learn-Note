@@ -1785,3 +1785,162 @@ WHERE age < (
 
 ## 4. HAVING子句的力量
 
+
+
+### 4.1 寻找缺失的编号
+
+Eg Table:
+
+![Xnip2022-02-24_09-36-49](../SQL.assets/Xnip2022-02-24_09-36-49.jpg)
+
+
+
+- 查询该表是否存在数据缺失的
+
+如果使用面向过程的语言进行处理:
+
+1. 对“连续编号”列按升序/降序排序
+2. 循环比较每一行和下一行的编号
+
+
+
+- 为了操作记录，我们需要对记录排序，**但SQL表/集合是无序的**
+- **且SQL没有排序的运算符**(**ORDER BY不是SQL的运算符，它是光标定义的一部分**)
+- SQL会**将多条记录作为一个集合来处理**
+
+
+
+解题SQL:
+
+```mysql
+SELECT
+	'存在缺失的编号' AS 'gap'
+FROM
+	SeqTbl
+HAVING COUNT(*) != MAX(seq);
+```
+
+- 其中COUNT(*)计算了表中的记录行数，MAX(seq)为其中的最大编号，两者不等则说明缺失
+- 这里没有使用GROUP BY，在以前的SQL标准中，HAVING子句必须和GROUP BY一起使用，但**以现在的SQL标准来说，HAVING可以单独使用了**
+- 但**HAVING单独使用时不能在SELECT列表里引用原表里的列了，要么使用常量，要么使用聚合函数**
+
+
+
+
+
+- 接下来查询缺失编号的最小值
+
+```mysql
+SELECT
+	MIN(t1.seq + 1) AS 'gap'
+FROM
+	SeqTbl AS t1
+WHERE NOT EXISTS (
+	SELECT
+		t2.seq
+	FROM
+		SeqTbl AS t2
+	WHERE (t1.seq + 1) = t2.seq
+	)
+```
+
+- 其检查了比每个编号大1的编号是否存在于表中，选取其中最小的一个即可
+- 如果表中包含NULL，且该SQL改为IN的话，该表的查询结果就为空了
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4.2 HAVING子查询(求众数)
+
+Eg Table:
+
+![Xnip2022-02-24_09-55-46](../SQL.assets/Xnip2022-02-24_09-55-46.jpg)
+
+- 以平均收入来评估的话很容易受到离群值的影响，所以这里需要使用众数
+
+
+
+
+
+- 统计出所有收入对应的人数
+- 找出其中人数最多的即可
+
+解答SQL:
+
+```mysql
+SELECT
+	income,
+	COUNT(*) AS 'cnt'
+FROM
+	Graduates
+GROUP BY income
+HAVING cnt >= ALL (
+	SELECT
+		COUNT(*)
+	FROM
+		Graduates
+	GROUP BY income
+	)
+```
+
+
+
+![Xnip2022-02-24_10-01-23](../SQL.assets/Xnip2022-02-24_10-01-23.jpg)
+
+
+
+- 又因为ALL谓词在遇到NULL或者空集时会出现问题，所以这里可以用极值函数来代替:
+
+```mysql
+SELECT
+	income,
+	COUNT(*) AS 'cnt'
+FROM
+	Graduates
+GROUP BY income
+HAVING cnt >= (
+	SELECT
+		MAX(cnt)
+	FROM (
+		SELECT
+			COUNT(*) AS 'cnt'
+		FROM
+			Graduates
+		GROUP BY income
+	) TMP
+)
+```
+
+
+
+
+
+
+
+
+
+### 4.3 HAVING自连接(求中位数)
+
+参照4.2中的示例表，求中位数:
+
+
+
+
+
+
+
+
+
+
+

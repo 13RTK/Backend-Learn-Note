@@ -1158,6 +1158,65 @@ AND n < (
 )
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day216
+
+## Tag: Define Func
+
+![Xnip2022-02-25_07-27-54](MySQL Note.assets/Xnip2022-02-25_07-27-54.jpg)
+
+
+
+![Xnip2022-02-25_07-28-09](MySQL Note.assets/Xnip2022-02-25_07-28-09.jpg)
+
+题意:
+
+给你一张员工薪资表，请你创建一个函数，使它能查询出第N高的薪水
+
+
+
+
+
+思路:
+
+- 该题目考察的是MySQL自建函数的过程，只要遵循语法即可，语法见图
+- 这里的思路是对薪水进行排序，再分页即可，这里我们只需要跳过前面N-1个即可
+- 所以刚开始的时候我们就需要获取N - 1，这里可以对参数N进行修改: N := N - 1;
+- 之后写出SQL再代入N即可，最终SQL如下
+
+```mysql
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+  SET N := N - 1;
+  RETURN (
+    SELECT
+      salary
+    FROM
+      Employee
+    GROUP BY salary
+    ORDER BY salary DESC
+    LIMIT 1 OFFSET N
+  );
+END
+```
+
 
 
 

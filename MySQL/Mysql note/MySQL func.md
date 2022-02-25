@@ -862,6 +862,7 @@ CAST(colume AS new_type);
 
 ![Xnip2022-01-18_13-11-23](MySQL Note.assets/Xnip2022-01-18_13-11-23.jpg)
 
+<hr>
 
 
 
@@ -881,8 +882,87 @@ CAST(colume AS new_type);
 
 
 
+# 7. 自定义函数
+
+
+
+## 1) 创建函数
+
+变量赋值的方法:
+
+- DECLEAR: 创建一个局部变量，作用域在BEGIN到END之间，初始值为NULL，可以使用DEFAULT赋值
+- SET: 为参数赋值，使用"="时只在SET里是比较，使用":="才是赋值
+
+
+
+Syntax:
+
+```mysql
+CREATE FUNCTION func_name(param TYPE)
+RETURNS TYPE
+[comment]
+BEGIN
+SET var := val;
+DECLARE var1, var2 TYPE DEFAULT val
+RETURN (
+	SQL1/Arithmatic
+);
+END
+```
 
 
 
 
+
+
+
+
+
+
+
+## 2) 查看函数状态
+
+Syntax:
+
+```mysql
+SHOW FUNCTION STATUS LIKE 'func_name';
+```
+
+
+
+![Xnip2022-02-25_07-24-02](MySQL Note.assets/Xnip2022-02-25_07-24-02.jpg)
+
+
+
+
+
+## 3) 查看函数定义
+
+Syntax:
+
+```mysql
+SHOW CREATE FUNCTION func_name;
+```
+
+
+
+Eg:
+
+![Xnip2022-02-25_07-25-35](MySQL Note.assets/Xnip2022-02-25_07-25-35.jpg)
+
+
+
+
+
+
+
+
+
+## 4) 删除函数
+
+Syntax:
+
+```mysql
+DROP FUNCTION [IF EXISTS] func_name;
+```
 
