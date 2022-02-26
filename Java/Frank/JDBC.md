@@ -272,3 +272,37 @@ void setType(int parameterIndex, Type x) throws SQLException: (PreparedStatement
 
 
 
+
+
+
+
+
+
+
+
+# 5.事务
+
+使用Conection类里的方法即可:
+
+- void setAutoCommit(boolean autoCommit): 设置是否自动提交SQL
+- void commit(): 提交事务中的SQL语句
+- SavePoint setSavePoint(): 在当前位置设置一个回滚点，并返回一个SavePoint对象
+- void rollback(SavePoint savePoint): 回滚到指定的回滚点位置
+- void rollback(): 回滚事务中所有的SQL语句
+
+Eg:
+
+![Xnip2022-02-25_17-55-57](JDBC/Xnip2022-02-25_17-55-57.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+

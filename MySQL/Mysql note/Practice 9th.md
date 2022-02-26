@@ -1217,6 +1217,100 @@ BEGIN
 END
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day217
+
+## Tag: 中位数
+
+![Xnip2022-02-26_10-29-14](MySQL Note.assets/Xnip2022-02-26_10-29-14.jpg)
+
+
+
+![Xnip2022-02-26_10-29-29](MySQL Note.assets/Xnip2022-02-26_10-29-29.jpg)
+
+题意:
+
+给你一张员工信息表，请你查询出每个公司中薪资处于中位数的员工信息
+
+
+
+
+
+思路:
+
+- 很巧的是，对于求中位数，在《SQL进阶教程》第一章的HAVING部分刚好有提到
+- 书中的解法是自连接后计算出两个子集，且让两个子集都包含中间部分(即SQL中的 >= COUNT(*) / 2和COUNT(*))
+- 最后只需要取出它们的重合部分即可，具体看图
+
+![Xnip2022-02-26_10-38-19](MySQL Note.assets/Xnip2022-02-26_10-38-19.jpg)
+
+
+
+![Xnip2022-02-26_10-38-24](MySQL Note.assets/Xnip2022-02-26_10-38-24.jpg)
+
+
+
+![Xnip2022-02-26_10-38-28](MySQL Note.assets/Xnip2022-02-26_10-38-28.jpg)
+
+
+
+- 沿着大佬的思路，我们再看这道题目，与书中示例不同的是，这里我们在统计时需要根据公司分组
+- 如果题目要求仅仅是求每个公司对应的中位数薪资的话，直接照搬书上的SQL就能做到，但这里我们需要的是中位数对于的员工信息，所以没这么简单
+- 这里我们需要先获取每个公司中薪资等于中位数的员工id，这里我们只需要模仿书上的写法即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		t1.id
+FROM
+		Employee AS t1
+INNER JOIN Employee AS t2 ON t1.company = t2.company
+GROUP BY t1.id, t1.salary
+HAVING SUM(CASE WHEN t1.salary <= t2.salary THEN 1 ELSE 0 END) >= COUNT(*) / 2
+AND SUM(CASE WHEN t1.salary >= t2.salary THEN 1 ELSE 0 END) >= COUNT(*) / 2
+```
+
+
+
+
+
+- 最后我们需要以这些员工id为基础，查询出需要的即可，但简单的使用IN还不行
+- 因为我们查询出来的是薪资等于中位数的员工，但其中不是每个员工都处于中间位置
+- 这里我们需要在最外层查询中根据公司和薪资分组，这样相同的薪资中就只会有一条记录得到匹配，重复的就被删除了，最终SQL如下
+
+```mysql
+SELECT
+    id,
+    company,
+    salary
+FROM
+    Employee
+WHERE id IN (
+    SQL1
+)
+GROUP BY company, salary
+```
+
 
 
 

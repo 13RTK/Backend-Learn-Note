@@ -1932,11 +1932,234 @@ HAVING cnt >= (
 
 ### 4.3 HAVING自连接(求中位数)
 
-参照4.2中的示例表，求中位数:
+- 思路: 将集合按照大小分为上半部分和下半部分两个子集，同时让这两个子集共同拥有集合正中间的元素，那么共同部分的元素的平均值就是中位数
+- 如果元素个数为奇数，那么不需要求平均值，计算平均值可以使得SQL更加通用
+
+
+
+参照4.2中的示例表，求中位数
+
+Eg Table:
+
+![Xnip2022-02-24_09-55-46](../SQL.assets/Xnip2022-02-24_09-55-46.jpg)
+
+
+
+SQL:
+
+```mysql
+-- 在HAVING子句中使用非等值自连接
+SELECT
+	AVG(DISTINCT income)
+FROM
+	(
+	SELECT
+		T1.income
+	FROM
+		Graduates T1,
+		Graduates T2
+	GROUP BY T1.income
+	HAVING SUM(CASE WHEN T2.income >= T1.income THEN 1 ELSE 0 END) >= COUNT(*) / 2
+	AND SUM(CASE WHEN T2.income <= T1.income THEN 1 ELSE 0 END) >= COUNT(*) / 2
+	) TMP;
+```
+
+
+
+解析:
+
+- COUNT(*)表示统计行数，除以2表示一般，而HAVING子句的第一个SUM用来统计前面一半，后一个SUM统计后面一半
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+### 4.4 查询不包含NULL的集合
+
+COUNT函数有两种使用方法:
+
+- COUNT(*): 可以统计NULL，**其统计的一定是所有行的数目，性能较好**
+- COUNT(列名): 统计时会排除掉NULL，其统计的不一定是所有行的数目(含NULL时候)
+
+
+
+Eg Table:
+
+![Xnip2022-02-25_08-41-58](../SQL.assets/Xnip2022-02-25_08-41-58.jpg)
+
+SQL:
+
+![Xnip2022-02-25_08-42-52](../SQL.assets/Xnip2022-02-25_08-42-52.jpg)
+
+
+
+
+
+
+
+
+
+Eg Table:
+
+![Xnip2022-02-25_08-46-40](../SQL.assets/Xnip2022-02-25_08-46-40.jpg)
+
+- 查询出那些学院的学生全部都提交了报告(没有NULL)
+- 这里不能简单的使用WHERE ISNULL(sbmt_date)
+
+
+
+SQL1:
+
+```mysql
+SELECT
+	dpt
+FROM
+	Students
+GROUP BY dpt
+HAVING COUNT(*) = COUNT(sbmt_date)
+```
+
+- 利用COUNT(*)和COUNT(字段)的区别，查询出提交日期不为NULL的学院
+
+
+
+
+
+SQL2:
+
+```mysql
+SELECT
+	dpt
+FROM
+	Students
+GROUP BY dpt
+HAVING COUNT(*) = SUM(CASE WHEN NOT ISNULL(sbmt_date) THEN 1 ELSE 0 END)
+```
+
+- 使用CASE可以使得SQL更加通用
+- CASE在这里的作用相当于进行判断的函数，用来判断各个元素是否满足了各种条件的集合，这样的函数称为特征函数(characteristic function)，从定义了集合的角度来将其称为定义函数
+- HAVING子句用来研究集合性质
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4.5 关系除法运算进行购物篮分析
+
+Eg Table:
+
+![Xnip2022-02-25_08-59-23](../SQL.assets/Xnip2022-02-25_08-59-23.jpg)
+
+问题: 查询出囊括了Items中所有商品的店铺(该问题是**数据挖掘中的“购物篮分析”**)
+
+
+
+分析:
+
+- 像表ShopItems这种一个实体的信息分散在多个行的情况时，仅仅通过WHERE子句结合OR或者IN是无法得到的，因为**WHERE指定的条件只能针对表里的某一行**
+- 针对多行数据设定查询条件:
+
+```mysql
+SELECT
+	SI.shop
+FROM
+	ShopItems SI,
+	Items I
+WHERE SI.item = I.item
+GROUP BY SI.shop
+HAVING COUNT(SI.shop) = (SELECT COUNT(item) FROM Items)
+```
+
+
+
+解析:
+
+- 先统计出Items表中商品的数量
+- 再统计出每个店铺与Items表连接后，商品的数量
+- 对比两个数量，留下一致的即可
+
+
+
+**注意：**这里不能将HAVING改为:
+
+```mysql
+HAVING COUNT(SI.item) = COUNT(I.item)
+```
+
+
+
+因为后面的COUNT会受到之前内连接的影响，此时COUNT(I.item)已经不再代表Items表中商品的数量了，而是连接后剩余的商品数量，此时会查询出所有的商店
+
+
+
+
+
+
+
+
+
+问题: 再排除掉仙台店，因为其多了一个窗帘
+
+这类问题称为精确关系除法(exact relational division)，即只选择没有剩余商品的店铺(前一个问题称为“带余除法(division with a remainder)”)，此时需要外连接
+
+```mysql
+SELECT
+	SI.shop
+FROM
+	ShopItems SI
+LEFT JOIN Items I ON SI.item = I.item
+GROUP BY SI.shop
+HAVING COUNT(SI.item) = (SELECT COUNT(item) FROM Items)
+AND COUNT(I.item) = (SELECT COUNT(item) FROM Items)
+```
+
+
+
+外连接的结果:
+
+![Xnip2022-02-25_09-21-52](../SQL.assets/Xnip2022-02-25_09-21-52.jpg)
+
+
+
+解析:
+
+- 此时COUNT(I.item)的结果为外连接后的结果，**如果不等于(SELECT COUNT(item) FROM Items)，则说明该店铺有多余的商品**
+
+
+
+
+
+
+
+### 4.6 小结
+
+1. 表不是文件，记录没有顺序，SQL不进行排序
+2. SQL不是面向过程语言，么有循环、分支、赋值操作(自定义函数和存储过程除外)
+3. SQL通过不断生成子集来获取目标集合
+4. 通常通过GROUP BY生成子集
+5. **WHERE用来调查集合元素的性质，而HAVING用来调查集合本身的性质**
 
 
 
