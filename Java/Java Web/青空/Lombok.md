@@ -68,13 +68,13 @@ Eg:
     ![Xnip2022-02-25_18-50-49](Lombok.assets/Xnip2022-02-25_18-50-49.jpg)
 
     <hr>
-
     
-
     
-
     
-
+    
+    
+    
+    
     
 
 
@@ -198,9 +198,137 @@ Eg:
 
 ![Xnip2022-02-25_21-27-32](Lombok.assets/Xnip2022-02-25_21-27-32.jpg)
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 五、Coustructor
+
+- AllArgsCoustructor: 自动创建包含所有字段的构造函数
+- NoArgsConstructor: 自动创建空参构造方法
+- RequiredArgsCoustructor: 只为需要的字段创建构造方法(final或者@NonNull修饰的字段)
+- Data: 其能代替@Setter、@Getter、@RequiredArgConstructor、@ToString、@EqualsAndHashCode这些所有的注解(不要用在有继承关系的子类上，理由同EqualsAndHashCode)
+- Value: 同Data，但不会为字段创建Setter，且会将所有字段都加上private final修饰
+
+
+
+Eg:
+
+![Xnip2022-02-26_14-28-52](Lombok.assets/Xnip2022-02-26_14-28-52.jpg)
+
+
+
+- 三者都有的选项:
+    - AccessLevel: 同Setter和Getter，可以修改构造方法的访问修饰符
+    - staticName: 将原构造方法设置为private，以输入的参数为准，创建一个新的方法来调用构造方法
+
+
+
+Eg:
+
+![Xnip2022-02-26_14-28-52](Lombok.assets/Xnip2022-02-26_14-28-52.jpg)
+
+
+
+
+
+- Data/Value
+
+staticConstructor: 作用同AllArgs/NoArgs/RequiredArgs中的staticName
+
+
+
+Eg(Data):
+
+![Xnip2022-02-26_14-28-52](Lombok.assets/Xnip2022-02-26_14-28-52.jpg)
+
+
+
+Eg(Value):
+
+![Xnip2022-02-26_14-53-10](Lombok.assets/Xnip2022-02-26_14-53-10.jpg)
+
+
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 六、SneakyThrows/CleanUp
+
+- SneakyThrows: 自动捕获方法中的异常，并创建try catch语句块
+- CleanUp: 自动关闭资源(流等等)
+
+![Xnip2022-02-26_14-59-38](Lombok.assets/Xnip2022-02-26_14-59-38.jpg)
+
+
+
+Sneaky中的选项值:
+
+- 可以在其中手动指定捕获的异常类: IOException.class
+
+Eg:
+
+![Xnip2022-02-26_15-04-53](Lombok.assets/Xnip2022-02-26_15-04-53.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 七、Builder
+
+- 可根据建造者模式/生成器创建一个Builder类
+- 通过Builder可以轻松地构建一个类，并选择性地初始化其中的值
+
+Eg:
+
+![Xnip2022-02-26_15-26-54](Lombok.assets/Xnip2022-02-26_15-26-54.jpg)
+
+
+
+选项值:
+
+![Xnip2022-02-26_15-29-07](Lombok.assets/Xnip2022-02-26_15-29-07.jpg)
 

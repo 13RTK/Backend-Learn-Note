@@ -1311,9 +1311,84 @@ WHERE id IN (
 GROUP BY company, salary
 ```
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day218
+
+## Tag: Recursive, CTE
+
+![Xnip2022-02-27_10-01-02](MySQL Note.assets/Xnip2022-02-27_10-01-02.jpg)
+
+
+
+![Xnip2022-02-27_10-01-27](MySQL Note.assets/Xnip2022-02-27_10-01-27.jpg)
+
+题意:
+
+看起来很多，但其实还好
+
+给你三张表，一张司机信息表，一张订单表，一张确认的订单表(订单表中部分订单可能取消)
+
+请你查询出从2020年1月到10月中，每个月中近3个月的平均订单距离和订单时长
+
+
+
+
+
+
+
+思路:
+
+- 从结果来看，我们只需要订单表和确认订单表，但麻烦的是，从1月到10月这10行并未出现在表中，要么我们使用CASE WHEN构建，要么写一个从1到12月的表
+- 这里我们可以选择通过CTE递归的方法生成1到12，方法和SQL Day215生成从1到100是一样的，SQL如下
+
+SQL1:
+
+```mysql
+WITH recursive month(cur_month) AS (
+    SELECT
+        1
+    UNION ALL
+    SELECT
+        cur_month + 1
+    FROM
+        month
+    WHERE cur_month < 12
+)
+```
+
+
+
+- 之后我们连接订单和确认订单表，限制订单的年份，再用我们生成的月份表连接限制订单的月份(注意这里是一个区间，所以用到了BETWEEN AND)
+- 最后按照月份分组，并排序，再限制前10个月即可，最终SQL如下
+
+```mysql
+SQL1
+
+SELECT
+    t3.cur_month AS 'month',
+    IFNULL(ROUND(SUM(t1.ride_distance) / 3, 2), 0) AS 'average_ride_distance',
+    IFNULL(ROUND(SUM(t1.ride_duration) / 3, 2), 0) AS 'average_ride_duration'
+FROM
+    AcceptedRides AS t1
+INNER JOIN Rides AS t2 ON t1.ride_id = t2.ride_id AND YEAR(t2.requested_at) = 2020
+RIGHT JOIN month AS t3 ON MONTH(t2.requested_at) BETWEEN t3.cur_month AND t3.cur_month + 2
+GROUP BY t3.cur_month
+ORDER BY t3.cur_month
+LIMIT 10
+```
 
