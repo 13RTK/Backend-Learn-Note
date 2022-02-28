@@ -1392,3 +1392,106 @@ ORDER BY t3.cur_month
 LIMIT 10
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day219
+
+## Tag: 连续区间的起始和结束数字
+
+![Xnip2022-02-28_07-58-16](MySQL Note.assets/Xnip2022-02-28_07-58-16.jpg)
+
+
+
+![Xnip2022-02-28_07-59-30](MySQL Note.assets/Xnip2022-02-28_07-59-30.jpg)
+
+题意:
+
+给你一张日志表，其中有若干数字，请你查询出其中所有连续区间对应的起始和结束数字
+
+
+
+
+
+
+
+思路:
+
+- 该题目可以分为两个部分求解: 即获取边界数字和对应每个区间
+- 边界数字很好理解，对于左边界: 在其基础上 -1的数不存在；对于右边界: 在其基础上 +1的数不存在，所以我们利用这两个条件就能分别查询出边界数字，SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+	log_id
+FROM 
+	Logs
+WHERE NOT EXISTS (
+  SELECT
+  	log_id
+  FROM
+  	Logs AS temp
+  WHERE temp.log_id = Logs.log_id - 1
+)
+```
+
+
+
+SQL2:
+
+```mysql
+SELECT 
+	log_id
+FROM 
+	Logs
+WHERE NOT EXISTS (
+  SELECT
+  	log_id
+  FROM
+  	Logs AS temp
+  WHERE temp.log_id = Logs.log_id + 1
+)
+```
+
+- 之后只需要对应左右边界即可，但该怎么对应？这里我们拿题目的示例来分析:
+- 按照Logs表中(1, 2, 3, 7, 8, 10)来查询的话，前两个SQL的查询结果分别为:
+- (1, 7, 10)和(3, 8, 10)，如果之间连接的话会形成笛卡尔积，所以需要一个限制条件
+- 又因为左边界必然小于等于右边界，所以我们可以使用非等值连接，即将连接条件设置为: t1.log_id <= t2.log_id
+- 但这样明显还是不行，每个左边界只需要一个右边界，这时候分组就派上用场了
+- 此时连接后，t1中第一条的对应关系为: (1) -> (3, 8, 10)，我们只需要根据t1.log_id分组，再取t2.log_id中的最小值即可！最终SQL如下
+
+```mysql
+SELECT
+    t1.log_id AS 'start_id',
+    MIN(t2.log_id) AS 'end_id'
+FROM (
+		SQL1
+    ) AS t1
+INNER JOIN (
+    SQL2
+    ) AS t2 ON t1.log_id <= t2.log_id
+GROUP BY t1.log_id
+```
+
+
+
+
+
+
+
