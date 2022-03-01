@@ -1489,9 +1489,99 @@ INNER JOIN (
 GROUP BY t1.log_id
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day220
+
+## Tag: UNION ALL, CASE WHEN
+
+![Xnip2022-03-01_07-58-24](MySQL Note.assets/Xnip2022-03-01_07-58-24.jpg)
+
+
+
+![Xnip2022-03-01_07-57-56](MySQL Note.assets/Xnip2022-03-01_07-57-56.jpg)
+
+题意:
+
+给你一张用户信息表，一张交易记录表，请你查询出所有用户的信息和当前的账户余额，最后再判断其是否透支
+
+
+
+
+
+思路:
+
+- 因为交易表中减少和增加的用户id在同一行，所以我们需要把行转换为列，这就需要UNION ALL了，我们将用户表中的credit和交易表中的paid_by和paid_to都视作user_id
+- 这样我们就将两张表的记录转换为了一张只有id和正负金额的交易表，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id,
+	credit AS 'amount'
+FROM
+	Users
+UNION ALL
+SELECT
+	paid_by AS 'user_id',
+	-amount AS 'amount'
+FROM
+	Transactions
+UNION ALL
+SELECT
+	paid_to AS 'user_id',
+	amount AS 'amount'
+FROM
+	Transactions
+```
+
+
+
+- 之后根据用户id分组，将金额统计起来即可，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	user_id,
+	SUM(amount) AS 'credit'
+FROM (
+	SQL1
+		) AS temp
+GROUP BY user_id
+```
+
+
+
+- 最后再连接用户表查询出用户信息，再根据当前余额判断是否透支即可，最终SQL如下
+
+```mysql
+SELECT
+	t2.user_id,
+	t2.user_name,
+	t1.credit,
+	CASE WHEN t1.credit >= 0 THEN 'No'
+	ELSE 'Yes' END AS 'credit_limit_breached'
+FROM (
+	SQL2
+	) AS t1
+INNER JOIN Users AS t2 ON t1.user_id = t2.user_id
+```
 
 
 
