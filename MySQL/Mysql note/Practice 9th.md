@@ -1663,11 +1663,72 @@ WHERE NOT EXISTS (
     );
 ```
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+# Day222
+
+## Tag: CTE
+
+![Xnip2022-03-03_07-20-42](MySQL Note.assets/Xnip2022-03-03_07-20-42.jpg)
+
+
+
+![Xnip2022-03-03_07-21-35](MySQL Note.assets/Xnip2022-03-03_07-21-35.jpg)
+
+题意:
+
+给你一张用户关系表，请你查询出共同关注者数量最多的用户对
+
+
+
+
+
+思路:
+
+- 既然是需要最多的共同关注者，那么follower_id应该相同，所以这里我们需要使用自连接，连接后根据id分组统计得到的行数就是每对关注者的共同关注人数
+- 为了去重，这里最好再限制一下两个id的大小关系，为了之后获取最大共同关注人数，这里按照人数进行了排序，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.user_id AS 'user1_id',
+    t2.user_id AS 'user2_id',
+    COUNT(*) AS 'num'
+FROM
+    Relations AS t1
+INNER JOIN Relations AS t2 ON t1.follower_id = t2.follower_id
+WHERE t1.user_id < t2.user_id
+GROUP BY t1.user_id, t2.user_id
+ORDER BY num DESC
+```
+
+
+
+- 根据这张临时表，我们可以直接通过LIMIT获取最大的共同关注人数，再根据这个数字去匹配对应的用户对即可，最终SQL如下
+
+```mysql
+WITH temp AS (
+		SQL1
+)
+
+SELECT
+    user1_id,
+    user2_id
+FROM
+    temp
+WHERE num = (SELECT num FROM temp LIMIT 1)
+```
 
 
 
