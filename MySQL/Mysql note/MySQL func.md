@@ -814,6 +814,17 @@ Eg:
 
 ![Xnip2021-12-11_09-11-14](MySQL Note.assets/Xnip2021-12-11_09-11-14.jpg)
 
+
+
+
+
+- CTE的递归写法:
+    - 想要递归调用，则必须在WITH后添加RECURSIVE关键字
+
+Eg:
+
+![Xnip2022-03-02_08-05-24](MySQL Note.assets/Xnip2022-03-02_08-05-24.jpg)
+
 <hr>
 
 

@@ -1583,5 +1583,95 @@ FROM (
 INNER JOIN Users AS t2 ON t1.user_id = t2.user_id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day221
+
+## Tag: CTE, RECURSIVE
+
+![Xnip2022-03-02_08-09-25](MySQL Note.assets/Xnip2022-03-02_08-09-25.jpg)
+
+
+
+![Xnip2022-03-02_08-11-49](MySQL Note.assets/Xnip2022-03-02_08-11-49.jpg)
+
+题意:
+
+给你一张任务对应表，一张已执行任务表，请你查询出其中所有没被执行的任务对
+
+
+
+
+
+思路:
+
+- 因为任务对应表中是id对应子任务id，所以我们可以根据该表获取每个任务id对应的所有子任务id
+- 将这个问题抽象一下：给你几组数字，请你为每组数字从给定的上限开始生成出所有的连续id
+- 是不是很熟悉？没错，又是CTE的递归用法，语法可参照图中的官方文档，我们首先生成出每组任务id对应的所有子任务id，SQL如下
+
+SQL1:
+
+```mysql
+WITH RECURSIVE temp(task_id, subtask_id) AS (
+    SELECT
+        task_id,
+        subtasks_count AS 'subtask_id'
+    FROM
+        Tasks
+    UNION ALL
+    SELECT
+        task_id,
+        subtask_id - 1
+    FROM
+        temp
+    WHERE subtask_id - 1 >= 1
+
+```
+
+
+
+- 之后就简单了，只要排除掉Executed表中的子任务id即可，最终SQL如下
+
+```mysql
+SQL1
+
+SELECT
+    task_id,
+    subtask_id
+FROM
+    temp
+WHERE NOT EXISTS (
+    SELECT
+        task_id,
+        subtask_id
+    FROM
+        Executed
+    WHERE Executed.task_id = temp.task_id 
+    AND Executed.subtask_id = temp.subtask_id
+    );
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
