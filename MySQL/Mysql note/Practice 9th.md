@@ -1730,6 +1730,79 @@ FROM
 WHERE num = (SELECT num FROM temp LIMIT 1)
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day223
+
+## Tag: CASE
+
+![Xnip2022-03-04_07-54-34](MySQL Note.assets/Xnip2022-03-04_07-54-34.jpg)
+
+
+
+![Xnip2022-03-04_07-54-52](MySQL Note.assets/Xnip2022-03-04_07-54-52.jpg)
+
+题意:
+
+给你一张会员信息表，一张访问记录表，一张购买记录表，请你根据转换率对每个用户进行分级(转换率 = 100 * 购买次数 / 访问次数)，大于等于80为钻石，50到80为黄金，小于50为白银，没有访问记录的为青铜
+
+
+
+思路:
+
+- 很明显这道题目需要我们先获取每个用户的转换率
+- 因为有可能存在没有购买记录的用户，所以这里我们需要以用户表为驱动表进行外连接
+- 需要注意的是，部分用户可能只有访问记录而没有购买记录，有的用户干脆没有访问记录，为了区分这两类用户，我们需要保存外连接得到的NULL
+- 这样转换率为NULL的就是青铜了，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.member_id,
+    t1.name,
+    100 * COUNT(t3.charged_amount) / COUNT(t2.visit_id) AS 'conversion_rate'
+FROM
+    Members AS t1
+LEFT JOIN Visits AS t2 ON t1.member_id = t2.member_id
+LEFT JOIN Purchases AS t3 ON t2.visit_id = t3.visit_id
+GROUP BY t1.member_id, t1.name
+```
+
+
+
+
+
+- 之后只需要根据该表的转换率进行分支判断即可，这里我选择CASE，最终SQL如下
+
+```mysql
+SELECT
+    member_id,
+    name,
+    CASE WHEN ISNULL(conversion_rate) THEN 'Bronze'
+    WHEN conversion_rate >= 80 THEN 'Diamond'
+    WHEN conversion_rate >= 50 AND conversion_rate < 80 THEN 'Gold'
+    WHEN conversion_rate < 50 THEN 'Silver'
+    ELSE NULL END AS 'category'
+FROM (
+		SQL1
+) AS temp
+```
+
+
+
 
 
 

@@ -1667,4 +1667,414 @@ static final class Entry<K,V> implements Map.Entry<K,V> {
 
 
 
+# 十一、Stream流
+
+- jdk1.8新特性
+- 将一个数组/集合变为一个流，再添加相应的工序
+
+
+
+Eg:
+
+- 将一个集合倒序排序，再排除小于等于10的元素
+
+![Xnip2022-03-03_09-06-17](Java SE.assets/Xnip2022-03-03_09-06-17.jpg)
+
+
+
+- 对应方法:
+    - Stream<E> stream(): 将当前对象变为一个Stream对象
+    - Stream<T> sorted(): 对当前流对象进行排序
+    - Stream<T> sorted(Comparator<? super T> comparator): 设置自定义排序规则
+    - Stream<T> filter(Predicate<? super T> predicate): 设置过滤器，只放过符合条件的元素
+    - <R, A> R collect(Collector<? super T, A, R> collector): 传入一个Collector，调用toList方法重新打包
+
+
+
+Eg:
+
+- 获取一个数组的最大最小值
+
+![Xnip2022-03-03_09-16-24](Java SE.assets/Xnip2022-03-03_09-16-24.jpg)
+
+步骤:
+
+- 将其转换为流对象
+- 通过mapToInt()方法将流转换为IntStream对象
+- 调用summaryStatistics方法得到一个IntSummaryStatistics对象
+- 调用getMax和getMin方法获取最值
+
+
+
+
+
+
+
+Eg:
+
+- 得到一个集合对象的最值
+
+![Xnip2022-03-03_09-24-11](Java SE.assets/Xnip2022-03-03_09-24-11.jpg)
+
+
+
+步骤
+
+- 先转换为Stream对象
+- 再调用mapToInt方法将Stream对象转换为IntStream对象
+- 再使用summaryStatistics()方法返回一个SummaryStatistics对象
+
+
+
+其余方法:
+
+- distinct(): 去重
+- limit(int num): 限定输出的元素个数
+
+
+
+拓展:
+
+- 流式计算时，会先统计所有的步骤，再执行每个步骤
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十二、Optional判空工具
+
+- 对于任何一个对象，使用静态方法:
+    - static<T> Optional<T> of(T value): 传入一个对象，返回一个Optional对象
+    - static<T> Opiontal<T> ofNullable(T value): 如果参数不为null才返回一个Optional对象，否则返回一个null对象
+- void ifPresent(Consumer<? super T> action): 如果对象不为空才执行其中的操作
+- void ifPresentOrElse(Consumer<? super T> action, Runnable emptyAction): 如果为空则输出另一参数
+- boolean isPresent(): 判断是否为null
+- orElse(String str): 如果当前Optional为空，则返回对应的string
+- T get()
+
+Eg:
+
+![Xnip2022-03-03_09-57-35](Java SE.assets/Xnip2022-03-03_09-57-35.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十三、反射/注解
+
+注意:
+
+反射次数多的话，不利于后期的维护
+
+
+
+## 1) 类的加载
+
+- Java程序启动时，ClassLoader会将一部分类进行加载，然后将类的信息提取出来，存放在元空间中(jdk8之前存放在永生代中)
+- 同时会生成一个Class对象放在内存里，且该对象只会存在一个，防止重复加载
+
+
+
+防止类重复加载的机制: 双亲委派机制
+
+![Xnip2022-03-03_10-33-30](Java SE.assets/Xnip2022-03-03_10-33-30.jpg)
+
+- 其中我们自己编写的类由AppClassLoader这个加载器加载
+- jdk原生的类都由BootstrapClassLoader加载
+- 其中ExtClassLoader是AppClassLoader的父加载器，BoostrapLoader是ExtClassLoader的父加载器
+- BootstrapLoader由C++实现，所以不能直接获取
+
+Eg:
+
+![Xnip2022-03-03_10-41-40](Java SE.assets/Xnip2022-03-03_10-41-40.jpg)
+
+- 因为BootstrapLoader为C++原生实现，所以无法获取
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) 获取Class对象
+
+- 可以通过类名直接调用.class()方法，其会返回对应的唯一class对象
+
+- 可通过该类的一个对象调用getClass()方法
+- 可通过Class类中的静态方法forName()加载对应的类返回class对象，传入对应类的包名路径
+- 返回的Class对象属于一个泛型类
+
+![Xnip2022-03-03_10-57-25](Java SE.assets/Xnip2022-03-03_10-57-25.jpg)
+
+
+
+
+
+可通过getName方法获取对象的类名:
+
+![Xnip2022-03-03_11-00-01](Java SE.assets/Xnip2022-03-03_11-00-01.jpg)
+
+
+
+
+
+
+
+- 数组同样是一个对象
+
+![Xnip2022-03-03_11-02-07](Java SE.assets/Xnip2022-03-03_11-02-07.jpg)
+
+
+
+
+
+- 基础类型同样有对应的Class对象，其存放在对应的包装类里
+
+![Xnip2022-03-03_11-04-26](Java SE.assets/Xnip2022-03-03_11-04-26.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 3) 对应方法
+
+- 可以通过getClass来代替instanceOf
+- 通过getSuperclass()
+- 通过asSubClass()方法判断当前类是否为参数类的子类，如果不是则会抛出异常
+- 通过getGenericSuperclass方法获取父类类型
+- 通过getGenericInterfaces方法获取父类接口
+
+Eg:
+
+![Xnip2022-03-03_11-14-07](Java SE.assets/Xnip2022-03-03_11-14-07.jpg)
+
+
+
+![Xnip2022-03-03_11-18-57](Java SE.assets/Xnip2022-03-03_11-18-57.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4) 构建实例对象
+
+- 通过Class对象调用newInstance()方法构造对象
+
+
+
+该方式在jdk9之后就被舍弃了
+
+Eg:
+
+![Xnip2022-03-03_11-38-01](Java SE.assets/Xnip2022-03-03_11-38-01.jpg)
+
+
+
+
+
+- 通过Class对象调用getConstructor方法获取对应的构造方法，其中加载的是参数对应类型的Class对象
+- 获取Constructor后调用newInstance方法构建实例对象
+
+![Xnip2022-03-03_15-22-05](Java SE.assets/Xnip2022-03-03_15-22-05.jpg)
+
+
+
+
+
+如果构造方法被private修饰:
+
+- 获取该Class对象后，获取声明的构造方法
+- 直接修改构造方法的访问权限即可
+
+![Xnip2022-03-03_15-29-51](Java SE.assets/Xnip2022-03-03_15-29-51.jpg)
+
+
+
+
+
+- getDeclaredConstructor(Class<?>... parameterTypes): 
+
+接受多个参数，返回一个构造器对象，传入对应构造方法的参数对应类型的Class对象
+
+如果是空参构造则不需要任何参数
+
+
+
+- getDeclaredConstructors():
+
+返回所有声明过的构造器对象
+
+
+
+
+
+
+
+修改构造器的访问权限:
+
+- void setAccessible(boolean flag): 设置当前构造器的访问权限
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 5) 调用类方法
+
+- 通过Class对象调用getMethod()方法:
+    -  Method getMethod(String name, Class<?>... parameterTypes): 第一个参数为获取的方法对应的方法名称，后面为方法参数对应的类型(有几个参数就传入几个Class对象)，最后返回一个Method方法
+    - Object invoke(Object obj, Object... args): 第一个参数为对应类的实例对象，第二个参数为传入的具体参数
+
+
+
+Eg:
+
+![Xnip2022-03-03_16-01-28](Java SE.assets/Xnip2022-03-03_16-01-28.jpg)
+
+
+
+该方式的好处:
+
+- 不需要导入类就能使用，一切对象都抽象为Object
+
+
+
+
+
+访问private修饰方法的过程同访问private构造方法相同
+
+![Xnip2022-03-03_16-09-38](Java SE.assets/Xnip2022-03-03_16-09-38.jpg)
+
+- 通过getDeclaredMethod方法获取对应的Method对象
+- 通过Method对象调用setAccessiable方法设置可见性
+
+
+
+
+
+如果方法的参数为可变参数，那么传入一个数组的Class对象即可
+
+Eg:
+
+![Xnip2022-03-03_16-14-44](Java SE.assets/Xnip2022-03-03_16-14-44.jpg)
+
+
+
+通过Method对象可以获取方法的信息:
+
+- getName(): 获取方法的名字
+- getReturnType(): 返回方法的返回类型
+- getTypeParameters(): 返回参数
+
+Eg:
+
+![Xnip2022-03-03_16-16-54](Java SE.assets/Xnip2022-03-03_16-16-54.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 6) 类的字段/属性
+
+- 通过类的Class对象调用getField或者getDeclaredField字段获取对应的Field对象
+- 如果字段为private，需要通过setAccessiable方法设置访问修饰符，再使用set方法设置字段的值
+
+![Xnip2022-03-03_16-33-16](Java SE.assets/Xnip2022-03-03_16-33-16.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 7) 自定义ClassLoader
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
 
