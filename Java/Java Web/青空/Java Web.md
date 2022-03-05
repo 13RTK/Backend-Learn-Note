@@ -256,7 +256,7 @@ Complete:
 - void setReceiveBufferSize(int size): 单位为字节，该方法可以设置TCP连接的接收缓冲区大小
 - void setSendBufferSize(int size): 单位为字节，该方法可以设置TCP连接的发送缓冲区大小
 
-
+<hr>
 
 
 
@@ -267,8 +267,6 @@ Complete:
 
 
 ## 3. Socket传输文件
-
-
 
 Client:
 
@@ -335,6 +333,7 @@ public static void main(String[] args) {
     fileOutputStream.flush();
     clientInputStream.close();
     clientSocket.close();
+    
   } catch(IOException e) {
     System.out.println("Server error!");
     e.printStackTrace();

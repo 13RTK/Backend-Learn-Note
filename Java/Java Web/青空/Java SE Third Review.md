@@ -2056,25 +2056,139 @@ Eg:
 
 ## 7) 自定义ClassLoader
 
+1. 首先创建一个类，并编译为.class文件
+2. 创建一个继承ClassLoader类的自定义ClassLoader类，自己写一个defineClass，其调用内部被protected修饰的defineClass方法
+3. 通过一个FileInputStream对象与外部的class文件建立输入流
+4. 调用read方法将流读取到一个字节数组中
+5. 创建一个自定义ClassLoader的实例对象，获取构造方法，调用newInstance()方法构建对象实例
 
 
 
+Eg:
+
+![Xnip2022-03-04_08-30-45](Java SE.assets/Xnip2022-03-04_08-30-45.jpg)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+![Xnip2022-03-04_08-40-16](Java SE.assets/Xnip2022-03-04_08-40-16.jpg)
 
 <hr>
+
+
+
+
+
+
+
+
+# 十四、注解
+
+
+
+
+
+## 1) overview
+
+大多数注解和注释相同，但其可以选择保存在运行时中
+
+
+
+jdk自带注解:
+
+- @Override:
+
+检查方法是否是重写方法。如果对应父类没有改方法会报错
+
+
+
+- @Deprecated:
+
+标记过时的方法，编译时会警告
+
+
+
+- @SuppressWarnings
+
+指示编译器去忽略注解中声明的警告
+
+
+
+- @FunctionalInterface 
+
+Java 8 开始支持，标识一个匿名函数或函数式接口。
+
+
+
+- @SafeVarargs
+
+Java 7 开始支持，忽略任何使用参数为泛型变量的方法或构造函数调用产生的警告。
+
+
+
+
+
+
+
+
+
+
+
+元注解:
+
+用来指明注解的信息
+
+- Retention:
+
+标记该注解保存在哪里
+
+
+
+- Target:
+
+标记注解的作用范围
+
+
+
+自定义注解:
+
+![Xnip2022-03-04_08-58-33](Java SE.assets/Xnip2022-03-04_08-58-33.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2) 通过反射获取注解
+
+- 首先获取类的Class对象，直接调用getAnnotation或者getAnnotations方法可以获取类上的注解
+- 通过Annotation对象调用annotitionType方法可以获取注解的类型，也可以直接获取注解中的字段值
+
+Eg:
+
+![Xnip2022-03-04_09-18-01](Java SE.assets/Xnip2022-03-04_09-18-01.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

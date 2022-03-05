@@ -38,7 +38,7 @@
 
 1. 创建一个mabatis-config.xml作为mybatis的配置文件，在其中填写驱动、url、用户名、密码
 2. 调用SqlSessionFactoryBuilder类中的build方法，传入该配置文件的文件输入流对象，返回一个SqlSessionFactory对象，通过该对象调用openSession方法，返回一个SqlSession
-3. 创建一个Mapper.xml文件，将其通过url的方式写在mybatis的配置文件中，注意namespace属性对应该映射文件的文件名，id之后需要写在通过SqlSession调用的select方法中，type属性即为我们查询后对应的类所在的路径(需写完整的包路径)，将Mapper写在mybatis配置文件中
+3. 创建一个Mapper.xml文件，将其通过url的方式写在mybatis的配置文件中，注意**namespace属性对应该映射文件的文件名**，id。之后需要写在通过SqlSession调用的select方法中，**type属性即为我们查询后映射的类所在的路径或者类对应的别名**(需写完整的包路径)，将Mapper写在mybatis配置文件中
 4. 创建好对象后，通过SqlSession对象调用select方法，返回对应的对象或者对象集合
 
 
@@ -176,14 +176,14 @@ public class MybatisTest {
 
 
 
-## 1) 封装/接口映射器
+## 1) 封装/接口/映射器
 
 - 首先将创建SqlSession的过程封装为一个方法，创建在MybatisUtil类中:
 
 ![Xnip2022-02-27_15-02-37](Mybatis Base.assets/Xnip2022-02-27_15-02-37.jpg)
 
 - 因为SqlSessionFactory对象只需要创建一个，所以这里设置为private static
-- openSession方法中的boolean参数表示是否开始自动提交
+- openSession方法中的boolean参数表示是否开启自动提交
 
 
 
@@ -194,7 +194,7 @@ public class MybatisTest {
 - 使用selectList/selectOne方法的话，返回的类型不确定，需要我们手动转换
 - 我们可以创建一个接口与映射器对应起来，只需要将Mapper.xml中的namespace改为接口所在的包名即可
 - 注意将接口和mapper.xml放在同一个包下
-- 最后将mybatis配置文件中的Mapper路径从url改为resource(注意用/区分包)
+- 最后将mybatis配置文件中的Mapper路径从url改为resource(注意用"/"区分包)
 
 ![Xnip2022-02-27_15-06-27](Mybatis Base.assets/Xnip2022-02-27_15-06-27.jpg)
 
@@ -207,7 +207,7 @@ public class MybatisTest {
 
 
 - 设置好后，Mybatis会自动为我们创建的接口动态代理创建一个实现类
-- 我们通过sqlSession对象调用getMapper方法，传入该接口，即可返回一个实现类对象
+- 我们**通过sqlSession对象调用getMapper方法，传入该接口**，即可返回一个实现类对象
 - 通过该实现类对象调用我们在接口中定义的方法即可
 
 ![Xnip2022-02-27_15-13-12](Mybatis Base.assets/Xnip2022-02-27_15-13-12.jpg)
@@ -247,8 +247,8 @@ Eg:
 
 
 
-- 通过typeAliases标签，可以为制定包下的类全部取别名(默认为小写)
-- 修改后，Mapper中的resultType也要修改
+- 通过typeAliases标签，可以为指定包下的类全部取别名(默认为类名全小写)
+- 修改后，Mapper中的resultType也要修改为对应的类名
 
 Eg:
 
@@ -261,6 +261,277 @@ Eg:
 - 如果不想要默认的别名，可以在类上通过Alias注解设置想要的别名
 
 ![Xnip2022-02-27_15-33-41](Mybatis Base.assets/Xnip2022-02-27_15-33-41.jpg)
+
+
+
+
+
+- 如果不想指定具体的类名，可以全部改为Map:
+    - 将接口中方法对应类型改为Map
+    - 将Mapper配置文件中的resultType改为Map
+
+Eg:
+
+![Xnip2022-03-04_10-23-07](Mybatis Base.assets/Xnip2022-03-04_10-23-07.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 3) 简单CRUD
+
+1. 在Mapper中可以写多个sql语句，不同的sql对应不同的标签(CRUD)
+2. 为了让数据库中的a_b字段对应类中的aB驼峰字段，**需要在Mybatis配置文件中添加一个settings字段，将mapUnderscoreToCamelCase属性设置为true**
+3. 在mapper中设置好对应的sql后，需要在接口中也写上同名的方法(名字同id)
+4. 最后通过接口的实现类直接执行方法即可
+
+
+
+Eg:
+
+![Xnip2022-03-04_10-34-27](Mybatis Base.assets/Xnip2022-03-04_10-34-27.jpg)
+
+- 如果需要传入WHERE子句的参数，最好使用#{}，括号中写上对应的字段名称，${}也可以，但其和statement一样会产生sql注入问题
+
+![Xnip2022-03-04_10-46-27](Mybatis Base.assets/Xnip2022-03-04_10-46-27.jpg)
+
+
+
+
+
+- 如果类中字段和表中的字段不同，需要我们在mapper中设置映射关系
+
+![Xnip2022-03-04_10-51-06](Mybatis Base.assets/Xnip2022-03-04_10-51-06.jpg)
+
+
+
+![Xnip2022-03-04_11-00-47](Mybatis Base.assets/Xnip2022-03-04_11-00-47.jpg)
+
+
+
+
+
+- 如果方法中有显式的构造方法，Mybatis一定会尝试调用一个
+- 如果构造方法有多个时，只有当存在满足表中所有字段的构造方法时，才能正常使用
+- 如果有多个构造方法，但没有一个符合条件时，会报错:
+
+Eg:
+
+![Xnip2022-03-04_11-04-21](Mybatis Base.assets/Xnip2022-03-04_11-04-21.jpg)
+
+
+
+![Xnip2022-03-04_11-07-09](Mybatis Base.assets/Xnip2022-03-04_11-07-09.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4) 复杂查询
+
+场景:
+
+一个老师会对应多个学生，现在要查询出每个老师的信息和对应的所有学生的信息
+
+
+
+1. 教师类
+
+![Xnip2022-03-04_21-08-45](Mybatis Base.assets/Xnip2022-03-04_21-08-45.jpg)
+
+
+
+
+
+2. 学生类
+
+![Xnip2022-03-04_21-09-16](Mybatis Base.assets/Xnip2022-03-04_21-09-16.jpg)
+
+
+
+3. 对应的表和SQL
+
+![Xnip2022-03-04_21-11-12](Mybatis Base.assets/Xnip2022-03-04_21-11-12.jpg)
+
+
+
+SQL:
+
+```mysql
+SELECT
+	t1.sid,
+	t1.name AS 'student_name',
+	t1.sex,
+	t3.tid,
+	t3.name AS 'teacher_name'
+FROM
+	school.student AS t1
+INNER JOIN school.teach AS t2 ON t1.sid = t2.sid
+INNER JOIN school.teacher AS t3 ON t2.tid = t3.tid
+```
+
+
+
+
+
+4. 在映射文件中创建对应的select标签，并创建对应的resultMap标签以设置映射关系，在接口中定义方法
+
+![Xnip2022-03-04_21-16-23](Mybatis Base.assets/Xnip2022-03-04_21-16-23.jpg)
+
+- 在教室类中使用collection标签，其中写入学生类各个字段的对应关系，使用ofType属性定义集合中存储的类
+- 最后记得在接口中定义同名方法
+
+
+
+
+
+5. Result
+
+![Xnip2022-03-04_21-17-10](Mybatis Base.assets/Xnip2022-03-04_21-17-10.jpg)
+
+
+
+
+
+
+
+
+
+
+
+场景2:
+
+查询每个学生和其对应的老师
+
+
+
+1. 学生类
+
+![Xnip2022-03-04_21-26-03](Mybatis Base.assets/Xnip2022-03-04_21-26-03.jpg)
+
+
+
+2. 映射文件和接口方法
+
+![Xnip2022-03-04_21-27-20](Mybatis Base.assets/Xnip2022-03-04_21-27-20.jpg)
+
+- 使用association标签表示与其关联的其他对象，注意**这里使用javaType属性指定类**
+
+
+
+
+
+3. Result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5) 事务操作
+
+通过SqlSession对象可以调用一下方法控制事务:
+
+- commit(): 提交事务
+- rollback(): 回滚事务
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6) 动态SQL
+
+官方链:
+
+[mybatis – MyBatis 3 | 动态 SQL](https://mybatis.org/mybatis-3/zh/dynamic-sql.html)
+
+- 在对应的SQL标签中可以使用一些条件分支标签
+
+
+
+### 1. if
+
+- 在test属性中设置触发的条件
+- 在标签内写上触发条件后拼接上的SQL
+
+![Xnip2022-03-04_22-08-52](Mybatis Base.assets/Xnip2022-03-04_22-08-52.jpg)
+
+释义:
+
+- 这里我们查询的学生id为2，所以触发了test里的条件，后面拼接上了一段新的SQL，所以将Tami这条记录排除掉了
+
+
+
+
+
+
+
+
+
+### 2. Choose
+
+- 其作用类似switch
+- 其中when标签类似于case
+- otherwise类似default
+
+![Xnip2022-03-04_22-17-57](Mybatis Base.assets/Xnip2022-03-04_22-17-57.jpg)
+
+这里查询的id小于等于3，所以触发了第一个when条件，在后面进一步限制了性别，只保留了Tami
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

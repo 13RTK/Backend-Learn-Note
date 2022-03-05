@@ -1801,7 +1801,48 @@ FROM (
 ) AS temp
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+# Day224
+
+## Tag: HAVING
+
+![Xnip2022-03-05_08-36-08](MySQL Note.assets/Xnip2022-03-05_08-36-08.jpg)
+
+
+
+![Xnip2022-03-05_08-36-39](MySQL Note.assets/Xnip2022-03-05_08-36-39.jpg)
+
+题意:
+
+给你一张候选人信息表，一张面试信息表，请你查询出工作经验大于等于2，面试总分大于15的候选人id
+
+
+
+思路:
+
+- 今天的SQL索然无味，感觉这是道简单题
+- 因为要求总分，所以自然需要根据id分组，而工作年限在连接的时候就可以进行限制了
+- 因为是分组后进行限制，所以这里使用HAVING即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.candidate_id
+FROM
+    Candidates AS t1
+INNER JOIN Rounds AS t2 ON t1.interview_id = t2.interview_id
+WHERE t1.years_of_exp >= 2
+GROUP BY t1.candidate_id
+HAVING SUM(t2.score) > 15
+```
 
 
 
