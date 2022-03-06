@@ -1844,6 +1844,80 @@ GROUP BY t1.candidate_id
 HAVING SUM(t2.score) > 15
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day225
+
+## Tag: GROUP BY, OUTTER JOIN
+
+![Xnip2022-03-06_10-56-23](MySQL Note.assets/Xnip2022-03-06_10-56-23.jpg)
+
+
+
+![Xnip2022-03-06_11-02-49](MySQL Note.assets/Xnip2022-03-06_11-02-49.jpg)
+
+题意:
+
+给你一张公交车到站时间表，一张乘客到站时间表，请你查询出每辆公交车上搭载的乘客(公交车只能搭载其到达时间小于乘客到达时间的乘客)
+
+
+
+
+
+思路:
+
+- 
+
+- 该题目的难点在于，如何在计算乘客数的时候排除之前的公交车，也就是让乘客搭乘最近到达的一辆车
+- 其实最近到达就是该乘客能够搭乘的车辆中，最早到达的车辆，我们可以先查询出这样的对应关系，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.passenger_id,
+    MIN(t2.arrival_time) AS 'min_bus_time'
+FROM
+    Passengers AS t1
+INNER JOIN Buses AS t2 ON t1.arrival_time <= t2.arrival_time
+GROUP BY t1.passenger_id
+```
+
+
+
+- 有了这张表后，我们只需要根据时间连接公交车表，再分组统计乘客数量即可
+- 为了统计所有车辆上乘客的数量，这里我们使用外连接，将公交车表作为驱动表
+- 为了排除NULL，这里使用COUNT(列)即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.bus_id,
+    COUNT(t2.passenger_id) AS 'passengers_cnt'
+FROM
+    Buses AS t1
+LEFT JOIN (
+		SQL1
+) AS t2 ON t1.arrival_time = t2.min_bus_time
+GROUP BY t1.bus_id
+ORDER BY t1.bus_id
+```
+
+
+
+
+
+
+
 
 
 

@@ -331,6 +331,14 @@ Eg:
 
 ![Xnip2022-03-04_11-07-09](Mybatis Base.assets/Xnip2022-03-04_11-07-09.jpg)
 
+
+
+
+
+- 对于insert/update/delete，需要使用paramType标签设置Mapper.xml文件
+
+![Xnip2022-03-05_13-55-11](Mybatis Base.assets/Xnip2022-03-05_13-55-11.jpg)
+
 <hr>
 
 
@@ -519,6 +527,149 @@ INNER JOIN school.teacher AS t3 ON t2.tid = t3.tid
 
 这里查询的id小于等于3，所以触发了第一个when条件，在后面进一步限制了性别，只保留了Tami
 
+<hr>
+
+
+
+
+
+
+
+
+
+## 7) Mybatis的缓存(面试重点)
+
+- Mybatis存在两级缓存，其中一级缓存无法关闭，二级缓存是默认关闭的
+- 关系如图:
+
+![Xnip2022-03-05_13-35-05](Mybatis Base.assets/Xnip2022-03-05_13-35-05.jpg)
+
+
+
+
+
+### 1. L1 Cache
+
+- 每个SqlSession独占一个L1 cache，如果该SqlSession关闭了，那么其对应的L1 cache就会直接清除
+- 所以通过同一个SqlSession查询后转换得到的对象是同一个，只在第一次查询时访问数据库并构建对象
+- 之后再执行相同的查询时，会直接从缓存中获取对象，所以获取的对象前后是相同的
+
+Eg:
+
+![Xnip2022-03-05_13-40-44](Mybatis Base.assets/Xnip2022-03-05_13-40-44.jpg)
+
+
+
+- 在两次相同的查询中，一旦中途修改了数据，那么缓存会直接清除，之后会重新从数据库中查询数据
+
+![Xnip2022-03-05_13-56-01](Mybatis Base.assets/Xnip2022-03-05_13-56-01.jpg)
+
+
+
+- 每个SqlSession独占一个L1 cache
+
+![Xnip2022-03-05_14-00-52](Mybatis Base.assets/Xnip2022-03-05_14-00-52.jpg)
+
+
+
+
+
+
+
+### 2. L2 cache
+
+- 在Mybatis配置文件中，在settings标签内设置cacheEnabled为true就能统一控制缓存
+- 二级缓存是默认关闭的，需要在Mapper配置文件中设置才行
+- 开启后，查询时会先查看L2中是否存在对于的对象，没有的话再去查看L1，最后再去数据库中重新获取
+- 注意：**只有一个SqlSession结束后，其在L1 cache的数据才能被写入L2 cache**
+
+Eg:
+
+![Xnip2022-03-05_14-17-26](Mybatis Base.assets/Xnip2022-03-05_14-17-26.jpg)
+
+配置:
+
+在Mapper的cache标签中的配置:
+
+- eviction(清除策略): 
+    - FIFO: 先进先出(队列)
+    - LRU
+- flushInterval: 刷新缓存的时段
+- size: 缓存存储的引用数量
+- readOnly: 返回的对象是否为只读
+
+![Xnip2022-03-05_14-14-03](Mybatis Base.assets/Xnip2022-03-05_14-14-03.jpg)
+
+
+
+
+
+
+
+
+
+- 缓存会带来一致性问题:
+
+运行时，通过其他的MySQL session修改了其中的值，但由于存在缓存，所以会一直读取缓存中的数据，而不是库中修改后的数据
+
+![Xnip2022-03-05_14-23-22](Mybatis Base.assets/Xnip2022-03-05_14-23-22.jpg)
+
+
+
+- 通过在某个具体的select/insert/update/delete标签内设置useCache和flushCache属性即可停用缓存，并在每次执行时都更新缓存
+
+![Xnip2022-03-05_14-28-54](Mybatis Base.assets/Xnip2022-03-05_14-28-54.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 8) 注解开发
+
+- 之前，我们需要创建一个Mapper.xml文件，并将其写在Mybatis的配置文件中，且需要创建一个接口对应其中的CRUD标签
+- 使用注解时只需要一个接口类即可，S**QL和字段间的一切对应关系只需要以注解的形式写在接口的方法上即可**，不再需要创建一个mapper.xml文件
+
+![Xnip2022-03-05_15-50-51](Mybatis Base.assets/Xnip2022-03-05_15-50-51.jpg)
+
+
+
+![Xnip2022-03-05_15-51-08](Mybatis Base.assets/Xnip2022-03-05_15-51-08.jpg)
+
+
+
+
+
+- 一对多的关系:
+
+![Xnip2022-03-05_16-19-57](Mybatis Base.assets/Xnip2022-03-05_16-19-57.jpg)
+
+
+
+![Xnip2022-03-05_16-20-25](Mybatis Base.assets/Xnip2022-03-05_16-20-25.jpg)
+
+
+
+
+
+- 如果一条SQL查询需要两个参数，那么需要在SQL中使用注解来指定参数，否则会报错
+
+![Xnip2022-03-05_16-25-15](Mybatis Base.assets/Xnip2022-03-05_16-25-15.jpg)
+
+
+
+![Xnip2022-03-05_16-28-09](Mybatis Base.assets/Xnip2022-03-05_16-28-09.jpg)
+
+<hr>
 
 
 
@@ -534,4 +685,54 @@ INNER JOIN school.teacher AS t3 ON t2.tid = t3.tid
 
 
 
+## 9) Mybatis的动态代理机制
 
+### 1. 静态代理
+
+
+
+- 静态代理需要对接口的具体实现
+- 接口定义行为
+- 创建一个类对其实现
+- 再创建一个代理类，其接收一个接口的实现类对象
+- 最后调用时，**使用代理类对象中的实现类对象执行接口中的方法**
+
+![Xnip2022-03-05_20-37-03](Mybatis Base.assets/Xnip2022-03-05_20-37-03.jpg)
+
+Eg:
+
+![Xnip2022-03-05_20-36-00](Mybatis Base.assets/Xnip2022-03-05_20-36-00.jpg)
+
+
+
+
+
+
+
+### 2. 动态代理
+
+- 让代理类实现InvocationHandler接口，重写其中的invoke方法
+
+
+
+代理类:
+
+![Xnip2022-03-05_20-52-09](Mybatis Base.assets/Xnip2022-03-05_20-52-09.jpg)
+
+
+
+- Mybatis下binding包里MapperProxy类:
+
+![Xnip2022-03-05_20-57-13](Mybatis Base.assets/Xnip2022-03-05_20-57-13.jpg)
+
+
+
+
+
+
+
+
+
+- Mybatis还是属于半自动框架
+
+<hr>
