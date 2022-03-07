@@ -398,7 +398,7 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 
 
-# 十、递增子序列
+# 十、递增子序列(每层一次性标记)
 
 ![Xnip2022-03-02_08-38-20](Backtrack/Xnip2022-03-02_08-38-20.jpg)
 
@@ -474,7 +474,7 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 
 
-# 十二、全排列2
+# 十二、全排列2(整棵树标记)
 
 ![Xnip2022-03-04_07-21-52](Backtrack/Xnip2022-03-04_07-21-52.jpg)
 
@@ -519,7 +519,7 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 
 
-# 十三、N皇后
+# 十三、N皇后(注意回溯字符)
 
 ![Xnip2022-03-05_08-05-02](Backtrack/Xnip2022-03-05_08-05-02.jpg)
 

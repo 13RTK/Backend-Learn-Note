@@ -1912,6 +1912,7 @@ GROUP BY t1.bus_id
 ORDER BY t1.bus_id
 ```
 
+<hr>
 
 
 
@@ -1923,4 +1924,57 @@ ORDER BY t1.bus_id
 
 
 
+# Day226
+
+## Tag: CAST, RANK
+
+![Xnip2022-03-07_08-11-18](MySQL Note.assets/Xnip2022-03-07_08-11-18.jpg)
+
+
+
+![Xnip2022-03-07_08-12-49](MySQL Note.assets/Xnip2022-03-07_08-12-49.jpg)
+
+题意:
+
+给你一张队伍积分表，一张积分变动表，请你查询出每个队伍在积分变动后排名的变动
+
+
+
+思路:
+
+- 很明显，这里需要我们查询出每个队伍变动前后的排名
+- 需要注意的是，变动后如果出现同分，则按照队伍名称的字典序排序
+- 最简单的方式就是使用窗口函数直接排序，直接获取变动前后的排名，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.team_id,
+	name,
+	RANK() OVER(
+		ORDER BY points DESC, name
+		) AS 'rank_1',
+	RANK() OVER(
+		ORDER BY points + points_change DESC, NAME
+		) AS 'rank_2'
+FROM
+	TeamPoints AS t1
+INNER JOIN PointsChange t2 ON t1.team_id = t2.team_id
+```
+
+
+
+- 最后只需要获取每个队伍变动前后的名称之差即可
+- 需要注意的是，窗口函数返回的是一个UNSIGNED类型，所以为了得到负数，我们需要转换一下类型，最终SQL如下
+
+```mysql
+SELECT
+	team_id,
+	`name`,
+	CAST(rank_1 AS SIGNED) - CAST(rank_2 AS SIGNED) AS 'rank_diff'
+FROM (
+	SQL1
+	) AS temp
+```
 

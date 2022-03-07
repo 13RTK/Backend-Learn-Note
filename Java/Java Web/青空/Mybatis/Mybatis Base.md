@@ -736,3 +736,66 @@ Eg:
 - Mybatis还是属于半自动框架
 
 <hr>
+
+
+
+
+
+
+
+
+
+
+
+# 四、Mybatis日志
+
+
+
+## 1) 开启日志
+
+- 在Mybatis配置文件中的settings标签内添加上该标签:
+
+```xml
+<setting name="logImpl" value="STDOUT_LOGGING" />
+```
+
+value有四个选项:
+
+ SLF4J | LOG4J | LOG4J2 | JDK_LOGGING | COMMONS_LOGGING | STDOUT_LOGGING | NO_LOGGING
+
+其中STDOUT_LOGGING表示标准日志格式输出
+
+![Xnip2022-03-06_20-50-29](../JUL.assets/Xnip2022-03-06_20-50-29.jpg)
+
+
+
+![Xnip2022-03-06_20-50-19](../JUL.assets/Xnip2022-03-06_20-50-19.jpg)
+
+
+
+
+
+- 使用JDK_LOGGING调用JUL默认日志
+
+- 因为Mybatis的日志等级比较低，所以需要使用LogManager修改默认的日志等级
+
+![Xnip2022-03-06_20-56-35](../JUL.assets/Xnip2022-03-06_20-56-35.jpg)
+
+
+
+
+
+- 编写自己的日志格式:
+
+![Xnip2022-03-06_21-02-57](../JUL.assets/Xnip2022-03-06_21-02-57.jpg)
+
+
+
+![Xnip2022-03-06_21-02-40](../JUL.assets/Xnip2022-03-06_21-02-40.jpg)
+
+<hr>
+
+
+
+
+
