@@ -1978,3 +1978,64 @@ FROM (
 	) AS temp
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day227
+
+## Tag: ROUND, INNER JOIN
+
+![Xnip2022-03-08_07-39-45](MySQL Note.assets/Xnip2022-03-08_07-39-45.jpg)
+
+
+
+![Xnip2022-03-08_07-40-00](MySQL Note.assets/Xnip2022-03-08_07-40-00.jpg)
+
+题意:
+
+给你一张配送表，请你查询出所有用户的第一份订单中是即时订单的百分比(即时订单是指order_date = customer_pref_delivery的订单)
+
+
+
+
+
+思路:
+
+- 首先，为了限定统计的范围，我们需要先查询出所有用户的第一份订单信息，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    customer_id,
+    MIN(order_date) AS 'first_order'
+FROM
+    Delivery
+GROUP BY customer_id
+```
+
+
+
+- 之后我们只需要通过连接后，计算出即时订单的数量和所有第一份订单的总数后得到百分比即可，最终SQL如下
+
+```mysql
+SELECT
+    ROUND(100 * SUM(CASE WHEN t1.order_date = t1.customer_pref_delivery_date THEN 1 ELSE 0 END) / COUNT(t2.customer_id), 2) AS 'immediate_percentage'
+FROM
+    Delivery AS t1
+INNER JOIN (
+		SQL1
+) AS t2 ON t1.customer_id = t2.customer_id AND t1.order_date = t2.first_order
+```
+
