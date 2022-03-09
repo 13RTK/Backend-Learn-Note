@@ -2096,6 +2096,7 @@ AND NOT EXISTS (
 	)
 ```
 
+<hr>
 
 
 
@@ -2103,4 +2104,79 @@ AND NOT EXISTS (
 
 
 
+
+
+
+
+
+
+
+
+# Day229
+
+## Tag: ROW_NUMBER
+
+![Xnip2022-03-10_07-27-53](MySQL Note.assets/Xnip2022-03-10_07-27-53.jpg)
+
+
+
+![Xnip2022-03-10_07-28-46](MySQL Note.assets/Xnip2022-03-10_07-28-46.jpg)
+
+题意:
+
+给你一张记录表，请你将该表进行重构，使得first_col列的值是递增的，而second_col的值是递减的
+
+
+
+
+
+
+
+思路:
+
+- 这里很明显需要将两列分开处理，所以这两列不可能在同一张表中
+- 这里我们首先需要获取出每列值在结果所需排列方式下对应的排名，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    first_col,
+    ROW_NUMBER() OVER(
+        ORDER BY first_col
+    ) AS 'first_rank'
+FROM
+    Data
+```
+
+
+
+SQL2:
+
+```mysql
+SELECT
+    second_col,
+    ROW_NUMBER() OVER(
+        ORDER BY second_col DESC
+    ) AS 'second_rank'
+FROM
+    Data
+```
+
+
+
+- 注意这里不要使用DENSE_RANK，因为相同值的排名会被跳过，排名是不连续的
+- 最后连接两表，且让两列的列值对应的rank相同即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.first_col,
+    t2.second_col
+FROM (
+		SQL1
+) AS t1
+INNER JOIN (
+		SQL2
+) AS t2 ON t1.first_rank = t2.second_rank
+```
 
