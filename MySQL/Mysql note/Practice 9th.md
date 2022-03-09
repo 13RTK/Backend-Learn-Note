@@ -2039,3 +2039,68 @@ INNER JOIN (
 ) AS t2 ON t1.customer_id = t2.customer_id AND t1.order_date = t2.first_order
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day228
+
+## Tag: EXISTS
+
+![Xnip2022-03-09_10-49-59](MySQL Note.assets/Xnip2022-03-09_10-49-59.jpg)
+
+
+
+![Xnip2022-03-09_10-50-51](MySQL Note.assets/Xnip2022-03-09_10-50-51.jpg)
+
+题意:
+
+给你一张保险投保信息表，请你查询出2016年成功投资的金额(2015年有与其金额相同的其他投保记录，且该投保人的位置信息是唯一的)
+
+
+
+思路:
+
+- 抽象一下，题目的要求有两个:
+- 一是2015有其他金额与其相同的记录，在SQL中体现为t1.TIV_2015 = t2.TIV_2015 AND t1.PID != t2.PID
+- 二是不同的经纬度信息，在SQL中体现为t1.LAT = t3.LAT AND t1.LON = t3.LON AND t1.PID != t3.PID
+- 将两个规则用AND连接起来即可，最终SQL如下
+
+```mysql
+SELECT
+	ROUND(SUM(TIV_2016), 2) AS 'TIV_2016'
+FROM
+	insurance AS t1
+WHERE EXISTS (
+	SELECT 
+		t2.PID
+	FROM 
+		insurance AS t2 
+	WHERE t1.TIV_2015 = t2.TIV_2015 
+	AND t1.PID != t2.PID
+	) 
+AND NOT EXISTS (
+	SELECT
+		t3.PID
+	FROM
+		insurance AS t3
+	WHERE t1.LAT = t3.LAT 
+	AND t1.LON = t3.LON 
+	AND t1.PID != t3.PID
+	)
+```
+
+
+
+
+
+
+
+
+

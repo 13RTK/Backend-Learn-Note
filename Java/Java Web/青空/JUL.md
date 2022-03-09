@@ -205,6 +205,12 @@ java.util.logging.ConsoleHandler.level = ALL
 java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
 # 指定默认的字符集
 java.util.logging.ConsoleHandler.encoding = UTF-8
+
+# 设置日志的路径
+java.util.logging.FileHandler.pattern=system.log
+
+# 设置日志为追加
+java.util.logging.FileHandler.append=true
 ```
 
 <hr>
@@ -232,4 +238,3 @@ Eg:
 ![Xnip2022-03-06_20-33-49](JUL.assets/Xnip2022-03-06_20-33-49.jpg)
 
 <hr>
-

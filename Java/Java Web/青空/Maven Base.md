@@ -311,9 +311,91 @@ Eg:
 
 # 六、Maven命令
 
+- IDEA左侧的maven栏中可以直接点击执行多种maven命令
 
 
 
+- test:
+
+可一键测试test目录下的所有测试用例:
+
+![Xnip2022-03-08_09-49-32](maven.assets/Xnip2022-03-08_09-49-32.jpg)
+
+- 为了正常运行Junit5，我们需要导入对应插件以支持它
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
+            <version>2.22.0</version>
+        </plugin>
+    </plugins>
+</build>
+```
 
 
+
+- 通过package命令可以将项目打包为jar包依赖，其会输出在target中
+- 想要作为可执行程序暑促，则需要另一插件:
+
+```xml
+<plugin>
+    <artifactId>maven-assembly-plugin</artifactId>
+    <version>3.1.0</version>
+    <configuration>
+        <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+        </descriptorRefs>
+        <archive>
+            <manifest>
+                <addClasspath>true</addClasspath>
+                <mainClass>com.test.Main</mainClass>
+            </manifest>
+        </archive>
+    </configuration>
+    <executions>
+        <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+                <goal>single</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+
+
+- clean: 清除所有target中的文件
+- validate: 验证项目的可用性
+- compile: 将项目编译为.class文件(生成target)
+- install: 将当前项目安装到本地仓库
+- verify: 按顺序执行每个默认生命周期阶段(validate, compile, package)
+- package: 将项目打包
+
+
+
+## 打包的注意事项
+
+- 父项目中没有任何子项目的时候，需要将packaging标签属性改为jar(默认可能为pom)
+
+![Xnip2022-03-08_10-43-18](maven.assets/Xnip2022-03-08_10-43-18.jpg)
+
+
+
+- 在properties中添加项目的编码:
+
+![Xnip2022-03-08_10-44-30](maven.assets/Xnip2022-03-08_10-44-30.jpg)
+
+
+
+- 最后记得在打包插件中指明主类的路径:
+
+![Xnip2022-03-08_10-45-55](maven.assets/Xnip2022-03-08_10-45-55.jpg)
+
+<hr>
 
