@@ -2180,3 +2180,116 @@ INNER JOIN (
 ) AS t2 ON t1.first_rank = t2.second_rank
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day230
+
+## Tag: CTE, CASE, UNION ALL
+
+![Xnip2022-03-11_07-42-36](MySQL Note.assets/Xnip2022-03-11_07-42-36.jpg)
+
+
+
+![Xnip2022-03-11_07-43-14](MySQL Note.assets/Xnip2022-03-11_07-43-14.jpg)
+
+题意:
+
+给你一张候选人信息表，请你查询出根据条件能够雇佣最多的工程师的id，要求先雇佣尽可能多的高级工程师
+
+
+
+思路:
+
+- 题目乍一看也很迷，我们先考虑算出两类工程师的佣金
+- 这里我们需要得出按照金额排序累加后，雇佣的工程师所需的累积费用
+- 累积则需要累加，所以这里我们使用SUM() OVER窗口函数，通过按照工程师类型分组，金额升序即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    employee_id,
+    experience,
+    SUM(salary) OVER(
+        PARTITION BY experience
+        ORDER BY salary
+    ) AS 'salary'
+FROM
+    Candidates
+```
+
+
+
+- 有了该表后，我们只需要限定experience字段和佣金总额，即可查询出我们能雇佣的最多的高级工程师id，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+    employee_id,
+    salary
+FROM
+    SQL1
+WHERE experience = 'Senior'
+AND salary <= 70000
+```
+
+
+
+- 最后，我们只需要分别查询出两张表，只不过在查询初级工程师的时候，我们需要先行判断是否雇佣了高级工程师
+- 如果有的话，则需要从预算中减去雇佣高级工程师的金额，SQL中体现为:
+
+```mysql
+CASE WHEN (SELECT COUNT(*) FROM t2) = 0 
+    THEN 0 
+    ELSE (SELECT MAX(salary) FROM t2) END + salary <= 70000
+```
+
+
+
+- 最终SQL如下
+
+```mysql
+WITH t1 AS (
+    SQL1
+),
+t2 AS (
+    SQL2
+)
+SELECT
+    employee_id
+FROM
+    t2
+UNION ALL
+SELECT
+    employee_id
+FROM
+    t1
+WHERE experience = 'Junior'
+AND CASE WHEN (SELECT COUNT(*) FROM t2) = 0 
+    THEN 0 
+    ELSE (SELECT MAX(salary) FROM t2) END + salary <= 70000
+```
+
+
+
+
+
+
+
+
+
+
+
