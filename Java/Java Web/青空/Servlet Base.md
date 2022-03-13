@@ -1074,5 +1074,548 @@ public class SessionFilter extends HttpFilter {
 
 ![Xnip2022-03-11_22-03-53](Servlet.assets/Xnip2022-03-11_22-03-53.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 十四、Lisener
+
+- 监听器有很多种，其能够监听对应类的创建与销毁，以及在对应类上对属性/值的修改
+
+分类:
+
+![Xnip2022-03-12_13-10-23](Servlet.assets/Xnip2022-03-12_13-10-23.jpg)
+
+
+
+Eg:
+
+监听Session的创建
+
+![Xnip2022-03-12_13-22-00](Servlet.assets/Xnip2022-03-12_13-22-00.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 十五、JSP加载原理
+
+通过IDEA创建一个新项目:
+
+![Xnip2022-03-12_13-55-07](Servlet.assets/Xnip2022-03-12_13-55-07.jpg)
+
+
+
+- 其中<%= %>可以将对应的Java内容转变为HTML的标签内容
+- <% %>中可以直接编写Java Code
+
+Eg:
+
+![Xnip2022-03-12_14-00-39](Servlet.assets/Xnip2022-03-12_14-00-39.jpg)
+
+JSP在编写的时候一定程度上提供了便利，但其不便于维护，先后端耦合度太高，开发者的指责不明确
+
+
+
+本质上，Tomcat在加载JSP页面时，会将.jsp动态转换为java类，并编译为.class进行加载，其生成的Java类其实就是Servlet的子类
+
+其会直接将JSP页面内的内容全部编译为字符串后输出，所以JSP本质上还是一个Servlet！
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十六、Thymeleaf
+
+
+
+## 1) 初入
+
+- Thymeleaf是一个Java模版引擎，既实现了JSP的模版，也兼顾了前后端分离
+
+
+
+IDEA创建:
+
+![Xnip2022-03-12_14-32-17](Servlet.assets/Xnip2022-03-12_14-32-17.jpg)
+
+
+
+
+
+- 首先需要在resource目录下创建一个html文件，其中需要在html标签内添加xmlns:th="http://www.thymeleaf.org"，以引入Thymeleaf的标签属性
+
+Eg:
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div th:text="${title}"></div>
+</body>
+</html>
+```
+
+
+
+之后我们需要编写一个Servlet作为默认页面(注意修改javax为jakarta)
+
+Eg:
+
+```java
+@WebServlet("/index")
+public class HelloServlet extends HttpServlet {
+
+    TemplateEngine engine;
+    @Override
+    public void init() throws ServletException {
+        engine = new TemplateEngine();
+        ClassLoaderTemplateResolver r = new ClassLoaderTemplateResolver();
+        engine.setTemplateResolver(r);
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Context context = new Context();
+        context.setVariable("title", "我是标题");
+        engine.process("test.html", context, resp.getWriter());
+    }
+}
+```
+
+
+
+页面:
+
+![Xnip2022-03-12_15-44-11](Servlet.assets/Xnip2022-03-12_15-44-11.jpg)
+
+
+
+- 在Servlet中，我们通过org.thymeleaf.context.Context这个对象，调用了setVariable方法，将test.html中对应的title修改为了我们所需的文本
+- 最后使用我们获取的模版引擎对象对页面进行了处理
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2) 语法基础
+
+后端部分:
+
+```java
+@WebServlet("/index")
+public class HelloServlet extends HttpServlet {
+
+    TemplateEngine engine;
+    @Override
+    public void init() throws ServletException {
+        engine = new TemplateEngine();
+        ClassLoaderTemplateResolver r = new ClassLoaderTemplateResolver();
+        engine.setTemplateResolver(r);
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Context context = new Context();
+        context.setVariable("title", "我是标题");
+        engine.process("test.html", context, resp.getWriter());
+    }
+}
+```
+
+我们需要先创建一个模版引擎对象: TemplateEngine，我们需要使用该对象将模版文件渲染为HTML文件
+
+使用前还需要为该引擎设置一个模版解析器，其决定了从哪里获取模版文件，ClassLoaderTemplateResovler表示加载内部文件
+
+获取该模版对象后，我们就能一直使用了，解析为HTML的过程:
+
+```java
+ @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Context context = new Context();
+        context.setVariable("title", "我是标题");
+        engine.process("test.html", context, resp.getWriter());
+    }
+}
+```
+
+1. 创建上下文，其中包含所有需要替换的内容
+2. 通过setVariable方法将对应内容进行替换
+3. 最后使用process进行解析即可
+
+
+
+
+
+- 为普通标签添加内容:
+
+```html
+<div th:text="${title}"></div>
+```
+
+th:text表示为当前标签指定内部的文本
+
+
+
+- 如果想要传入链接，则需要使用th:utext:
+
+```html
+<div th:utext="${title}"></div>
+```
+
+
+
+- 传入的属性其实是一个字符串对象引用，所以可以调用该字符串对象对应的方法
+
+```html
+<div th:text="${title.toUpperCase()}"></div>
+```
+
+
+
+- th:还可以拼接标签的属性，而属性的值可以让后端通过Context对象替换
+
+```java
+@Override
+protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    Context context = new Context();
+    context.setVariable("url", "http://n.sinaimg.cn/sinakd20121/600/w1920h1080/20210727/a700-adf8480ff24057e04527bdfea789e788.jpg");
+  	context.setVariable("alt", "图片就是加载不出来啊");
+    engine.process("test.html", context, resp.getWriter());
+}
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <img width="700" th:src="${url}" th:alt="${alt}">
+</body>
+</html>
+```
+
+
+
+- 同样的，我们还可以在其中使用运算(算术/三元)
+- 多个属性间还可以使用 + 进行拼接，其中的字符串需要使用单引号
+
+Eg:
+
+```html
+<div th:text="${name}+' 我是文本 '+${value}"></div>
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) 流程控制语句
+
+
+
+### 1. If
+
+
+
+- 使用th:if标签
+- 同样使用Context对象调用setVariable方法替换标签中的值(只能传入boolean值或者NULL)
+- 如果设置为true，则会显示该标签，否则不显示该标签
+
+
+
+具体的判断规则:
+
+- 如果值不是空的：
+
+    - 如果值是布尔值并且为`true`。
+    - 如果值是一个数字，并且是非零
+    - 如果值是一个字符，并且是非'0'
+    - 如果值是一个字符串，而不是“错误”、“关闭”或“否”
+    - 如果值不是布尔值、数字、字符或字符串。
+
+    以上返回为true，会显示该标签
+
+- 如果值为空，th:if将计算为false
+
+Eg:
+
+![Xnip2022-03-12_16-24-17](Servlet.assets/Xnip2022-03-12_16-24-17.jpg)
+
+
+
+![Xnip2022-03-12_16-24-25](Servlet.assets/Xnip2022-03-12_16-24-25.jpg)
+
+传入为null，所以默认为false，该标签不会显示
+
+
+
+- th:unless与th:if相反
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2. switch
+
+- th:switch
+- th:case
+- th:default
+
+
+
+![Xnip2022-03-12_17-13-17](Servlet.assets/Xnip2022-03-12_17-13-17.jpg)
+
+
+
+![Xnip2022-03-12_17-15-00](Servlet.assets/Xnip2022-03-12_17-15-00.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+### 3. list
+
+
+
+遍历操作
+
+- th:each
+    - 其中填写"元素名称 : ${列表变量名称}"即可，通过元素名称即可获取对应的值
+    - 注意需要写在li标签内
+
+syntax:
+
+```html
+<ul>
+  <li th:each="element : ${listName}" th:text="${element}"></li>
+</ul>
+```
+
+
+
+Eg:
+
+![Xnip2022-03-12_20-57-41](Servlet.assets/Xnip2022-03-12_20-57-41.jpg)
+
+
+
+![Xnip2022-03-12_20-58-16](Servlet.assets/Xnip2022-03-12_20-58-16.jpg)
+
+
+
+
+
+获取迭代状态:
+
+- 在元素后面添加iterStat即可，之后通过该iterStat获取对应的字段:
+
+    - 当前*迭代索引*，以0开头。这是`index`属性。
+
+    - 当前*迭代索引*，以1开头。这是`count`属性。
+
+    - 迭代变量中的元素总量。这是`size`属性。
+
+    - 每个迭代的*迭代变量*。这是`current`属性。
+
+    - 当前迭代是偶数还是奇数。这些是`even/odd`布尔属性。
+
+    - 当前迭代是否是第一个迭代。这是`first`布尔属性。
+
+    - 当前迭代是否是最后一个迭代。这是`last`布尔属性。
+
+Eg:
+
+![Xnip2022-03-12_21-03-57](Servlet.assets/Xnip2022-03-12_21-03-57.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 4) 页面模版
+
+在一些页面进行跳转的时候，多个页面间可能会有重复的部分，以前我们需要将重复的部分CV到不同的页面，这时候会出现大量的冗余代码，所以引入了Thymeleaf模版
+
+
+
+- 在使用模版前，我们需要在每个html页面中写重复的内容:
+
+![Xnip2022-03-12_21-33-05](Servlet.assets/Xnip2022-03-12_21-33-05.jpg)
+
+- 两个html中有重复的部分
+
+
+
+
+
+- 我们需要先将重复的部分放在一个html中，并在对应的标签内设置对应的属性
+
+Eg:
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<body>
+    <div class="head" th:fragment="head-title">
+        <div>
+            <h1>我是标题内容，每个页面都有</h1>
+        </div>
+        <hr>
+    </div>
+</body>
+</html>
+```
+
+
+
+之后将重复的部分通对应的fragment名称写在需要使用的页面上即可:
+
+```html
+<div th:include="head.html::head-title"></div>
+```
+
+
+
+Eg:
+
+![Xnip2022-03-12_21-37-51](Servlet.assets/Xnip2022-03-12_21-37-51.jpg)
+
+
+
+我们可以使用th:insert、th:replace、th:include三种方法，三种的区别:
+
+- th:insert 直接用div片段插入相应位置的标签
+- th:replace 直接将对应的标签整体进行替换
+- th:include 同insert，但原模版位置的外标签属性等不会保留
+
+
+
+
+
+
+
+
+
+不同的页面还可以定制模版内的属性值
+
+- 我们在模版页面中添加一个h2标题，其中的内容由每个页面自己决定
+
+
+
+模版页面:
+
+```html
+<div class="head" th:fragment="head-title(sub)">
+    <div>
+        <h1>我是标题内容，每个页面都有</h1>
+        <h2 th:text="${sub}"></h2>
+    </div>
+    <hr>
+</div>
+```
+
+
+
+调用页面:
+
+```html
+<div th:include="head.html::head-title('这个是第1个页面的二级标题')"></div>
+<div class="body">
+    <ul>
+        <li th:each="title, iterStat : ${list}" th:text="${iterStat.index}+'.《'+${title}+'》'"></li>
+    </ul>
+</div>
+```
+
+
+
+
+
+Eg:
+
+![Xnip2022-03-12_21-51-16](Servlet.assets/Xnip2022-03-12_21-51-16.jpg)
+
+
+
+![Xnip2022-03-12_21-52-18](Servlet.assets/Xnip2022-03-12_21-52-18.jpg)
+
 
 

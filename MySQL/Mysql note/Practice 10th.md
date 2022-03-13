@@ -49,6 +49,84 @@ FROM (
 GROUP BY `rank`
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day232
+
+## Tag: ROW_NUMBER, COUNT() OVER
+
+![Xnip2022-03-13_08-04-20](MySQL Note.assets/Xnip2022-03-13_08-04-20.jpg)
+
+
+
+![Xnip2022-03-13_08-03-43](MySQL Note.assets/Xnip2022-03-13_08-03-43.jpg)
+
+题意:
+
+给你一张用户活动记录表，请你查询出用户最近的第二次活动，如果只有一个活动则直接查询出来即可
+
+
+
+思路:
+
+- 因为需要的是最近的第二次活动，所以我们需要将活动根据时间进行排序，且需要根据用户分组
+- 且因为部分用户的活动次数可能只有1次，所以为了区分这两种用户，我们还需要根据用户分组后，统计其对应的活动次数，综合考虑下来，窗口函数是最适合的，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    username,
+    activity,
+    startDate,
+    endDate,
+    ROW_NUMBER() OVER(
+        PARTITION BY username
+        ORDER BY endDate DESC
+    ) AS 'rank',
+    COUNT(*) OVER(
+        PARTITION BY username
+    ) AS 'cnt'
+FROM
+    UserActivity
+```
+
+
+
+- 获取该临时表后，我们只需要查询出排名为2，或者活动数为1的即可，最终SQL如下
+
+```mysql
+WITH temp AS (
+    SQL1
+)
+
+SELECT
+    username,
+    activity,
+    startDate,
+    endDate
+FROM
+    temp
+WHERE `rank` = 2
+OR `cnt` = 1
+```
+
+
+
+
+
 
 
 
