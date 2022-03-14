@@ -1617,5 +1617,63 @@ Eg:
 
 ![Xnip2022-03-12_21-52-18](Servlet.assets/Xnip2022-03-12_21-52-18.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十七、Tomcat的类加载机制
+
+- Tomcat需要运行多个Web应用，运行时必须实现多个Web间的隔离，即需要分别加载对应的类和依赖，还必须保证应用间的类不能相互访问
+- 但传统的类加载机制不能做到这一点(双亲委派)
+
+![Xnip2022-03-03_10-33-30](Java SE.assets/Xnip2022-03-03_10-33-30.jpg)
+
+- 传统的类加载机制会将所有的web应用视为一体，同一个类/依赖如果在一个Web应用中加载过了，那么另一个应用就无法加载(双亲委派不允许重复加载)
+
+
+
+
+
+
+
+- 为了解决这个问题，有自己的一套类加载机制
+
+![img](https://images2018.cnblogs.com/blog/137084/201805/137084-20180526104342525-959933190.png)
+
+
+
+- Common ClassLoader：Tomcat最基本的类加载器，加载路径中的class可以被Tomcat容器本身以及各个Web应用程序访问。
+- Catalina ClassLoader：Tomcat容器私有的类加载器，加载路径中的class对于Web应用程序不可见。
+- Shared ClassLoader：各个Web应用程序共享的类加载器，加载路径中的class对于所有Web应用程序可见，但是对于Tomcat容器不可见。
+- Webapp ClassLoader：各个Web应用程序私有的类加载器，加载路径中的class只对当前Web应用程序可见，每个Web应用程序都有一个自己的类加载器
+- JasperLoader：JSP类加载器，每个JSP文件都有一个自己的类加载器
+
+
+
+这样的机制解决了不同的Web应用不能重复加载同一个类/依赖的问题，但这样其实破坏了JDK的双亲委派机制
+
+以Webapp ClassLoader为例: 
+
+它只加载自己的class，但没有交给上面的Bootstrap处理，这样一来岂不是能编写与JDK同名的类了吗？
+
+
+
+- 其实Webapp ClassLoader在加载时，会将绕开上面的Applicate ClassLoader，直接使用ExtClassLoader来记载类，从而判断其是否为JDK自带的类
+- 如果不是则返回到其自身进行加载，如果还是不行则返回给AppClassLoader
+
+<hr>
+
+
+
 
 

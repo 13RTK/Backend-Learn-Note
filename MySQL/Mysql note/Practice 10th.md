@@ -123,6 +123,7 @@ WHERE `rank` = 2
 OR `cnt` = 1
 ```
 
+<hr>
 
 
 
@@ -130,4 +131,134 @@ OR `cnt` = 1
 
 
 
+
+
+# Day233
+
+## Tag: ROW_NUMBER, GROUP BY, LEFT JOIN
+
+![Xnip2022-03-14_07-23-40](MySQL Note.assets/Xnip2022-03-14_07-23-40.jpg)
+
+
+
+![Xnip2022-03-14_07-21-58](MySQL Note.assets/Xnip2022-03-14_07-21-58.jpg)
+
+题意:
+
+给你一张运动员的比赛记录表，请你查询出每个运动员的最长连胜次数
+
+
+
+
+
+思路:
+
+- 该题目可以使用窗口函数的frame解决，但说实话，我也记不住语法，这里就学习一下别人的解法:
+- 首先，我们获取每个运动员对应比赛的时间次序，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    player_id,
+    match_day,
+    result,
+    ROW_NUMBER() OVER(
+        PARTITION BY player_id
+        ORDER BY match_day
+    ) AS 'match_rank'
+FROM
+    Matches
+```
+
+
+
+- 之后重点来了，我们再查询出每个胜场的次序，并用比赛次序减去胜场次序
+- 你问我为啥这么做？待会儿就知道了，此时SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+    player_id,
+    match_rank - ROW_NUMBER() OVER(
+        PARTITION BY player_id
+        ORDER BY match_rank
+    ) AS 'diff'
+FROM (
+		SQL1
+	) AS temp
+WHERE result = 'Win'
+)
+```
+
+
+
+- 将该表作为CTE临时表，根据player_id和diff分组，统计列数，SQL如下
+
+SQL3:
+
+```mysql
+WITH rank_diff AS (
+		SQL2
+)
+
+SELECT
+    player_id,
+    diff,
+    COUNT(*) AS 'num'
+FROM
+    rank_diff
+GROUP BY player_id, diff
+```
+
+
+
+- 到这里，就该解释思路了：
+- 到这一步的时候，SQL的结果如图，可以看到，我们得出的结果中: 同一个运动员中diff不同的列对应的num不同
+- 其实这不同的num对应的就是不同时间区间内，该运动员连胜的场次，为什么？
+- 之前我们根据比赛时间获取了次序，之后又用它减去了胜场的次序，各位想想：如果处于同一连胜区间内，那么这些记录对应的差是不是都该相同呢？
+- 所以我们只需要获取其中记录最多的区间对应的场次，不就是运动员的最长连胜次数了吗？语言表达有限，建议各位自己试一试，此时SQL如下
+
+SQL4:
+
+```mysql
+WITH rank_diff AS (
+		SQL2
+)
+
+SELECT
+    player_id,
+    MAX(num) AS 'longest_streak'
+FROM (
+		SQL3
+) AS diff_num
+GROUP BY player_id
+```
+
+
+
+
+
+- 到了这一步，我们是否成功了呢？其实还没有，在计算diff差的时候，如果某个倒霉蛋一次也没赢过，那么他在CTE临时表中是没有记录的
+- 所以为了查询出所有的运动员记录，我们还必须根据原表中的运动员id来查询，这里使用外连接即可，最终SQL如下
+
+```mysql
+WITH rank_diff AS (
+		SQL2
+)
+
+SELECT
+    t1.player_id,
+    IFNULL(t2.longest_streak, 0) AS 'longest_streak'
+FROM (
+    SELECT
+        DISTINCT player_id
+    FROM
+        Matches
+) AS t1
+LEFT JOIN (
+		SQL4
+) AS t2 ON t1.player_id = t2.player_id
+```
 
