@@ -1939,7 +1939,7 @@ exam:
 格式
 
 ```mysql
-SELECT GROUP_CONCAT(column_name SEPARATOR sep), (group_by_column_name) FROM table_name GROUP BY column;
+SELECT GROUP_CONCAT(column_name ORDER BY column SEPARATOR sep), (group_by_column_name) FROM table_name GROUP BY column;
 ```
 
 

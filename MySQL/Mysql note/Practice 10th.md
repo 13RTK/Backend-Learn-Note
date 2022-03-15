@@ -262,3 +262,78 @@ LEFT JOIN (
 ) AS t2 ON t1.player_id = t2.player_id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day234
+
+## Tag: GROUP_CONCAT, CONCAT
+
+![Xnip2022-03-15_07-22-23](MySQL Note.assets/Xnip2022-03-15_07-22-23.jpg)
+
+
+
+![Xnip2022-03-15_07-37-24](MySQL Note.assets/Xnip2022-03-15_07-37-24.jpg)
+
+
+
+![Xnip2022-03-15_07-22-43](MySQL Note.assets/Xnip2022-03-15_07-22-43.jpg)
+
+题意:
+
+给你一张Terms表，其中一列数据为次数，另一列为系数，请你根据次数的升序构建一个一元多次等式，左边是表中的所有项，右边为0，正负号在等式中要显式表示，次数大于等于1的，则要用<符号><系数>X^<次数>的方式表示出来，如果次数等于0，则只表示系数即可
+
+
+
+
+
+思路:
+
+- 看结果有些复杂，但我们可以将等式拆成两边，左边就是我们要构建的
+- 其中对应表中的每行数据来说，数据无非分为这几个部分: <符号>，<系数>，X，<次数>
+- 因此，我们可以先构造出每行对应的部分，首先符号很简单，因为题目指明了，系数列不为0，所以我们只需要根据系数即可获取符号
+- 后面三个部分就有些特殊了，因为需要分三种情况：如果次数为0，则只保留系数本身，如果次数为1，则构建为系数 + X；其余情况下才构建<系数>X<次数>
+- 最后将这三个部分拼接起来即可，这里使用CONCAT即可，需要注意的是，为了之后构建出来的等式是按照次数降序的，这里我们还需要将次数一并查询出来，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+    power,
+    CONCAT(
+        CASE WHEN factor < 0 
+        THEN '-' ELSE '+' END,
+        CASE WHEN power = 0 
+        THEN ABS(factor)
+        WHEN power = 1
+        THEN CONCAT(ABS(factor), 'X')
+        ELSE CONCAT(ABS(factor), 'X', '^', power) END
+    ) AS 'LHS'
+FROM
+    Terms
+```
+
+
+
+- 之后我们只需要将这些行连在一起即可，这里需要使用GROUP_CONCAT
+- 从官方文档可见，其可以在拼接时排序，且因为其默认的分隔符为","，所以我们还需要将默认分隔符改为空字符，最后只需要再右边拼接上"=0"即可，最终SQL如下
+
+```mysql
+SELECT
+    CONCAT(GROUP_CONCAT(LHS ORDER BY power DESC SEPARATOR ''), '=0') AS 'equation'
+FROM (
+		SQL1
+FROM
+    Terms
+) AS `left`
+```
+
+
+
