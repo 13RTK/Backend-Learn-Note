@@ -54,7 +54,7 @@
 
 
 
-# 二、初入
+# 二、IoC初入
 
 - 需要注意的是，IoC容器的目的是解耦，而不是减少代码量
 
@@ -423,10 +423,395 @@ Eg:
 
 
 
+# 四、AOP
+
+AOP: aspect orient programming
+
+AOP就是在运行的时候，动态的将其他code切入到bean的指定方法、位置上，我们可以使用AOP来帮助我们在方法执行前/后，添加一些额外的操作，**所以本质上就是代理**(代理自己管理对象的生命周期，而装饰则让client自己管理)
+
+通过AOP，我们可以在不改变源代码的基础上进行增强处理
+
+
+
+![点击查看源网页](https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimage.mamicode.com%2Finfo%2F201808%2F20180810205057430646.png&refer=http%3A%2F%2Fimage.mamicode.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1640952533&t=2e5d4955d8f3436603622dd184da65d6)
+
+
+
+AOP将业务流程切断，并在切断的位置处添加一个额外操作，再将它们连起来
+
+其原理是通过动态代理来的，但不是和Mybatis一样通过JDK实现的，而是通过第三方的库
+
+他能够直接对父类进行代理，而不是生成接口的代理类
 
 
 
 
+
+
+
+
+
+## 1. 引入/导入依赖
+
+
+
+Spring是支持AOP的框架之一，其整合了部分AspectJ框架，使用前需要导入依赖:
+
+```xml
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-aspects</artifactId>
+    <version>5.3.13</version>
+</dependency>
+```
+
+
+
+且需要修改一下之前的Spring配置文件:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+</beans>
+```
+
+
+
+
+
+结合AOP的原理，我们需要知道以下条件:
+
+- 需要切入的类，需要切入的方法
+- 切入后的添加的操作
+- 是在切入前还是切入后执行
+- 告诉spring需要切入
+
+
+
+
+
+Eg:
+
+- 在Student类中的test方法后切入一个log打印操作
+
+
+
+步骤:
+
+1. 创建一个新的类，其中创建切入对应类前后的方法
+2. 将这个类作为bean注册到IoC中
+3. 在Spring配置文件中通过<aop:config>标签编写对应的aop操作
+4. 在aop:config中创建切片: 标签<aop:aspect>，在其中创建切入点<aop:pointcut>和切入操作<aop:after>或者<aop:before>等等
+
+
+
+1. 创建一个StudentAop类，编写需要添加的操作
+
+Eg:
+
+![Xnip2022-03-15_14-17-07](Spring.assets/Xnip2022-03-15_14-17-07.jpg)
+
+
+
+
+
+2. 将该类注册为bean
+
+Eg:
+
+![Xnip2022-03-15_14-18-31](Spring.assets/Xnip2022-03-15_14-18-31.jpg)
+
+
+
+
+
+3. 创建aop配置
+
+![Xnip2022-03-15_14-19-12](Spring.assets/Xnip2022-03-15_14-19-12.jpg)
+
+- aop:aspect(指明插入的操作来自哪个bean)
+
+这里**在ref属性中填写切入的操作来自的bean即可**
+
+
+
+- aop:pointcut(指明切入点，指明切入的类和方法)
+
+其中的id属性可以任意给出，其用来唯一标识一个切入点
+
+expression属性则用来指明切入的类对应的方法，其中常用的是execution:
+
+
+
+execution解析
+
+execution的格式如下:
+
+修饰符 包名.类名.方法名(参数)
+
+1. 修饰符: public, private, void, static等等，使用*表示任意修饰符
+2. 包名: 同样可以使用*代表包下所有的类
+3. 方法名: 通过*可以代表类的所有方法
+4. 参数: 通过它才能让spring知道切入的是哪个方法，可以直接写切入方法的参数类型，也可以使用*代表一个参数，使用..代表任意参数
+
+Eg:
+
+![Xnip2022-03-15_14-28-39](Spring.assets/Xnip2022-03-15_14-28-39.jpg)
+
+
+
+
+
+
+
+- 除了execution，我们也可以通过注解来匹配对应的切入方法
+
+Eg:
+
+![Xnip2022-03-15_14-35-24](Spring.assets/Xnip2022-03-15_14-35-24.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 2. 通过增强方法获取切入方法的信息
+
+- 之前我们将需要插入到切入方法的增强方法通过配置在Spring的配置文件中指明了
+- 如果在执行AOP方法时还需要切入方法的一些信息时，只需要在AOP方法中添加一个JoinPoint类型的参数:
+
+![Xnip2022-03-15_14-42-24](Spring.assets/Xnip2022-03-15_14-42-24.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. 环绕方法
+
+- 环绕方法是对切入方法的完全代理，可以控制其是否调用，返回值是否输入等
+- 环绕方法只需要将aop:after改为aop:around即可
+
+Eg:
+
+![Xnip2022-03-15_14-59-35](Spring.assets/Xnip2022-03-15_14-59-35.jpg)
+
+如图: 结果中只输出了环绕方法的字符，没有输出test方法中的参数
+
+
+
+在环绕方法中添加ProceedingJoinPoint连接点，再通过其调用proceed方法才能使得切入方法得到执行
+
+且如果想让切入方法返回对应的值的话，还必须改写环绕方法的返回类型，并返回proceed方法返回的对象
+
+Eg:
+
+![Xnip2022-03-15_15-06-13](Spring.assets/Xnip2022-03-15_15-06-13.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 4. 接口实现AOP
+
+- 创建一个类，实现对应的接口后，该类中的方法就能在对应的位置插入
+
+Eg:
+
+![Xnip2022-03-15_15-13-27](Spring.assets/Xnip2022-03-15_15-13-27.jpg)
+
+
+
+
+
+AOP中的术语:
+
+- 通知(Advice): AOP框架中的增强处理
+- 连接点(Join point): 能够插入切面的一个点，这个点可以是方法的调用、异常的抛出，也就是方法执行前后需要做的内容
+- 切点(Pointcut): 可以插入增强处理的连接点，可以是方法执行前后，也可以是是抛出异常
+- 切面(Aspect): 可以是Advice和Pointcut的结合(即aop:aspect中可以有aop:pointcut和aop:advisor)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 五、通过注解代替XML配置
+
+- 导入spring-context配置，创建一个类以代替之前的xml配置文件
+- 在该类上添加Configuration注解，并按照提示配置上下文
+- 创建对应的bean类，在配置类中编写对应bean的方法，并在方法上添加Bean注解
+- 在main方法中，创建一个AnnotationConfigApplication实例，调用构造方法加载该配置类的class对象
+- 之后调用getBean方法即可
+
+
+
+Eg:
+
+![Xnip2022-03-15_15-44-20](Spring.assets/Xnip2022-03-15_15-44-20.jpg)
+
+
+
+![Xnip2022-03-15_15-52-52](Spring.assets/Xnip2022-03-15_15-52-52.jpg)
+
+
+
+- 与xml不同的是，我们可以在配置类中通过常规的方式初始化对象
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 1. 相关配置
+
+- 在每个bean上通过scope注解即可指定其创建实例的模式:
+
+Eg:
+
+![Xnip2022-03-15_15-57-15](Spring.assets/Xnip2022-03-15_15-57-15.jpg)
+
+
+
+- 在Bean注解中添加字符串，可以为当前这个Bean设置别名
+
+
+
+
+
+注册的bean会在IDEA下面的工具栏有所显示：
+
+![Xnip2022-03-15_16-00-26](Spring.assets/Xnip2022-03-15_16-00-26.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 2. 扫描注册
+
+通过在类上添加Component注解可以使得当前类被自动扫描到，只需要配置类使用ComponentScan注解即可，每个注解可用来扫描一个包下的类，使用ComponentScans注解即可一次扫描多个包下的类
+
+
+
+同样的，scope注解也可以添加到对应的类上
+
+Eg:
+
+![Xnip2022-03-15_16-05-05](Spring.assets/Xnip2022-03-15_16-05-05.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. 注解自动装配
+
+- 同之前使用xml文件一样，如果一个类中有一些字段为引用类型，我们可以添加自动注入(autowire)从而自动创建一个引用类型实例
+
+
+
+在注解中有两种方法:
+
+
+
+1. 在配置文件的Bean中，添加引用类型参数
+
+Eg:
+
+![Xnip2022-03-15_16-28-20](Spring.assets/Xnip2022-03-15_16-28-20.jpg)
+
+
+
+
+
+2. 在使用@Component注解的类中，为引用类型添加@Resource注解
+
+![Xnip2022-03-15_16-31-42](Spring.assets/Xnip2022-03-15_16-31-42.jpg)
+
+
+
+- 或者为引用类型的setter方法添加@Autowired注解:
+
+![Xnip2022-03-15_16-32-43](Spring.assets/Xnip2022-03-15_16-32-43.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 六、
 
 
 

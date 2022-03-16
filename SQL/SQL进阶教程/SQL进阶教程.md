@@ -2161,6 +2161,151 @@ AND COUNT(I.item) = (SELECT COUNT(item) FROM Items)
 4. 通常通过GROUP BY生成子集
 5. **WHERE用来调查集合元素的性质，而HAVING用来调查集合本身的性质**
 
+<hr>
+
+
+
+
+
+
+
+
+
+### 练习
+
+- 1-4-1
+
+Table:
+
+![Xnip2022-03-15_19-55-46](../SQL.assets/Xnip2022-03-15_19-55-46.jpg)
+
+判断该表是否存在缺失的编号
+
+我的解法:
+
+```mysql
+SELECT
+	CASE WHEN col_num != max_row_num
+	THEN '存在缺失的编号'
+	WHEN col_num = max_row_num
+	THEN '不存在缺失的编号'
+	ELSE NULL END AS 'gap'
+FROM (
+	SELECT
+		COUNT(*) AS 'col_num',
+		MAX(seq) AS 'max_row_num'
+	FROM
+		SeqTbl
+		) AS temp
+```
+
+
+
+更好的解法:
+
+```mysql
+SELECT
+	CASE WHEN COUNT(*) != MAX(seq)
+	THEN '存在缺失的编号'
+	WHEN COUNT(*) = MAX(seq)
+	THEN '不存在缺失的编号'
+	ELSE NULL END AS 'gap'
+FROM
+	SeqTbl
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+- 1-4-2
+
+Table:
+
+![Xnip2022-03-15_20-08-38](../SQL.assets/Xnip2022-03-15_20-08-38.jpg)
+
+
+
+求出全体学生在9月份就全部提交了报告的学院
+
+
+
+我的解法:
+
+```mysql
+SELECT
+	dpt
+FROM
+	Students
+GROUP BY dpt
+HAVING COUNT(*) = COUNT(sbmt_date)
+AND COUNT(*) = SUM(CASE WHEN MONTH(sbmt_date) = 9 THEN 1 ELSE 0  END)
+```
+
+
+
+更好的解法:
+
+```mysql
+SELECT
+	dpt
+FROM
+	Students
+GROUP BY dpt
+HAVING COUNT(*) = SUM(CASE WHEN MONTH(sbmt_date) = 9 THEN 1 ELSE 0  END)
+```
+
+<hr>
+
+
+
+
+
+
+
+- 1-4-3
+
+Table:
+
+![Xnip2022-03-15_20-19-11](../SQL.assets/Xnip2022-03-15_20-19-11.jpg)
+
+
+
+![Xnip2022-03-15_20-19-58](../SQL.assets/Xnip2022-03-15_20-19-58.jpg)
+
+查询出每个店铺现有Items表中的种类数和不足的种类数
+
+
+
+我的解法(同答案):
+
+```mysql
+SELECT
+	t2.shop,
+	COUNT(t1.item) AS 'my_item_cnt',
+	(SELECT COUNT(*) FROM Items) - COUNT(t1.item) AS 'diff_cnt'
+FROM
+	Items AS t1
+INNER JOIN ShopItems AS t2 ON t1.item = t2.item
+GROUP BY t2.shop
+```
+
+
+
+
+
+
+
+
+
 
 
 

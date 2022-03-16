@@ -335,5 +335,90 @@ FROM
 ) AS `left`
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day235
+
+## Tag: DATE_FORMAT, LEFT JOIN, TIMESTAMPDIFF
+
+![Xnip2022-03-16_07-38-21](MySQL Note.assets/Xnip2022-03-16_07-38-21.jpg)
+
+
+
+![Xnip2022-03-16_07-39-35](MySQL Note.assets/Xnip2022-03-16_07-39-35.jpg)
+
+题意:
+
+给你一张用户日志表，请你查询出其中每天新用户的次日留存率
+
+
+
+思路:
+
+- 次日留存的计算无非就是次日再次登陆的用户人数 / 当天的新用户人数
+- 我们将分子和分母拆开来看，因为要求每天的新用户，所以我们需要根据用户分组并获取每个用户的注册日期，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+		uid,
+		MIN(DATE(in_time)) AS 'first_time'
+FROM
+		tb_user_log
+GROUP BY uid
+```
+
+
+
+- 接下来，我们只需要按照该临时表的数据，连接上原表后获取每个用户的次日记录即可，这里我们需要使用外连接
+- 等等，这样真的可以吗？题目中有一点需要注意: 如果in_time和out_time跨天了，则也算做两天活跃，所以一张表中的in_time和out_time都需要与注册日期进行比较
+- 这里我们需要将这两个同行的数据转换为同列才行，所以这里我们还需要对原表进行一次UNION查询，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+		uid,
+		DATE(in_time) AS 'dt'
+FROM
+		tb_user_log
+UNION
+SELECT
+		uid,
+		DATE(out_time) AS 'dt'
+FROM
+		tb_user_log
+```
+
+
+
+- 一切就绪，接下来就很常规了，我们只需要将SQL1作为驱动表，对两表使用外连接，并限制两表的日期关系(注意这里要用AND，外连接的AND和WHERE分别指连接时判断和连接前判断)
+- 最后再限制一下日期为2021-10，对日期分组排序即可，最终SQL如下
+
+```mysql
+SELECT
+	t1.first_time AS 'dt',
+	ROUND(COUNT(t2.uid) / COUNT(t1.uid), 2) AS 'uv_left_rate'
+FROM (
+	SQL1
+LEFT JOIN (
+  SQL2
+) AS t2 ON t1.uid = t2.uid
+AND TIMESTAMPDIFF(DAY, t1.first_time, t2.dt) = 1
+WHERE DATE_FORMAT(t1.first_time, '%Y%m') = '202111'
+GROUP BY t1.first_time
+```
+
 
 
