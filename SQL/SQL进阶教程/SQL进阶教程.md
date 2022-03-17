@@ -2298,11 +2298,77 @@ INNER JOIN ShopItems AS t2 ON t1.item = t2.item
 GROUP BY t2.shop
 ```
 
+<hr>
 
 
 
 
 
+
+
+
+
+## 5. 外连接
+
+- SQL本身是用来生成报表的，所以其终究只是用来查询数据的，但现在的SQL还要求能够进行格式转换
+- 本节将学习使用外连接进行格式转换
+
+
+
+
+
+### 5.1 行列转换:制作交叉表
+
+Eg Table:
+
+![Xnip2022-03-16_21-21-47](../SQL.assets/Xnip2022-03-16_21-21-47.jpg)
+
+
+
+- 将该表改为交叉表:
+
+![Xnip2022-03-16_21-24-08](../SQL.assets/Xnip2022-03-16_21-24-08.jpg)
+
+
+
+- 这里将员工姓名作为主表进行外连接即可(驱动表)
+
+Eg:
+
+```mysql
+SELECT
+	C0.name,
+	CASE WHEN NOT ISNULL(C1.name) THEN '◯' ELSE NULL END AS 'SQL入门',
+	CASE WHEN NOT ISNULL(C2.name) THEN '◯' ELSE NULL END AS 'UNIX入门',
+	CASE WHEN NOT ISNULL(C3.name) THEN '◯' ELSE NULL END AS 'Java 中级'
+FROM (
+		SELECT
+		DISTINCT `name`
+		FROM
+		`Courses`
+	) AS C0
+LEFT JOIN (
+	SELECT
+		NAME
+		FROM
+		Courses
+		WHERE course = 'SQL入门'
+	) AS C1 ON C0.name = C1.name
+LEFT JOIN (
+	SELECT
+			NAME
+		FROM
+			Courses
+		WHERE course = 'UNIX入门'
+	) AS C2 ON C0.name = C1.name
+LEFT JOIN (
+	SELECT
+		NAME
+	FROM
+		Courses
+	WHERE course = 'Java 中级'
+	) AS C3 ON C0.name = C3.name
+```
 
 
 

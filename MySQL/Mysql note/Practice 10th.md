@@ -420,5 +420,95 @@ WHERE DATE_FORMAT(t1.first_time, '%Y%m') = '202111'
 GROUP BY t1.first_time
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day236
+
+## Tag: GROUP BY, 日活, 新用户占比
+
+![Xnip2022-03-17_07-35-21](MySQL Note.assets/Xnip2022-03-17_07-35-21.jpg)
+
+
+
+![Xnip2022-03-17_07-36-47](MySQL Note.assets/Xnip2022-03-17_07-36-47.jpg)
+
+题意:
+
+给你一张用户活动日志表，请你查询出每天的日活用户数和新用户的占比
+
+
+
+思路:
+
+- 首先自然需要查询出所有新用户对应的首次使用日期，之后才好进行对比，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		uid,
+		MIN(DATE(in_time)) AS 'first_time'
+FROM
+		tb_user_log
+GROUP BY uid
+```
+
+
+
+- 有了该表后，按理说我们只需要再连接上原表后，统计每天的总用户数和新用户数即可
+- 但题目中又提到了：如果in_time和out_time跨天了，则两天都算做活跃
+- 是不是有点眼熟，对，昨天有这个要求，所以我们参照昨天的做法，将行转换为列即可，SQL如下
+
+SQL2
+
+```mysql
+SELECT
+		uid,
+		DATE(in_time) AS 'dt'
+FROM
+		tb_user_log
+UNION
+SELECT
+		uid,
+		DATE(out_time) AS 'dt'
+FROM
+		tb_user_log
+```
+
+
+
+- 最后，我们才应该连接两表，注意应该以原表数据为主，因为有些日期中可能没有新用户，所以要用到外连接，最终SQL如下
+
+```mysql
+SELECT
+    DATE(t2.dt) AS 'dt',
+    COUNT(t2.uid) AS 'dau',
+    ROUND(IFNULL(COUNT(t1.uid), 0) / COUNT(t2.uid), 2) AS 'uv_new_ratio'
+FROM (
+    SQL1
+    ) AS t1
+RIGHT JOIN (
+    SQL2
+) AS t2 ON t1.uid = t2.uid AND t1.first_time = t2.dt
+GROUP BY dt
+ORDER BY dt
+```
+
+
+
+
+
 
 

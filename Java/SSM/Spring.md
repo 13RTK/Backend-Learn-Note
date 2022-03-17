@@ -673,7 +673,7 @@ AOP中的术语:
 
 
 
-# 五、通过注解代替XML配置
+# 五、通过注解代替XML配置注册Bean
 
 - 导入spring-context配置，创建一个类以代替之前的xml配置文件
 - 在该类上添加Configuration注解，并按照提示配置上下文
@@ -810,8 +810,157 @@ Eg:
 
 
 
+# 六、注解实现AOP
 
-# 六、
+- 与使用XML相同，我们依然需要创建一个类，其中编写需要切入的增强方法(before/after等等)
+
+
+
+AOP依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework</groupId>
+  <artifactId>spring-aspects</artifactId>
+  <version>5.3.13</version>
+</dependency>
+```
+
+
+
+
+
+1. 首先，我们需要在配置类上添加@EnableAspectJAutoProxy注解以开启AOP，并注册增强内容所在的类为bean
+
+Eg:
+
+![Xnip2022-03-16_10-53-13](Spring.assets/Xnip2022-03-16_10-53-13.jpg)
+
+
+
+
+
+
+
+2. 在增强内容所在类上添加@Aspect注解，以表明其为一个切面配置
+
+在其中编写对应的增强方法，使用@Before/@After等注解将增强操作添加到对应的切面中
+
+
+
+注意: JoinPoint属于org.aspectj.lang.JoinPoint下
+
+Eg:
+
+![Xnip2022-03-16_11-00-54](Spring.assets/Xnip2022-03-16_11-00-54.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 1. 返回值处理
+
+- 使用AfterReturning可以指定方法返回后的操作
+- 想要获取其返回值的话，需要在@AfterReturning注解中添加参数returning
+- 注意方法参数名需要和returning的值相同才行
+
+Eg:
+
+```java
+@AfterReturing("execution()", returning="val")
+public void after(Object val) {
+  
+}
+```
+
+
+
+![Xnip2022-03-16_11-07-09](Spring.assets/Xnip2022-03-16_11-07-09.jpg)
+
+<hr>
+
+
+
+
+
+
+
+## 2. 环绕方法
+
+- 使用Around注解即可，同样需要添加一个ProceedingJoinPoint参数
+- 同样需要该对象调用proceed方法才能执行原方法
+- 注意，ProceedingJoinPoint属于org.aspectj.lang下
+
+Eg:
+
+```java
+@Around("execution(* package_path)")
+public Object around(ProceedingJoinPoint point) {
+  Object returnVal = point.proceed();
+  
+  return returnVal;
+}
+```
+
+
+
+Eg:
+
+![Xnip2022-03-16_11-14-00](Spring.assets/Xnip2022-03-16_11-14-00.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. Import
+
+- 使用Import可以将其他的类强制注册为Bean，或者载入其他配置类中注册的bean
+
+Eg:
+
+![Xnip2022-03-16_11-19-14](Spring.assets/Xnip2022-03-16_11-19-14.jpg)
+
+
+
+- 通过这种方法，我们可以强行注册所有的类为Bean，甚至是JDK自带的类
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
