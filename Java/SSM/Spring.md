@@ -959,6 +959,89 @@ Eg:
 
 
 
+# 七、整合Mybatis框架
+
+
+
+## 1. SqlSessionTemplate
+
+
+
+- 首先需要两个新的依赖:
+
+spring-jdbc和mybatis-spring
+
+Eg:
+
+```xml
+<dependency>
+  <groupId>org.mybatis</groupId>
+  <artifactId>mybatis-spring</artifactId>
+  <version>2.0.6</version>
+</dependency>
+<dependency>
+  <groupId>org.springframework</groupId>
+  <artifactId>spring-jdbc</artifactId>
+  <version>5.3.13</version>
+</dependency>
+```
+
+
+
+mybatis-spring中为我们提供了一个SqlSessionTemplate类，其就是一个封装好的工具类，可以让我们将SqlSessionFactory注册为Bean
+
+因为不能修改依赖的源码，所以这里我们不能在spring的配置类中使用scan的方式进行注册，而是需要在配置类中使用@Bean注解:
+
+```java
+@Bean
+public SqlSessionTemplate sqlSessionTemplate() throws IOException {
+
+  return new SqlSessionTemplate(new SqlSessionFactoryBuilder().
+                                build(Resources.getResourceAsReader("mybatis-config.xml")));
+}
+```
+
+
+
+
+
+![Xnip2022-03-17_18-40-15](Spring.assets/Xnip2022-03-17_18-40-15.jpg)
+
+- 这里我们将SqlSessionTemplate直接注册为了bean，这样我们就能够直接从IoC容器中获取我们需要的对象实例了，而不是使用我们自己编写的工具类
+
+
+
+
+
+
+
+
+
+- 按照我们编写服务层的逻辑来的话，我们需要在service包下编写对应的接口和其实现类
+- 并且在使用的时候需要创建对应的实现类实例才能使用接口定义的功能
+
+Eg:
+
+![Xnip2022-03-17_20-24-55](Spring.assets/Xnip2022-03-17_20-24-55.jpg)
+
+
+
+- 但有了之前注册的SqlSessionTemplate后，我们就可以直接将对应的查询功能集成到实现类中
+- 并将实现类通过扫描注册为bean，这样使用的时候只需要使用接口即可，IoC容器会自动为我们获取接口的实现类实例:
+
+Eg:
+
+![Xnip2022-03-17_20-28-31](Spring.assets/Xnip2022-03-17_20-28-31.jpg)
+
+
+
+![Xnip2022-03-17_20-29-01](Spring.assets/Xnip2022-03-17_20-29-01.jpg)
+
+
+
+- 通过这种方式，我们就实现了解耦，之后就只需要使用接口而不用关心实现类
+
+<hr>
 
 
 
@@ -971,4 +1054,166 @@ Eg:
 
 
 
+
+## 2. 直接注册Mapper为Bean
+
+上述方法其实还不够简便，依然需要我们使用SqlSessionTemplate实例去获取Mapper对象
+
+其实可以在Spring配置类中直接通过注解将Mapper接口注册为bean:
+
+![Xnip2022-03-17_20-38-45](Spring.assets/Xnip2022-03-17_20-38-45.jpg)
+
+
+
+这样我们甚至就不用在Mybatis配置文件中指定Mapper的包路径了
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 3. 通过DataSource实现类代替配置文件
+
+想要取代SqlSessionFactory的话，要么像之前那样使用SqlSessionTemplate，要么使用SqlSessionFactoryBean的Bean
+
+
+
+- 这里我们通过注册一个DataSource的实现类和一个SqlSessionFactoryBean来代替mybatis的配置文件:
+
+```java
+@Bean
+public DataSource dataSource() {
+  PooledDataSource source = new PooledDataSource();
+  source.setDriver("com.mysql.cj.jdbc.Driver");
+  source.setUrl("jdbc:mysql://localhost:3306");
+  source.setUsername("root");
+  source.setPassword("abcdef");
+
+  return source;
+}
+
+@Bean
+public SqlSessionFactoryBean sqlSessionFactoryBean(@Autowired DataSource dataSource) {
+  SqlSessionFactoryBean bean = new SqlSessionFactoryBean();
+  bean.setDataSource(dataSource);
+
+  return bean;
+}
+```
+
+- 之后基于Spring的开发均不再需要Mybatis的XML配置文件了
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 4. HikariPC数据源
+
+- HikariPC数据源实现是Spring官方指定的数据源实现，速度很快
+- Druid也是一种数据源实现，其自带后台监控，所以较慢
+
+
+
+使用:
+
+- 导入依赖
+
+```xml
+<dependency>
+    <groupId>com.zaxxer</groupId>
+    <artifactId>HikariCP</artifactId>
+    <version>3.4.5</version>
+</dependency>
+```
+
+
+
+- 之后修改dataSource的定义
+
+```java
+@Bean
+public DataSource dataSource() throws SQLException {
+    HikariDataSource dataSource = new HikariDataSource();
+    dataSource.setJdbcUrl("jdbc:mysql://localhost:3306/study");
+    dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+    dataSource.setUsername("root");
+    dataSource.setPassword("123456");
+    return dataSource;
+}
+```
+
+
+
+- 其采用了SLF4J这个日志框架，所以我们还需要导入SLF4J的依赖
+
+Eg:
+
+```xml
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-jdk14</artifactId>
+    <version>1.7.25</version>
+</dependency>
+```
+
+注意版本一定要和`slf4j-api`保持一致！
+
+
+
+- Lombok可以通过@Slf4j注解快速开启对应的日志
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 5. Spring管理事务
+
+- 首先在配置类上添加一个@EnableTransactionManagement注解
+- 之后在配置类将一个事务管理器注册为Bean
+
+Eg:
+
+![Xnip2022-03-17_21-57-01](Spring.assets/Xnip2022-03-17_21-57-01.jpg)
+
+
+
+- 之后只需要在需要执行事务操作的方法上添加@Transactional注解即可
+
+Eg:
+
+![Xnip2022-03-17_21-58-26](Spring.assets/Xnip2022-03-17_21-58-26.jpg)
+
+
+
+- 在默认传播级别下，事务中遇到错误就会自动会滚
+- 通过该注解可以设置其他的事务属性(包括隔离等级)
+
+Eg:
+
+![Xnip2022-03-17_22-00-38](Spring.assets/Xnip2022-03-17_22-00-38.jpg)
+
+
+
+- 事务传播规则:
+
+![这里写图片描述](https://img-blog.csdn.net/20170420212829825?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc29vbmZseQ==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
 

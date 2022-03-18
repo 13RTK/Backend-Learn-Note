@@ -2372,7 +2372,66 @@ LEFT JOIN (
 
 
 
+这里生成了四个子集:
 
+![Xnip2022-03-17_16-22-30](../SQL.assets/Xnip2022-03-17_16-22-30.jpg)
+
+
+
+
+
+其中C0起到了员工主表的作用，C1～C3是每门课程对应的学习者的集合
+
+如果原表的列数增加了，则再增加外连接即可，但这样写出的SQL会很臃肿，性能会恶化
+
+
+
+- 这里我们可以将外连接用标量子查询代替:
+
+```mysql
+SELECT
+	C0.name,
+	(SELECT 
+			'◯'
+		FROM
+			`Courses` AS C1
+		WHERE course = 'SQL入门'
+		AND C1.name = C0.name) AS 'SQL入门',
+		(SELECT
+			'◯'
+		FROM
+			Courses AS C2
+		WHERE course = 'UNIX基础'
+		AND C2.name = C0.name) AS 'UNIX基础',
+		(SELECT
+			'◯'
+		FROM
+			Courses AS C3
+		WHERE course = 'Java 中级'
+		AND C3.name = C0.name) AS 'Java 中级'
+FROM (SELECT DISTINCT NAME FROM courses) AS C0
+```
+
+
+
+
+
+- 这样我们在增加/删除课程的时候，只需要增加/删除SELECT子句即可
+- 这对需要动态生成SQL的系统是很有好处的，但其性能很差
+- 我们可以嵌套使用CASE表达式
+
+```mysql
+SELECT
+	name,
+	CASE WHEN SUM(CASE WHEN course = 'SQL入门' THEN 1 ELSE NULL END) = 1 THEN '◯' ELSE NULL END AS 'SQL入门',
+	CASE WHEN SUM(CASE WHEN course = 'UNIX基础' THEN 1 ELSE NULL END) = 1 THEN '◯' ELSE NULL END AS 'UNIX基础',
+	CASE WHEN SUM(CASE WHEN course = 'Java 中级' THEN 1 ELSE NULL END) = 1 THEN '◯' ELSE NULL END AS 'Java 中级'
+FROM
+	Courses
+GROUP BY name;
+```
+
+- 这里我们先将SUM的结果处理为1或者NULL，之后在外层的CASE中将1转换为◯
 
 
 

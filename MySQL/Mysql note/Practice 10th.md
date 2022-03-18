@@ -506,9 +506,82 @@ GROUP BY dt
 ORDER BY dt
 ```
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+# Day237
+
+## Tag: DENSE_RANK
+
+![Xnip2022-03-18_07-50-34](MySQL Note.assets/Xnip2022-03-18_07-50-34.jpg)
+
+
+
+![Xnip2022-03-18_07-53-23](MySQL Note.assets/Xnip2022-03-18_07-53-23.jpg)
+
+
+
+
+
+题意:
+
+给你一张店铺销售记录表，请查询出11月中连续2天以上购物的用户对应的购物天数
+
+
+
+
+
+思路:
+
+- 对于连续的购物天数来说，如果对其进行排序的话，其实对于的rank应该是连续的
+- 所以我们只需要获取每个用户按照日期排序的记录，最后留下≥2的即可，首先获取每个日期对应的次序，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		user_id,
+		sales_date,
+		DENSE_RANK() OVER(
+			PARTITION BY user_id
+			ORDER BY sales_date
+		) AS 'rn'
+FROM sales_tb
+```
+
+
+
+- 之后只需要限制月份和对应的次序大小即可，最终SQL如下
+
+```mysql
+SELECT
+    user_id,
+    MAX(rn) AS 'days_count'
+FROM (
+    SQL1
+    ) AS temp
+WHERE rn >= 2
+AND MONTH(sales_date) = 11
+GROUP BY user_id
+ORDER BY user_id
+```
+
+
+
+拓展:
+
+- 是不是感觉哪里不对？
+- 要是一个用户间隔1天及以上后又有一次购买记录呢？这种算法不还是把他算进去了吗？
+- 没错，一旦表中有间隔1天以上的用户记录的话，这种算法就是错的了
+- 这其实是牛客网的数据不严谨造成的，各位可以去试试，在有间隔一天及以上的用户记录存在的情况下
+- 随便拿一个题解的答案去运行，会发现这条本不连续的记录还是被查询出来了
 

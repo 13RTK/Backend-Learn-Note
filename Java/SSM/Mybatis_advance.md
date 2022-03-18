@@ -520,7 +520,45 @@ protected void pushConnection(PooledConnection conn) throws SQLException {
 }
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+# 二、事务管理
+
+- Mybatis将对事务的操作抽象为了一个接口: Transaction
+
+![Xnip2022-03-17_21-19-21](Mybatis_advance.assets/Xnip2022-03-17_21-19-21.jpg)
+
+该接口的实现有两种:
+
+
+
+1. 使用JDBC: 即使用Connection实例才进行这些操作，对应的实现类为JdbcTransaction
+
+Mybatis默认的就是JDBC:
+
+```xml
+<transactionManager type="JDBC"/>
+```
+
+
+
+Eg:
+
+![Xnip2022-03-17_21-22-15](Mybatis_advance.assets/Xnip2022-03-17_21-22-15.jpg)
+
+
+
+
+
+2. MANAGED: Mybatis会将事务管理的实现交给容器(Spring等)来实现，对应实现类为ManagedTransaction
 
 
 
