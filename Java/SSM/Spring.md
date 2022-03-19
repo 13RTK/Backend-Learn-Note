@@ -1217,3 +1217,77 @@ Eg:
 
 ![这里写图片描述](https://img-blog.csdn.net/20170420212829825?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc29vbmZseQ==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 八、Junit集成测试
+
+Spring有一个test模块，其能自动整合Junit测试
+
+其需要的依赖:
+
+```xml
+-- Junit5的依赖
+<dependency>
+  <groupId>org.junit.jupiter</groupId>
+  <artifactId>junit-jupiter</artifactId>
+  <version>5.8.2</version>
+  <scope>test</scope>
+</dependency>
+
+
+-- Spring-test依赖
+<dependency>
+  <groupId>org.springframework</groupId>
+  <artifactId>spring-test</artifactId>
+  <version>5.3.12</version>
+</dependency>
+```
+
+
+
+- 我们首先需要使用@ExtendWith是由Junit提供的
+- 之后使用Sprting-test提供的@ContextConfiguration来表明加载的配置文件，可以是XML也可以是类
+
+Eg:
+
+```java
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = SpringConfig.class)
+public class ContextTest {
+
+    @Resource
+    StudentService service;
+
+    @Test
+    public void serviceTest() {
+        service.getStudent().forEach(System.out::println);
+    }
+}
+```
+
+
+
+- 这里我们只需要在测试中将对应的接口实例进行自动注入即可
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
