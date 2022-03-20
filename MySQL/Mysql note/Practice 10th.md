@@ -634,3 +634,97 @@ ORDER BY user_id
 
 
 
+
+
+
+
+
+
+
+# Day239
+
+## Tag: GMV, 动销率
+
+![Xnip2022-03-20_07-50-28](MySQL Note.assets/Xnip2022-03-20_07-50-28.jpg)
+
+
+
+![Xnip2022-03-20_07-58-38](MySQL Note.assets/Xnip2022-03-20_07-58-38.jpg)
+
+题意:
+
+给你一张产品信息表，一张销售记录表，请你计算每款产品的动销率和售罄率
+
+
+
+
+
+思路:
+
+- 该题目不是难在SQL的编写上，而是理解题目中动销率和售罄率这两个概念上
+- 动销率其实可以理解为: 售出的数量 / (总数 - 售出的数量)
+- 而售罄率 = GMV / 备货值，其中GMV = 销售总额，备货值 = 吊牌价 * 备货数
+- 这么一看好想不难对吧？其实这里有一个坑
+- 按照常规的思路，直接根据style_id分组，连接另外一个表后直接就能统计各个数据，这样子写出来的SQL如下
+
+```mysql
+SELECT
+    t1.style_id,
+    ROUND(100 * SUM(t2.sales_num) / (SUM(t1.inventory) - SUM(t2.sales_num)), 2) AS 'pin_rate',
+    ROUND(100 * SUM(t2.sales_price) / SUM(t1.tag_price * t1.inventory), 2) AS 'sell-through_rate'
+FROM
+    product_tb AS t1
+INNER JOIN sales_tb AS t2 ON t1.item_id = t2.item_id
+GROUP BY t1.style_id
+ORDER BY t1.style_id
+```
+
+
+
+- 但提交时就会发现是错误的，为啥呀？明明是按照定义来的呀？
+- 其实在连接的时候，如果同一个item_id的商品在销售表中出现多次的话，连接时就会将其对应的数据查询多次，这样一来对应的数值都会减少
+- 部分题解可能直接就在对应的字段或者乘积上去重就过了，但其实是不严谨的:
+- 如果两个item_id不同的商品，其对应的tag_price * inventory恰巧相同呢？
+- 所以这种方式不可行
+
+
+
+
+
+- 为了解决重复计算的问题，这里我们可以先按照item_id分组查询出对应的sku和gmv，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+		item_id,
+		SUM(sales_num) AS 'sku',
+		SUM(sales_price) AS 'gmv'
+FROM
+		sales_tb
+WHERE MONTH(sales_date) = 11 AND YEAR(sales_date) = 2021
+GROUP BY item_id
+```
+
+
+
+- 最后我们再连接计算记录，最终SQL如下
+
+```mysql
+SELECT
+    t1.style_id,
+    ROUND(100 * SUM(t2.sku) / SUM(t1.inventory - t2.sku), 2) AS 'pin_rate',
+    ROUND(100 * SUM(t2.gmv) / SUM(t1.tag_price * t1.inventory), 2) AS 'sell-through_rate'
+FROM
+    product_tb AS t1
+INNER JOIN (
+    SQL1
+    ) AS t2 ON t1.item_id = t2.item_id
+GROUP BY t1.style_id
+ORDER BY t1.style_id
+```
+
+
+
+
+
