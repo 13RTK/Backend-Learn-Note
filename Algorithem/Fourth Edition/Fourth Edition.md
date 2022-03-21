@@ -205,6 +205,92 @@ public class QuickFindUF {
 
 
 
+## 3. 快速合并(quick union)
+
+### 1) 分析
+
+- 在调用union方法时，将第一个参数连接到第二个参数所在树的根节点上
+- 通过修改对象所在数组中对应位置处对应的元素值即可将其模拟为在同一颗树上
+
+Eg:
+
+![Xnip2022-03-20_21-41-23](Algorithm Fourth.assets/Xnip2022-03-20_21-41-23.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) Java实现
+
+```java
+public class QuickUnionUF {
+  public int[] id;
+
+  public QuickUnionUF(int n) {
+    id = new int[n];
+
+    for (int i = 0; i < id.length; i++) {
+      id[i] = i;
+    }
+  }
+
+  private int getRoot(int idx) {
+    while (idx != id[idx]) {
+      idx = id[idx];
+    }
+
+    return idx;
+  }
+
+  public void union(int p, int q) {
+    int pRoot = getRoot(p);
+    int qRoot = getRoot(q);
+
+    id[pRoot] = qRoot;
+  }
+
+  public boolean connected(int p, int q) {
+    int pRoot = getRoot(p);
+    int qRoot = getRoot(q);
+
+    return pRoot == qRoot;
+  }
+}
+```
+
+
+
+
+
+![Xnip2022-03-20_22-02-10](Algorithm Fourth.assets/Xnip2022-03-20_22-02-10.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 消耗
+
+- 比起Quick Find，Quick Union在union操作上其实没好多少，只不过把遍历数组变为了回溯整棵树而已
+- 对应的，其在connected上的用时反而上升到了N
+
+| algorithm  | initialize | union | find/connected |
+| :--------: | :--------: | :---: | :------------: |
+| quick-find |     N      |   N   |       N        |
+
 
 
 

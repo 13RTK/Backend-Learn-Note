@@ -508,9 +508,231 @@ Eg:
 
 - 默认情况下会使用单例模式，所以不管是否为同一个请求或者同一个回话，其都只会返回一个实例对象
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+# 九、RestFul风格
+
+- 其作用是利用http协议的特性，将参数通过URL拼接传给服务器
+
+
+
+Eg:
+
+我们的请求为:
+
+`http://localhost:8080/mvc/index/abc`
+
+
+
+- 只需要在Controller对应的方法中，在RequestMapping注解的路径后添加一个{"路径变量名"}
+- 在方法的参数中添加一个使用了@PathVariable注解的形参即可(注解中的属性为其对应的路径变量名)
+
+Eg:
+
+![Xnip2022-03-20_14-47-23](SpringMVC.assets/Xnip2022-03-20_14-47-23.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 1. 不同的请求方法
+
+按照功能，我们可以对URL划分:
+
+- POST : .../mvc/index 添加用户信息，携带表单
+- GET: .../mvc/index/{id} 获取用户信息，id直接放在URL里
+- PUT: .../mvc/index 修改用户信息，携带表单
+- DELETE: .../mvc/index/{idx} 删除用户信息，id放在URL里
+
+
+
+对应的请求映射方法:
+
+![Xnip2022-03-20_15-05-21](SpringMVC.assets/Xnip2022-03-20_15-05-21.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十、拦截器
+
+拦截器的作用与Filter类似，但Filter作用于Servlet之前
+
+而拦截器会在Servlet与RequestMapping之间，即DispatcherServlet在将请求交给对应的Controller之前先交给拦截器
+
+- 拦截器只会拦截所有Controller中定义的请求映射路径，不会拦截静态资源
+
+Eg:
+
+![点击查看源网页](https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fupload-images.jianshu.io%2Fupload_images%2F4685968-ca4e9021f653c954.png%3FimageMogr2%2Fauto-orient%2Fstrip%257CimageView2%2F2%2Fw%2F1240&refer=http%3A%2F%2Fupload-images.jianshu.io&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1642340637&t=70d3dd6b52ae01ac76c04d99e6bd95ed)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 1. 创建拦截器
+
+- 我们需要创建一个类，其需要实现HandlerInterceptor接口(该接口中都是默认方法)
+
+Eg:
+
+```java
+public class MainInterceptor implements HandlerInterceptor {
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        System.out.println("我是处理之前");
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        System.out.println("我是处理之后");
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        System.out.println("我是完成之后");
+    }
+}
+```
+
+
+
+
+
+
+
+创建之后，我们需要在Web配置类中重写**addInterceptor**方法，使用其提供的参数"registy"
+
+调用**addInterceptor**方法传入一个对应的拦截器实例对象
+
+调用**addPatterns**方法设置其拦截的路径规则
+
+调用**excludePathPatterns**方法设置不进行连接的路径
+
+
+
+Eg:
+
+![Xnip2022-03-20_15-49-31](SpringMVC.assets/Xnip2022-03-20_15-49-31.jpg)
+
+
+
+
+
+- 在整个流程结束后才会调用afterCompletion方法
+- 如果在preHandle方法中直接返回false，则会直接终止流程
+
+Eg:
+
+![Xnip2022-03-20_15-53-10](SpringMVC.assets/Xnip2022-03-20_15-53-10.jpg)
+
+
+
+
+
+- 如果在放行后，controller对应方法处理中抛出了异常的话，则不会执行postHandle方法
+- 但之后还是会执行afterCompletion方法
+
+<hr>
+
+
+
+
+
+
+
+## 2. 多级拦截器
+
+- 创建一个SubInterceptor类，同样在Web配置类中调用addInterceptor方法进行注册
+
+Eg:
+
+![Xnip2022-03-20_15-59-06](SpringMVC.assets/Xnip2022-03-20_15-59-06.jpg)
+
+
+
+![Xnip2022-03-20_15-59-14](SpringMVC.assets/Xnip2022-03-20_15-59-14.jpg)
+
+- 拦截器拦截的顺序就是其在web配置类中注册的顺序
+
+Eg:
+
+![Xnip2022-03-20_16-01-47](SpringMVC.assets/Xnip2022-03-20_16-01-47.jpg)
+
+
+
+如果前面的拦截器在preHandle中返回了false，那么和单个拦截器一样便不再继续了
+
+<hr>
+
+
+
+
+
+
+
+
+
+# 十一、自定义异常处理
+
+如果Controller的方法中出现了异常，那么其会默认出现一个页面
+
+Eg:
+
+![Xnip2022-03-20_16-15-19](SpringMVC.assets/Xnip2022-03-20_16-15-19.jpg)
+
+
+
+如果不想在出现异常的时候返回默认页面，而是我们自己的页面呢？
+
+
+
+- 首先创建一个Controller类用来处理异常，**该类需要使用@ControllerAdvice注解**
+- **其中的方法使用@ExceptionHandler注解**，其中的**属性代表该方法处理的异常种类**
+- 在方法中可以将异常对象放入参数列表中
+
+Eg:
+
+![Xnip2022-03-20_16-21-08](SpringMVC.assets/Xnip2022-03-20_16-21-08.jpg)
 
 
 

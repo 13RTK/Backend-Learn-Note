@@ -724,7 +724,95 @@ GROUP BY t1.style_id
 ORDER BY t1.style_id
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day240
+
+## Tag: ROW_NUMBER
+
+![Xnip2022-03-21_08-28-30](MySQL Note.assets/Xnip2022-03-21_08-28-30.jpg)
+
+
+
+![Xnip2022-03-21_08-28-03](MySQL Note.assets/Xnip2022-03-21_08-28-03.jpg)
+
+题意:
+
+给你一张体育馆的人流量表，请你查询出其中人数大于等于100且id连续的三行或以上的记录
+
+
+
+思路:
+
+- 该思路借鉴自: [row_number方式解决连续性问题 - 体育馆的人流量 - 力扣（LeetCode） (leetcode-cn.com)](https://leetcode-cn.com/problems/human-traffic-of-stadium/solution/row_numberfang-shi-jie-jue-lian-xu-xing-42uhh/)
+- 按照题意，id连续其实就是日期连续，因此该题目的最简单的解法就是两个自连接，限制彼此的日期关系即可
+
+- 官方题解就是这个思路，但说实话，这种做法其实开销巨大
+- 这里我们可以将问题转换一下: 在筛选去所有人数大于100的记录后，如果记录对应的行号减去id对应的差值相同的话，就说明这几个日期是连续的
+- 因此我们可以先查询出每条记录对应的id与行号的差值，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		t2.id - ROW_NUMBER() OVER( 
+				ORDER BY t2.id
+		) AS 'step',
+		t2.id,
+		t2.visit_date,
+		t2.people 
+FROM
+		Stadium AS t2
+WHERE t2.people >= 100 
+```
+
+
+
+- 又因为题目要求连续3天的，所以我们只需要根据差值分组(因此差值相同的才是连续的)，统计记录数即可获取每个连续时段内对应的日期数，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+		COUNT(*) OVER(
+            PARTITION BY t1.step
+        ) AS 'count',
+		t1.id,
+		t1.visit_date,
+		t1.people 
+FROM (
+		SQL1
+		) AS t1 
+) AS t2
+```
+
+
+
+- 最后只需要限制count字段，进行排序即可，最终SQL如下
+
+```mysql
+SELECT
+	t2.id,
+	t2.visit_date,
+	t2.people
+FROM (
+	SQL2
+	) AS t2
+WHERE t2.count >= 3
+ORDER BY t2.id
+```
 
 
 
