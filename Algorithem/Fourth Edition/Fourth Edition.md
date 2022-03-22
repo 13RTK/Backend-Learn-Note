@@ -287,9 +287,215 @@ public class QuickUnionUF {
 - 比起Quick Find，Quick Union在union操作上其实没好多少，只不过把遍历数组变为了回溯整棵树而已
 - 对应的，其在connected上的用时反而上升到了N
 
-| algorithm  | initialize | union | find/connected |
-| :--------: | :--------: | :---: | :------------: |
-| quick-find |     N      |   N   |       N        |
+|  algorithm  | initialize | union | find/connected |
+| :---------: | :--------: | :---: | :------------: |
+| quick-Union |     N      |   N   |       N        |
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 4. 快速合并优化
+
+
+
+### 1) 加权快速合并
+
+
+
+#### 1. 理论
+
+- 为了解决union操作后，树太高的问题，我们可以想办法在连接时让"矮"的树接在"高"的树的根节点上
+- 这里我们只需要再多为每个位置上的节点维护一个数组代表其所在树对应的高度即可
+
+![Xnip2022-03-21_21-16-05](Algorithm Fourth.assets/Xnip2022-03-21_21-16-05.jpg)
+
+
+
+
+
+
+
+#### 2. 设计/Java实现
+
+- 额外维护一个size数组，其中每个元素代表其位置的对象作为根节点时树中节点的数量
+- 在union操作时，首先判断两个相连节点对应的根节点的树的节点数量，确保将矮的树接在高的树上，并且更新连接后的树的高度
+
+![Xnip2022-03-21_21-20-24](Algorithm Fourth.assets/Xnip2022-03-21_21-20-24.jpg)
+
+
+
+Code:
+
+```java
+public class WeightedQuickUnionUF {
+    public int[] id;
+    public int[] size;
+
+    public WeightedQuickUnionUF(int n) {
+        id = new int[n];
+        size = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            id[i] = i;
+            size[i] = 1;
+        }
+    }
+
+    private int root(int idx) {
+        while (idx != id[idx]) {
+            idx = id[idx];
+        }
+
+        return idx;
+    }
+
+    public boolean connected(int q, int p) {
+        return root(q) == root(p);
+    }
+
+    public void union(int q, int p) {
+        int qRoot = root(q);
+        int pRoot = root(p);
+
+        if (qRoot == pRoot) {
+            return;
+        }
+
+        if (size[qRoot] > size[pRoot]) {
+            id[pRoot] = qRoot;
+            size[qRoot] += size[pRoot];
+        } else {
+            id[qRoot] = pRoot;
+            size[pRoot] += size[qRoot];
+        }
+    }
+```
+
+
+
+Eg:
+
+![Xnip2022-03-21_22-09-05](Algorithm Fourth.assets/Xnip2022-03-21_22-09-05.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 3. 消耗分析
+
+因为每次合并的时候，树中节点的数量至少翻倍(因为两个树合并时其中一颗树的节点数至少会≥它)，又因为节点一共有n个，所以当节点数翻倍logn次后，树的节点刚好为N，此时所有的节点都在一颗树中了
+
+所以每次union的消耗为logn(以2为底的对数)，同样的，因为root操作也将为了logn，所以connected操作也降为了logn
+
+|      algorithm      | initialize | union | find/connected |
+| :-----------------: | :--------: | :---: | :------------: |
+| weighted-quick-find |     N      | logn  |      logn      |
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 压缩路径
+
+
+
+#### 1. 理论
+
+- 在获取root的过程中，我们可以将每次检查过的节点直接连在根节点上从而进一步压缩树的高度
+
+Eg:
+
+![Xnip2022-03-21_22-01-30](Algorithm Fourth.assets/Xnip2022-03-21_22-01-30.jpg)
+
+
+
+
+
+
+
+
+
+#### 2. 实现
+
+- 只需要在root方法中添加一行即可
+
+Eg:
+
+![Xnip2022-03-21_22-03-13](Algorithm Fourth.assets/Xnip2022-03-21_22-03-13.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### 3. 消耗分析
+
+|     algorithm      | initialize | union | find/connected |
+| :----------------: | :--------: | :---: | :------------: |
+| UF + Path Compress |     N      | logn  |      logn      |
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 5. 消耗总结
+
+|      algorithm      | initialize | union | find/connected |
+| :-----------------: | :--------: | :---: | :------------: |
+|     quick-find      |     N      |   N   |       1        |
+|     quick-union     |     N      |   N   |       N        |
+| weighted-quick-find |     N      | logn  |      logn      |
+| UF + Path Compress  |     N      | logn  |      logn      |
+
+Union-Find不可能设计出线性复杂度的算法，但在快速合并的基础上结合加权和路径压缩的话，其实很接近线性复杂度了
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -2437,3 +2437,490 @@ GROUP BY name;
 
 
 
+- 如果不使用聚合，那么返回结果就是course的行数
+- SELECT子句中，聚合函数的结果其实是标量值，可以像常量/普通列那样使用
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5.2 行列转换(2): 汇总重复项于一列
+
+- 再来试一试列转行
+
+
+
+Eg Table:
+
+![Xnip2022-03-21_16-04-47](../SQL.assets/Xnip2022-03-21_16-04-47.jpg)
+
+
+
+- 将该表转换为员工 + 孩子的形式
+
+Eg:
+
+```mysql
+SELECT
+	employee,
+	child_1 AS 'child'
+FROM
+	Personnel
+UNION ALL
+SELECT
+	employee,
+	child_2 AS 'child'
+FROM
+	Personnel
+UNION ALl
+SELECT
+	employee,
+	child_3 AS 'child'
+FROM
+	Personnel
+```
+
+
+
+- 这种解法把没有孩子的吉田查询出了三次，所以最好把child为NULL排除
+- 但出于需求，我们还需要将吉田保留一行
+
+Eg:
+
+![Xnip2022-03-21_16-13-59](../SQL.assets/Xnip2022-03-21_16-13-59.jpg)
+
+- 想要解决这个问题，我们不能简单的将child为NULL的排除
+
+
+
+
+
+其中一个解法:
+
+- 首先创建一个视图
+
+Eg:
+
+![Xnip2022-03-21_16-21-55](../SQL.assets/Xnip2022-03-21_16-21-55.jpg)
+
+
+
+- 之后将员工表作为驱动表进行外连接:
+
+```mysql
+SELECT
+	EMP.employee,
+	CHILDREN.child
+FROM
+	Personnel AS EMP
+LEFT JOIN Children ON CHILDREN.child IN (EMP.child_1, EMP.child_2, EMP.child_3)
+```
+
+
+
+![Xnip2022-03-21_16-24-58](../SQL.assets/Xnip2022-03-21_16-24-58.jpg)
+
+
+
+- 当对应的名字存在于视图中时，返回名字，否则返回NULL
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5.3 交叉表内制作嵌套式表侧栏
+
+Eg Table:
+
+![Xnip2022-03-21_18-23-30](../SQL.assets/Xnip2022-03-21_18-23-30.jpg)
+
+
+
+![Xnip2022-03-21_18-23-37](../SQL.assets/Xnip2022-03-21_18-23-37.jpg)
+
+
+
+![Xnip2022-03-21_18-16-09](../SQL.assets/Xnip2022-03-21_18-16-09.jpg)
+
+
+
+根据该表生成交叉表"包含嵌套式表侧栏的统计表"
+
+![Xnip2022-03-21_18-17-51](../SQL.assets/Xnip2022-03-21_18-17-51.jpg)
+
+- 生成表侧栏需要使用外连接，侧栏是年龄层级和性别，所以要将TblAge和TblSex作为驱动表进行外连接
+- 但如果直接进行外连接的话其实会出问题
+
+Eg:
+
+``` mysql
+SELECT
+	MASTER1.age_class AS 'age_class',
+	MASTER2.sex_cd AS 'sex_cd',
+	DATA.pop_tohoku AS 'pop_tohoku',
+	DATA.pop_kanto AS 'pop_kanto'
+FROM (
+	SELECT
+		age_class,
+		sex_cd,
+		SUM(CASE WHEN pref_name IN ('青森', '秋田')
+		THEN population ELSE NULL END) AS 'pop_tohoku',
+		SUM(CASE WHEN pref_name IN ('东京', '千叶')
+		THEN population ELSE NULL END) AS 'pop_kanto'
+	FROM
+		TblPop
+	GROUP BY age_class, sex_cd
+	) AS DATA
+RIGHT JOIN TblAge AS MASTER1 ON DATA.age_class = MASTER1.age_class
+RIGHT JOIN TblSex AS MASTER2 ON DATA.sex_cd = MASTER2.sex_cd
+```
+
+
+
+![Xnip2022-03-21_18-40-36](../SQL.assets/Xnip2022-03-21_18-40-36.jpg)
+
+
+
+
+
+- 其实在与TblAge表进行第一次外连接的时候还有age_class = 2的记录
+
+Eg:
+
+![Xnip2022-03-21_18-44-23](../SQL.assets/Xnip2022-03-21_18-44-23.jpg)
+
+
+
+- 但TblPop中没有age_class为2的记录对应的sex_cd，所以其对应的sex_cd全为NULL
+- 所以在与TblAge表进行连接的时候，条件DATA.sex_cd = MASTER2.sex_cd就变为了:
+
+```mysql
+NULL = MASTER2.sex_cd
+```
+
+最终没有任何age_class为2的记录被返回(这些记录与TbleAge连接的结果都不为真)
+
+
+
+
+
+
+
+
+
+正确的写法:
+
+```mysql
+SELECT
+	MASTER.age_class AS 'age_class',
+	MASTER.sex_cd AS 'sex.cd',
+	DATA.pop_tohoku AS 'pop_tohoku',
+	DATA.pop_kanto AS 'pop_kanto'
+FROM (
+	SELECT
+		age_class,
+		sex_cd
+	FROM
+		TblAge
+	INNER JOIN TblSex
+	) AS MASTER
+LEFT JOIN (
+	SELECT
+		age_class,
+		sex_cd,
+		SUM( CASE WHEN pref_name IN ( '青森', '秋田' ) THEN population ELSE NULL END ) AS 'pop_tohoku',
+		SUM( CASE WHEN pref_name IN ( '东京', '千叶' ) THEN population ELSE NULL END ) AS 'pop_kanto' 
+	FROM
+		TblPop 
+	GROUP BY age_class, sex_cd
+	) AS DATA ON MASTER.age_class = DATA.age_class AND MASTER.sex_cd = DATA.sex_cd
+```
+
+
+
+- 这里的关键是将TblAge和TblSex进行交叉连接形成笛卡尔积，从而获取表侧栏
+
+![Xnip2022-03-21_18-56-43](../SQL.assets/Xnip2022-03-21_18-56-43.jpg)
+
+
+
+交叉连接时，使用CROSS JOIN和FROM TblAge, TblSex的效果是一样的，后者更通用一些
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5.4 作为乘法运算的连接
+
+- 在SQL里，交叉连接相当于乘法运算
+
+Eg Tables:
+
+![Xnip2022-03-21_19-08-25](../SQL.assets/Xnip2022-03-21_19-08-25.jpg)
+
+
+
+![Xnip2022-03-21_19-08-33](../SQL.assets/Xnip2022-03-21_19-08-33.jpg)
+
+- 以商品为单位汇总各自的销量(轻松秒杀，没意思)
+
+Eg:
+
+![Xnip2022-03-21_19-15-36](../SQL.assets/Xnip2022-03-21_19-15-36.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 5.5 全外连接
+
+标准SQL中定义了外连接的三种类型:
+
+- LEFT OUTER JOIN
+- RIGHT OUTER JOIN
+- FULL OUTER JOIN
+
+
+
+三种中，全外连接使用很少，这里结合实例进行理解:
+
+Eg Table:
+
+![Xnip2022-03-21_19-24-24](../SQL.assets/Xnip2022-03-21_19-24-24.jpg)
+
+
+
+![Xnip2022-03-21_19-24-31](../SQL.assets/Xnip2022-03-21_19-24-31.jpg)
+
+两表中，田中和铃木都同时属于这两张表，而伊集院和西园寺则只属于其中一张表
+
+全外连接能够从两张内容不一致的表中没有遗漏地获取所有信息，类似将两张表都作为驱动表的连接
+
+Eg:
+
+```mysql
+SELECT COALESCE(A.id, B.id) AS id,
+       A.name AS A_name,
+       B.name AS B_name
+FROM Class_A  A  FULL OUTER JOIN Class_B  B
+  ON A.id = B.id;
+```
+
+
+
+
+
+**注意：MySQL暂时还不支持全外连接，可以使用左右连接加上UNION进行模拟**
+
+Eg:
+
+```mysql
+SELECT
+	A.name,
+	B.name
+FROM
+	Class_A AS A
+LEFT JOIN Class_B AS B ON A.id = B.id
+UNION
+SELECT
+	A.name,
+	B.name
+FROM
+	Class_A AS A
+RIGHT JOIN Class_B AS B ON A.id = B.id
+```
+
+
+
+
+
+从集合运算的角度来看，内连接相当于求集合的积(intersect，交集)，全外连接相当于求集合的和(UNION，并集)
+
+
+
+Eg:
+
+![Xnip2022-03-21_19-44-14](../SQL.assets/Xnip2022-03-21_19-44-14.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5.6 外连接集合运算
+
+- SQL是以集合论为基础的，但在之前连基础的集合运算都不支持，INTERSECT和EXCEPT都是SQL-92才加入的
+- 各个DBMS提供商在集合上的实现也各有不同，所以需要了解一下集合运算符的替代方案
+
+
+
+
+
+
+
+#### 1) 外连接求差集: A - B
+
+伊集院只存在于A班，因此我们可以通过判断外连接后的字段是否为NULL来得到差集
+
+Eg:
+
+![Xnip2022-03-21_19-50-44](../SQL.assets/Xnip2022-03-21_19-50-44.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### 2) 外连接求差集: B - A
+
+- 西园寺只存在于B班，因此我们可以通过判断外连接后的字段是否为NULL来得到差集
+
+Eg:
+
+![Xnip2022-03-21_19-53-13](../SQL.assets/Xnip2022-03-21_19-53-13.jpg)
+
+
+
+注：使用外连接解决这种问题不符合外连接的设计目的，但对于不支持差值运算的数据库来说，其可以作为NOT IN 和 NOT EXISTS之外的另一种解法了
+
+**而且其可能是差值运算中效率最高的**
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 3) 全外连接求异或集
+
+SQL中没有定义求异或集的运算符，如果使用集合运算符，则有两种方法:
+
+- (A UNION B) EXCEPT (A INTERSECT B)
+- (A INTERSECT B) EXCEPT (B INTERSECT A)
+
+Eg:
+
+```mysql
+SELECT COALESCE(A.id, B.id) AS id,
+       COALESCE(A.name , B.name ) AS name
+  FROM Class_A  A  FULL OUTER JOIN Class_B  B
+    ON A.id = B.id
+ WHERE A.name IS NULL 
+    OR B.name IS NULL;
+```
+
+
+
+不支持全外连接的数据库(MySQL)的写法:
+
+```mysql
+SELECT
+	id,
+	COALESCE(A_name, B_name)
+FROM (
+	SELECT
+		A.id,
+		A.name AS 'A_name',
+		B.name AS 'B_name'
+	FROM
+		Class_A AS A
+	LEFT JOIN Class_B AS B ON A.id = B.id
+	UNION
+	SELECT
+		B.id,
+		A.name,
+		B.name
+	FROM
+		Class_A AS A
+	RIGHT JOIN Class_B AS B ON A.id = B.id
+	) AS temp
+WHERE ISNULL(A_name)
+OR ISNULL(B_name)
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 5.7 小结
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

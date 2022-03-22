@@ -814,5 +814,109 @@ WHERE t2.count >= 3
 ORDER BY t2.id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day241
+
+## Tag: DENSE_RANK, LEFT JOIN
+
+![Xnip2022-03-22_08-44-05](MySQL Note.assets/Xnip2022-03-22_08-44-05.jpg)
+
+
+
+![Xnip2022-03-22_08-47-18](MySQL Note.assets/Xnip2022-03-22_08-47-18.jpg)
+
+题意:
+
+给你一张用户信息表，一张订单表，一张物品信息表，请你查询出每个用户按日期顺序卖出的第二件商品的品牌是否为其喜爱的品牌，如果用户没有卖出记录或者没有卖出两件则默认为no
+
+
+
+
+
+思路:
+
+- 因为涉及到按照日期排序，所以我们应该先获取每个用户按照日期排序后卖出的第二件商品，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    t1.seller_id,
+    t2.item_brand,
+    DENSE_RANK() OVER(
+        PARTITION BY seller_id
+        ORDER BY order_date
+    ) AS 'date_rank'
+FROM
+    Orders AS t1
+INNER JOIN Items AS t2 ON t1.item_id = t2.item_id
+```
+
+
+
+- 之后再限定date_rank为2来获取用户卖出的第二件商品，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+		seller_id,
+		item_brand
+	FROM (
+		SQL1
+		) AS temp
+	WHERE date_rank = 2
+```
+
+
+
+- 最后只需要再连接Users表，比较商品品牌即可，最终SQL如下
+
+```mysql
+SELECT
+	t1.user_id AS 'seller_id',
+	CASE WHEN t1.favorite_brand = t2.item_brand THEN 'yes'
+	ELSE 'no' END AS '2nd_item_fav_brand'
+FROM
+	Users AS t1
+LEFT JOIN (
+	SQL2
+	) AS t2 ON t1.user_id = t2.seller_id
+```
+
+
+
+
+
+提醒:
+
+- 注意：部分老铁可能会这样想：SQL2不是脱裤子放屁吗？我直接以Users表为驱动表，将三张表进行外连接不就行了吗?
+- 想法不错，但这里有个问题:
+- 刚开始使用Users表和获取rank的Orders表进行外连接后，确实查询出了每个用户对于的交易记录，且没有交易记录的用户也为NULL
+- 但之后与Items表进行外连接的时候会出现问题:
+- 如果用户没有任何交易记录，则其对应的item_id字段为NULL，这样在与Items表进行连接的时候就是Items.item_id = NULL，这个表达式的结果一定不为真
+- 对应的没有交易记录的用户则不会出现在结果集中
+- 为了避免这样的结果，我不得已才先将后面两张表进行了连接
+- 类似的问题各位可以参考《SQL进阶教程》中第一章第五节中外连接的内容
+
+
+
+
+
+
+
+
+
+
+
 
 

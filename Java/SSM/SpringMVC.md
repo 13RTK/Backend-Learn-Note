@@ -734,5 +734,138 @@ Eg:
 
 ![Xnip2022-03-20_16-21-08](SpringMVC.assets/Xnip2022-03-20_16-21-08.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十二、文件上传下载
+
+
+
+## 1. 文件上传
+
+- 在SpringMVC中，我们需要在Web配置中注册一个Resolver的bean
+
+
+
+
+
+在配置前我们需要引入依赖，该依赖还包含了commons.io
+
+Eg:
+
+```xml
+<dependency>
+  <groupId>commons-fileupload</groupId>
+  <artifactId>commons-fileupload</artifactId>
+  <version>1.4</version>
+</dependency>
+```
+
+
+
+配置一个Resolver:
+
+```java
+@Bean("multipartResolver")
+public CommonsMultipartResolver commonsMultipartResolver() {
+  CommonsMultipartResolver resolver = new CommonsMultipartResolver();
+  resolver.setMaxUploadSize(1024 * 1024 * 10);
+  resolver.setDefaultEncoding("UTF-8");
+
+  return resolver;
+}
+```
+
+
+
+
+
+
+
+
+
+- 之后我们只需要编写对应的Controller方法即可
+
+Eg:
+
+```java
+@RequestMapping(value = "/upload", method = RequestMethod.POST)
+@ResponseBody
+public String upload(@RequestParam CommonsMultipartFile file) throws IOException {
+  File fileObj = new File("/Users/alex/Desktop/test.html");
+  file.transferTo(fileObj);
+  System.out.println("用户上传的文件已保存到：" + fileObj.getAbsolutePath());
+  return "文件上传成功！";
+}
+```
+
+
+
+
+
+- 在前端页面中设置一个上传表单:
+
+Eg:
+
+![Xnip2022-03-21_13-38-04](SpringMVC.assets/Xnip2022-03-21_13-38-04.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2. 文件下载
+
+- 对于下载，我们只需要使用HttpServletResponse实例，设置响应的内容类型
+- 通过该响应获取一个输出流，为传输给用户的文件建立一个输入流
+- 最后通过commons.io中的copy方法将输入流复制给输出流即可
+
+Eg:
+
+```java
+@RequestMapping(value = "/download", method = RequestMethod.GET)
+@ResponseBody
+public void download(HttpServletResponse response) {
+  response.setContentType("multipart/form-data");
+
+  try (FileInputStream fileInputStream = new FileInputStream("/Users/alex/Desktop/test.html")) {
+    ServletOutputStream fileOutputStream = response.getOutputStream();
+    IOUtils.copy(fileInputStream, fileOutputStream);
+  } catch (IOException e) {
+    e.printStackTrace();
+  }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
