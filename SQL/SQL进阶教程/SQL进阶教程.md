@@ -2908,6 +2908,102 @@ OR ISNULL(B_name)
 
 ### 5.7 小结
 
+1. SQL不是用来生成报表的语言，一般不建议用SQL来做格式转换
+2. 如果一定要格式转换的话，则需要考虑外连接或者CASE表达式
+3. 需要生成嵌套式表侧栏时，最好先获取主表的笛卡尔积
+4. 外连接和集合运算很像，使用外连接可以实现各种集合运算
+
+<hr>
+
+
+
+
+
+### 练习
+
+
+
+1-5-1:
+
+![Xnip2022-03-21_18-16-09](../SQL.assets/Xnip2022-03-21_18-16-09.jpg)
+
+
+
+![Xnip2022-03-21_18-23-30](../SQL.assets/Xnip2022-03-21_18-23-30.jpg)
+
+
+
+![Xnip2022-03-21_18-23-37](../SQL.assets/Xnip2022-03-21_18-23-37.jpg)
+
+
+
+根据以上三表生成如下带有嵌套式表侧栏的统计结果，尽量减少临时视图:
+
+![Xnip2022-03-21_18-17-51](../SQL.assets/Xnip2022-03-21_18-17-51.jpg)
+
+
+
+我的答案(同答案):
+
+```mysql
+SELECT
+	t1.age_class,
+	t1.sex_cd,
+	SUM(CASE WHEN t2.pref_name IN ('青森', '秋田') 
+	THEN t2.population ELSE NULL END) AS '东北',
+	SUM(CASE WHEN t2.pref_name IN ('东京', '千叶') 
+	THEN t2.population ELSE NULL END) AS '关东'
+FROM (
+	SELECT
+		age_class,
+		sex_cd
+	FROM
+		TblAge,
+		TblSex
+	) AS t1
+LEFT JOIN TblPop AS t2 ON t1.age_class = t2.age_class AND t1.sex_cd = t2.sex_cd
+GROUP BY t1.age_class, t1.sex_cd
+```
+
+
+
+![Xnip2022-03-22_12-33-29](../SQL.assets/Xnip2022-03-22_12-33-29.jpg)
+
+<hr>
+
+
+
+
+
+
+
+1-5-2
+
+![Xnip2022-03-22_12-16-03](../SQL.assets/Xnip2022-03-22_12-16-03.jpg)
+
+
+
+![Xnip2022-03-22_12-16-16](../SQL.assets/Xnip2022-03-22_12-16-16.jpg)
+
+根据上面一张表和对应的孩子视图，查询出每个职工对应的孩子数量
+
+
+
+我的解法(同答案):
+
+```mysql
+SELECT
+	t1.employee,
+	COUNT(t2.child) AS 'child_cnt'
+FROM
+	Personnel AS t1
+LEFT JOIN children AS t2 ON t2.child IN (t1.child_1, t1.child_2, t1.child_3)
+GROUP BY t1.employee
+```
+
+![Xnip2022-03-22_12-31-35](../SQL.assets/Xnip2022-03-22_12-31-35.jpg)
+
+<hr>
 
 
 
@@ -2917,6 +3013,60 @@ OR ISNULL(B_name)
 
 
 
+
+
+
+
+1-5-3
+
+![Xnip2022-03-22_12-49-27](../SQL.assets/Xnip2022-03-22_12-49-27.jpg)
+
+![Xnip2022-03-22_12-49-34](../SQL.assets/Xnip2022-03-22_12-49-34.jpg)
+
+给你两张班级学生表，要求你将B的信息合并到A里去: 如果id相同则用B班的姓名进行覆盖，如果不同则直接插入
+
+
+
+我的答案:
+
+- 注意，MySQL不支持Merge语法，但可以使用INSERT ... ON DUPLICATE KEY UPDATE...
+
+```mysql
+INSERT INTO Class_A (id, name) 
+SELECT * FROM Class_B
+ON DUPLICATE KEY UPDATE name = VALUES(name)
+```
+
+
+
+![Xnip2022-03-22_12-52-55](../SQL.assets/Xnip2022-03-22_12-52-55.jpg)
+
+
+
+
+
+官方文档:
+
+![Xnip2022-03-22_12-54-21](../SQL.assets/Xnip2022-03-22_12-54-21.jpg)
+
+
+
+
+
+
+
+答案:
+
+```sql
+MERGE INTO Class_A A
+    USING (SELECT *
+             FROM Class_B ) B
+      ON (A.id = B.id)
+    WHEN MATCHED THEN
+        UPDATE SET A.name = B.name
+    WHEN NOT MATCHED THEN
+        INSERT (id, name) VALUES (B.id, B.name);
+```
 
 
 

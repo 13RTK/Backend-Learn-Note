@@ -908,11 +908,85 @@ LEFT JOIN (
 - 为了避免这样的结果，我不得已才先将后面两张表进行了连接
 - 类似的问题各位可以参考《SQL进阶教程》中第一章第五节中外连接的内容
 
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+# Day242
+
+## Tag: RANGE, SUM OVER
+
+![Xnip2022-03-23_08-06-56](MySQL Note.assets/Xnip2022-03-23_08-06-56.jpg)
+
+
+
+![Xnip2022-03-23_08-06-34](MySQL Note.assets/Xnip2022-03-23_08-06-34.jpg)
+
+
+
+![Xnip2022-03-23_08-21-38](MySQL Note.assets/Xnip2022-03-23_08-21-38.jpg)
+
+题意:
+
+给你一张员工薪资表，请你查询出其中每个员工除了最近一个月外，每个月近三个月的累积薪资
+
+
+
+思路:
+
+- 首先因为不能统计最近一个月的数据，所以我们需要先获取每个员工对应的最近一个月用于之后的排除，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+		Id,
+		MAX(Month) AS 'max_month'
+FROM
+		Employee
+GROUP BY Id
+```
+
+
+
+- 对于累加，我说过这是SUM OVER擅长的事，但这里不是简单的累加这么简单，而是需要累加近两个月的值
+- 这就涉及到窗口函数的frame参数了，窗口函数在OVER中一般只用到了两个参数: PARTITION分组和ORDER BY排序，但其实第三个参数frame也非常有用
+- frame可以用来限制窗口的范围，在这道题目中，我们可以使用“RANGE 2 PRECODING”这样的表达式，其代表每个值前面的两个值
+- 和它类似的有ROW，但其统计的是前面的两行，所以这里并不适用，最终将SQL1通过EXISTS改写如下
+
+```mysql
+SELECT
+    Id,
+    Month,
+    SUM(Salary) OVER(
+        PARTITION BY Id
+        ORDER BY Month RANGE 2 PRECEDING
+    ) AS 'Salary'
+FROM 
+    Employee AS t1
+WHERE NOT EXISTS (
+    SELECT
+        Id,
+        MAX(Month) AS 'max_month'
+    FROM
+        Employee AS t2
+    GROUP BY Id
+    HAVING t2.Id = t1.Id AND max_month = t1.Month
+)
+ORDER BY Id, Month DESC
+```
 
 
 
