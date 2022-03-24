@@ -436,6 +436,459 @@ Eg:
 
 ![Xnip2022-03-22_20-06-02](Spring Security.assets/Xnip2022-03-22_20-06-02.jpg)
 
+<hr>
+
+
+
+
+
+
+
+## 3) 自定义登陆/登出页面
+
+Spring Security的自带页面:
+
+![Xnip2022-03-23_12-46-06](Spring Security.assets/Xnip2022-03-23_12-46-06.jpg)
+
+
+
+- 其中在输入框下面有一个隐藏的input标签:
+
+```html
+<input name="_csrf" type="hidden" value="396094d1-5b4f-46d5-b2cf-5081bfb9bd26">
+```
+
+这个标签存储了一串类似hash值的字符，其实就是用来防止CSRF攻击的
+
+
+
+- 从Spring Security4.0开始，默认就会启用CSRF防护
+- 其会直接拦截所有类型的请求，除非带有一个CSRF Token
+- 如果提交的是表单，则在表单中必须有一个Token字符串，如果是JSON数据格式，则需要在请求头中包含此Token字符串
+- 因此想要不被拦截，我们还需要在输入框下添加一个输入框:
+
+```html
+<input type="text" th:name="${_csrf.getParameterName()}" th:value="${_csrf.token}" hidden>
+```
+
+- 其中Token的键名称和对应的字符都会由Spring Security自动提供
+
+
+
+
+
+
+
+
+
+
+
+配置后端:
+
+
+
+1. 配置拦截规则:
+
+- 重写另一个参数为HttpSecurity实例的方法以配置拦截规则
+- 调用authorizedRequest方法配置拦截的请求
+- 调用antMatchers()传入匹配的路径，传入"/static/**"表示所有的静态资源，在调用permitAll方法，表示所有人均可访问
+- 再次调用antMatchers()，传入/**代表所有路径，最后调用hasRole方法限定权限
+
+Eg:
+
+```java
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/static/**").permitAll()
+                .antMatchers("/**").hasRole("user");
+    }
+```
+
+
+
+
+
+
+
+
+
+
+
+2. 配置表单登陆和登陆页面
+
+- 在之前配置的基础上，使用and()连接之后的操作
+- 调用formLogin方法开启表单登陆
+- 使用loginPage方法指定登陆的页面
+- 再使用loginProcessingUrl**指定表单的提交地址**
+- defaultSuccessingUrl: 指定登陆成功后跳转的页面，**注意要添加第二个参数true**
+- permitAll将登陆页面对所有人放开
+
+
+Eg:
+
+```java
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/static/**").permitAll()
+                .antMatchers("/**").hasRole("user")
+                .and()
+                .formLogin()
+                .loginPage("/login")
+                .loginProcessingUrl("/doLogin")
+                .defaultSuccessUrl("/index", true)
+                .permitAll()
+    }
+```
+
+
+
+
+
+
+
+3. 配置登出页面
+
+```java
+@Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/static/**").permitAll()
+                .antMatchers("/**").hasRole("user")
+                .and()
+                .formLogin()
+                .loginPage("/login")
+                .loginProcessingUrl("/doLogin")
+                .defaultSuccessUrl("/index", true)
+                .permitAll()
+                .and()
+                .logout()
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login");
+    }
+```
+
+- 使用logout方法开启登出操作
+- 使用logoutUrl指定退出登陆的请求地址
+- logoutSuccessUrl: 指定退出后重定向的地址
+
+
+
+
+
+
+
+4. 在Controller中编写login对应的方法
+
+Eg:
+
+```java
+@RequestMapping("/login")
+public String login() {
+  return "login";
+}
+```
+
+
+
+
+
+
+
+配置前端:
+
+
+
+1. 添加属性，添加带有CSRF的input标签，并设置表单的action和method
+
+Eg:
+
+![Xnip2022-03-23_14-57-41](Spring Security.assets/Xnip2022-03-23_14-57-41.jpg)
+
+
+
+2. 将logout改为带有CSRF属性的input表单
+
+Eg:
+
+![Xnip2022-03-23_14-59-05](Spring Security.assets/Xnip2022-03-23_14-59-05.jpg)
+
+
+
+
+
+
+
+
+
+关闭csrf:
+
+![Xnip2022-03-23_15-01-01](Spring Security.assets/Xnip2022-03-23_15-01-01.jpg)
+
+
+
+注意将logout改回去:
+
+![Xnip2022-03-23_15-09-38](Spring Security.assets/Xnip2022-03-23_15-09-38.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 四、授权
+
+- 对于一个用户的操作其实就是在访问我们在Controller中的路径
+- 所以控制不同的用户所拥有的权限其实就是决定用户能否访问对应的Servlet
+
+
+
+例子:
+
+- 对于一个QQ群，其中有三种用户，各自能够访问的权限如下
+    - 群主：`/login`、`/logout`、`/chat`、`/edit`、`/delete`、`/upgrade`
+    - 管理员：`/login`、`/logout`、`/chat`、`/edit`
+    - 普通群成员：`/login`、`/logout`、`/chat`
+
+
+
+Spring Security提供了两种授权方式:
+
+- 基于权限的授权: 只要拥有某权限就能访问某路径
+- 基于角色的权限: 根据用户的角色来决定是否可以访问某个路径
+
+<hr>
+
+
+
+
+
+
+
+## 1) 基于角色授权
+
+- 我们这里创建两种用户，一种是普通用户，一种是管理员用户，普通用户只能访问index，而管理员可以访问任意页面
+
+
+
+数据库：
+
+- 为了对用户进行区分，我们需要在数据库中新增一个role字段
+
+Eg:
+
+![Xnip2022-03-23_16-06-00](Spring Security.assets/Xnip2022-03-23_16-06-00.jpg)
+
+
+
+
+
+SpringSecurity权限设置:
+
+```java
+ http
+                .authorizeRequests()
+                .antMatchers("/static/**").permitAll()
+                .antMatchers("/**").hasAnyRole("user", "admin")
+                .anyRequest().hasRole("admin")
+```
+
+- 将index的权限开放给user和admin
+- 将任意路径的权限只开放给admin
+
+
+
+
+
+
+
+实体类:
+
+创建一个User类来表示数据库的记录，并修改Mapper
+
+![Xnip2022-03-23_16-15-37](Spring Security.assets/Xnip2022-03-23_16-15-37.jpg)
+
+
+
+
+
+
+
+Service
+
+![Xnip2022-03-23_16-17-13](Spring Security.assets/Xnip2022-03-23_16-17-13.jpg)
+
+
+
+
+
+普通用户尝试访问admin:
+
+![Xnip2022-03-23_16-36-15](Spring Security.assets/Xnip2022-03-23_16-36-15.jpg)
+
+
+
+![Xnip2022-03-23_16-35-52](Spring Security.assets/Xnip2022-03-23_16-35-52.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2) 基于权限授权
+
+在使用autMatchers设置对应路径后，我们可以使用hasAuthority方法代替hasRole方法，在其中传入页面权限即可
+
+Eg:
+
+![Xnip2022-03-23_18-02-38](Spring Security.assets/Xnip2022-03-23_18-02-38.jpg)
+
+
+
+在Service中，我们只能授予其固定权限:
+
+![Xnip2022-03-23_18-03-34](Spring Security.assets/Xnip2022-03-23_18-03-34.jpg)
+
+- 这样不管是普通用户还是admin，其都只能访问index这个页面
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3) 基于注解授权
+
+- 如果要为Controller配置权限，则需要在Mvc的配置类上添加注解
+
+Eg:
+
+![Xnip2022-03-23_18-33-45](Spring Security.assets/Xnip2022-03-23_18-33-45.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 五、记住我
+
+- 只需要在SpringSecurity的配置文件中调用对于方法即可
+- 前端页面需要有对应name属性的表单参数
+
+Eg:
+
+![Xnip2022-03-23_18-50-12](Spring Security.assets/Xnip2022-03-23_18-50-12.jpg)
+
+在rememberMeParameter方法中传入对应前端标签的name属性
+
+tokenRepository方法可以传入两种参数，一种是将Token放在内存里的(Server的内存)，另一种是放在数据库里(之后可以放在Redis里)
+
+前端:
+
+![Xnip2022-03-23_18-50-21](Spring Security.assets/Xnip2022-03-23_18-50-21.jpg)
+
+
+
+默认14天过期
+
+![Xnip2022-03-23_18-54-47](Spring Security.assets/Xnip2022-03-23_18-54-47.jpg)
+
+
+
+
+
+
+
+
+
+- 数据库存放:
+
+
+
+SpringSecurityConfiguration:
+
+```java
+@Resource
+PersistentTokenRepository repository;
+
+@Bean
+public PersistentTokenRepository jdbcRepository(@Autowired DataSource dataSource){
+    JdbcTokenRepositoryImpl repository = new JdbcTokenRepositoryImpl();  //使用基于JDBC的实现
+    repository.setDataSource(dataSource);   //配置数据源
+  	repository.setCreateTableOnStartup(true);   //启动时自动创建用于存储Token的表（建议第一次启动之后删除该行）
+    return repository;
+}
+```
+
+
+
+- Configure方法:
+
+```java
+.and()
+.rememberMe()
+.rememberMeParameter("remember")
+.tokenRepository(repository)
+.tokenValiditySeconds(60 * 60 * 24 * 7)  //Token的有效时间（秒）默认为14天
+```
+
+
+
+该方法在第一次执行时会在数据库中插入一条数据，这样即使服务器重启，token也依然有效
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 六、
+
+
+
 
 
 

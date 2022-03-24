@@ -988,6 +988,102 @@ WHERE NOT EXISTS (
 ORDER BY Id, Month DESC
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day243
+
+## Tag: LEFT JOIN
+
+![Xnip2022-03-24_08-48-50](MySQL Note.assets/Xnip2022-03-24_08-48-50.jpg)
+
+
+
+![Xnip2022-03-24_08-49-55](MySQL Note.assets/Xnip2022-03-24_08-49-55.jpg)
+
+题意:
+
+给你一张消费记录表，请你查询出每天只使用手机、桌面端和两者都使用的用户人数和消费金额
+
+
+
+
+
+思路:
+
+- 从结果示例可知，不管有没有我们需要查询出每一天对应三种情况的数据，所以这里就需要外连接制作嵌套式表侧栏了
+- 从结果可知：表侧栏就是日期和平台情况的笛卡尔积，SQL如下
+
+SQL:
+
+```mysql
+SELECT
+		DISTINCT spend_date,
+		t2.platform
+FROM
+		Spending,
+		(
+		SELECT
+			DISTINCT platform
+		FROM
+			Spending
+		UNION ALL
+		SELECT
+			'both'
+		) AS t2
+```
+
+
+
+- 之后我们需要根据原表查询出每天每个人对应的平台和累加的金额，SQL如下
+
+SQL2:
+
+```mysql
+SELECT 
+		user_id,
+		spend_date,
+		CASE WHEN COUNT(platform)=2 THEN 'both' ELSE platform END AS 'platform',
+		SUM(amount) AS 'amount'
+FROM 
+		Spending 
+GROUP BY user_id, spend_date
+```
+
+
+
+- 最后以表侧栏为驱动表，进行外连接即可，最终SQL如下
+
+```mysql
+SELECT
+	t1.spend_date,
+	t1.platform,
+	IFNULL(SUM(t2.amount), 0) AS 'total_amount',
+	COUNT(t2.user_id) AS 'total_users'
+FROM (
+	SQL1
+	) AS t1
+LEFT JOIN (
+	SQL2
+	) AS t2 ON t1.spend_date = t2.spend_date AND t1.platform = t2.platform
+GROUP BY t1.spend_date, t1.platform
+```
+
+
+
+
+
 
 
 
