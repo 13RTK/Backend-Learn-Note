@@ -3068,6 +3068,182 @@ MERGE INTO Class_A A
         INSERT (id, name) VALUES (B.id, B.name);
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6. 关联子查询比较行与行
+
+在进行行与行之间的比较时，除了窗口函数外，主要使用的是关联子查询，特别是结合连接的关联子查询
+
+
+
+
+
+
+
+### 1) 增长、减少、维持现状
+
+需要行间数据的代表性业务: 基于时间序列表进行时间序列分析
+
+Eg Table:
+
+![Xnip2022-03-25_09-20-47](../SQL.assets/Xnip2022-03-25_09-20-47.jpg)
+
+
+
+要求:
+
+根据该表数据，输出与上一年相比营业额的变化情况
+
+
+
+
+
+1. 先考虑求出相比上一年不变的情况
+
+
+
+思路:
+
+- 在Sales的基础上，再加上一个存储了上一年数据的集合
+
+```mysql
+SELECT
+	year,
+	sale
+FROM
+	Sales AS S1
+WHERE sale = (
+	SELECT
+		sale
+	FROM
+		Sales AS S2
+	WHERE S2.year + 1 = S1.year
+)
+```
+
+其中S2.year代表开始的年份，S1.year代表之后的一个年份
+
+示意图:
+
+![Xnip2022-03-25_09-29-19](../SQL.assets/Xnip2022-03-25_09-29-19.jpg)
+
+
+
+
+
+Eg:
+
+![Xnip2022-03-25_09-27-33](../SQL.assets/Xnip2022-03-25_09-27-33.jpg)
+
+
+
+
+
+- 关联子查询和自连接很多时候是等价的，所以我们可以直接用自连接进行替换:
+
+```mysql
+SELECT
+	S1.year,
+	S1.sale
+FROM
+	Sales AS S1,
+	Sales AS S2
+WHERE S1.sale = S2.sale
+AND S1.year - S2.year = 1
+```
+
+Eg:
+
+![Xnip2022-03-25_09-36-48](../SQL.assets/Xnip2022-03-25_09-36-48.jpg)
+
+<hr>
+
+
+
+
+
+
+
+### 2) 列表展示与上一年的比较结果
+
+```mysql
+SELECT
+	S1.year,
+	S1.sale,
+	CASE WHEN sale = (SELECT sale FROM Sales AS S2 WHERE S1.year - S2.year = 1) THEN '→'
+	WHEN sale > (SELECT sale FROM Sales AS S2 WHERE S1.year - S2.year = 1) THEN '↑'
+	WHEN sale < (SELECT sale FROM Sales AS S2 WHERE S1.year - S2.year = 1) THEN '↓'
+	ELSE '-' END AS 'var'
+FROM
+	Sales AS S1
+ORDER BY S1.year
+```
+
+Eg:
+
+![Xnip2022-03-25_21-50-14](../SQL.assets/Xnip2022-03-25_21-50-14.jpg)
+
+- 这里将前面关联子查询的逻辑放在了SELECT列表里
+
+
+
+
+
+- 用自连接改写:
+
+```mysql
+SELECT
+	S1.year,
+	S1.sale,
+	CASE WHEN S1.sale = S2.sale THEN '→'
+	WHEN S1.sale > S2.sale THEN '↑'
+	WHEN S1.sale < S2.sale THEN '↓'
+	ELSE '-' END AS 'var'
+FROM
+	Sales AS S1,
+	Sales AS S2
+WHERE S1.year - S2.year = 1
+ORDER BY S1.year
+```
+
+Eg:
+
+![Xnip2022-03-25_21-56-09](../SQL.assets/Xnip2022-03-25_21-56-09.jpg)
+
+由于没有1990年之前的数据，所以自连接将其排除了
+
+
+
+尝试将时间轴改为横着的方式展示:
+
+![Xnip2022-03-25_21-58-54](../SQL.assets/Xnip2022-03-25_21-58-54.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 时间轴有间断时
+
+
+
 
 
 

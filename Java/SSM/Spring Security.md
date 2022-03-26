@@ -884,8 +884,72 @@ public PersistentTokenRepository jdbcRepository(@Autowired DataSource dataSource
 
 
 
+# 六、Spring Security
 
-# 六、
+为了获取登陆用户的信息，这里我们需要使用SecurityContext实例
+
+
+
+- 方式一:
+
+![Xnip2022-03-24_14-22-42](Spring Security.assets/Xnip2022-03-24_14-22-42.jpg)
+
+- 通过SecurityContextHolder类调用getContext方法即可获取一个Context实例
+- 通过该实例调用getAuthentication方法即可获取一个Authentication实例
+- 通过该实例调用getPrinciple方法即可获取一个User实例(该类由SpringSecurity提供)
+
+
+
+
+
+
+
+- 方式二:
+
+![Xnip2022-03-24_14-30-33](Spring Security.assets/Xnip2022-03-24_14-30-33.jpg)
+
+通过注解直接获取一个SecurityContext实例
+
+
+
+
+
+
+
+
+
+- 因为用户信息都是基于SecurityContext的，所以我们可以直接修改SecurityContext的内容以实现主动为用户登陆
+
+```java
+@RequestMapping("/auth")
+@ResponseBody
+public String auth() {
+  SecurityContext context = SecurityContextHolder.getContext();
+  UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken("alex", null, AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_user"));
+
+  context.setAuthentication(token);
+
+  return "Login success";
+}
+```
+
+
+
+- Security的生命周期:
+
+从请求的Session中获取后放入SecurityContext中，请求结束之后从SecurityContextHolder取出并放回Session中，实际上是依靠Session来存储的
+
+<hr>
+
+
+
+
+
+
+
+
+
+
 
 
 

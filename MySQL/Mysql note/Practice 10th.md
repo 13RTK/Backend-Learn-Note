@@ -1080,6 +1080,121 @@ LEFT JOIN (
 GROUP BY t1.spend_date, t1.platform
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day244
+
+## Tag: DISTINCT, TIME
+
+![Xnip2022-03-25_07-32-31](MySQL Note.assets/Xnip2022-03-25_07-32-31.jpg)
+
+
+
+![Xnip2022-03-25_07-32-42](MySQL Note.assets/Xnip2022-03-25_07-32-42.jpg)
+
+题意:
+
+给你一张购买记录表，请你在自定义函数getUserIDs中编写一个SQL以返回规定日期内，消费金额大于等于最小金额的用户数量
+
+
+
+
+
+思路:
+
+- 看起来自定义函数很麻烦，其实只需要我们用上函数提供的三个参数就行了
+- 需要注意的是，统计的字段应该为去重后的user_id，这里不需要判断为NULL的情况，因为COUNT(字段)是不会将NULL计算在内的，最终内部SQL如下
+
+```mysql
+SELECT
+		COUNT(DISTINCT user_id) AS 'user_cnt'
+FROM
+		Purchases
+WHERE time_stamp BETWEEN startDate AND endDate
+AND amount >= minAmount
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+# Day245
+
+## Tag: HAVING
+
+![Xnip2022-03-26_11-25-35](MySQL Note.assets/Xnip2022-03-26_11-25-35.jpg)
+
+
+
+![Xnip2022-03-26_11-24-57](MySQL Note.assets/Xnip2022-03-26_11-24-57.jpg)
+
+题意:
+
+给你一张学生信息表，一张考试成绩表，请你查询出其中所有至少参加了一次测试，且成绩处于中游的学生信息
+
+
+
+思路:
+
+- 最直接的方式就是查询出每次考试中的最高分和最低分最远的学生id，之后用NOT IN排除即可
+- 这里有一个技巧: 对成绩表进行自连接，通过SUM(t1.score < t2.score)和SUM(t1.score > t2.score)即可获取最高分和最低分，所以SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	t1.student_id 
+FROM
+	exam AS t1
+INNER JOIN exam AS t2 ON t1.exam_id = t2.exam_id 
+GROUP BY t1.exam_id, t1.student_id
+HAVING SUM(t1.score < t2.score) = 0 OR SUM(t1.score > t2.score) = 0
+```
+
+
+
+- 有了需要排除的学生id后就很简单了，使用NOT IN排除即可，这里能不能改为NOT EXISTS呢？当然可以，在HAVING后面接一个就行，就是开销有点大，最终EXISTS的版本如下
+
+```mysql
+SELECT
+    DISTINCT t1.student_id,
+    t2.student_name
+FROM
+    Exam AS t1    
+INNER JOIN Student AS t2 ON t1.student_id = t2.student_id
+WHERE NOT EXISTS (
+	SELECT
+		e1.student_id 
+	FROM
+		exam AS e1
+	INNER JOIN exam AS t2 ON e1.exam_id = t2.exam_id 
+	GROUP BY e1.exam_id, e1.student_id 
+	HAVING (SUM(e1.score < t2.score) = 0 OR SUM(e1.score > t2.score) = 0)
+    AND t1.student_id = e1.student_id
+)
+ORDER BY t1.student_id
+```
+
+
+
+
+
 
 
 
