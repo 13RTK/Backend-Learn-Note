@@ -74,6 +74,127 @@ SpringBootApplication注解中实现了自动扫描，所以不需要我们自�
 
 其中展示的是git忽略的目录
 
+<hr>
+
+
+
+
+
+# 三、整合Web
+
+
+
+## 1) 服务器
+
+
+
+- 在创建项目时选择spring-web依赖
+
+![Xnip2022-03-26_15-16-15](SpringBoot.assets/Xnip2022-03-26_15-16-15.jpg)
+
+
+
+- 直接启动后，可在浏览器中访问:
+
+![Xnip2022-03-26_15-18-07](SpringBoot.assets/Xnip2022-03-26_15-18-07.jpg)
+
+
+
+
+
+- 直接编写controller即可
+
+注意: Application和controller一定要在同一个包内(同级目录下)
+
+Eg:
+
+![Xnip2022-03-26_15-31-36](SpringBoot.assets/Xnip2022-03-26_15-31-36.jpg)
+
+
+
+
+
+- 通过properties文件可以对SpringBoot进行一定的配置
+
+Eg:
+
+![Xnip2022-03-26_15-32-24](SpringBoot.assets/Xnip2022-03-26_15-32-24.jpg)
+
+
+
+
+
+- 直接返回对象，可以转换为JSON格式了
+
+![Xnip2022-03-26_15-46-21](SpringBoot.assets/Xnip2022-03-26_15-46-21.jpg)
+
+
+
+
+
+
+
+
+
+## 2) SpringSecurity
+
+- 导入对应的依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+
+
+
+可在properties文件中填写用户信息
+
+但还是需要我们自己写Initializer类
+
+![Xnip2022-03-26_16-02-17](SpringBoot.assets/Xnip2022-03-26_16-02-17.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 四、整合MyBatic
+
+依赖:
+
+```xml
+<dependency>
+  <groupId>org.mybatis.spring.boot</groupId>
+  <artifactId>mybatis-spring-boot-starter</artifactId>
+  <version>2.2.0</version>
+</dependency>
+<dependency>
+  <groupId>mysql</groupId>
+  <artifactId>mysql-connector-java</artifactId>
+</dependency>
+```
+
+
+
+编写Mapper:
+
+
+
+
+
+
+
+
+
 
 
 

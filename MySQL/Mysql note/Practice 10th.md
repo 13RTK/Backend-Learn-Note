@@ -1191,6 +1191,7 @@ WHERE NOT EXISTS (
 ORDER BY t1.student_id
 ```
 
+<hr>
 
 
 
@@ -1198,6 +1199,68 @@ ORDER BY t1.student_id
 
 
 
+
+
+
+
+# Day246
+
+## Tag: AVG() OVER, CASE
+
+![Xnip2022-03-27_10-52-18](MySQL Note.assets/Xnip2022-03-27_10-52-18.jpg)
+
+
+
+![Xnip2022-03-27_10-52-01](MySQL Note.assets/Xnip2022-03-27_10-52-01.jpg)
+
+题意:
+
+给你一张员工工资表，一张员工信息表，请你查询出每个月每个部门的平均工资和公司平均工资之间的关系
+
+
+
+
+
+思路:
+
+- 
+
+- 该问题其实可以分解为求出每个月公司的平均工资和每个月每个部门的平均工资
+- 能不能一起查询出来呢？这里用传统的GROUP BY肯定不行，所以需要借助窗口函数，我们只需要修改一下分组条件就能获取这两个数据了，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		DISTINCT LEFT(t1.pay_date, 7) AS 'pay_month',
+		t2.department_id,
+		AVG(amount) OVER(
+				PARTITION BY MONTH(t1.pay_date), t2.department_id
+		) AS 'depart_avg',
+		AVG(amount) OVER(
+				PARTITION BY MONTH(t1.pay_date)
+		) AS 'company_avg'
+FROM
+		Salary AS t1
+INNER JOIN employee AS t2 ON t1.employee_id = t2.employee_id
+```
+
+
+
+- 有了该数据后，我们只需要进行分支判断即可，最终SQL如下
+
+```mysql
+SELECT
+    pay_month,
+    department_id,
+    CASE WHEN depart_avg > company_avg THEN 'higher'
+    WHEN depart_avg < company_avg THEN 'lower'
+    WHEN depart_avg = company_avg THEN 'same'
+    ELSE NULL END AS 'comparison'
+FROM (
+    SQL1
+) AS temp
+```
 
 
 
