@@ -1262,6 +1262,77 @@ FROM (
 ) AS temp
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day247
+
+## Tag: SUM() OVER
+
+![Xnip2022-03-28_08-08-34](MySQL Note.assets/Xnip2022-03-28_08-08-34.jpg)
+
+
+
+![Xnip2022-03-28_08-08-50](MySQL Note.assets/Xnip2022-03-28_08-08-50.jpg)
+
+题意:
+
+给你一张数字频率表，请你查询出其中的中位数
+
+
+
+
+
+思路:
+
+- 求中位数我们早在SQL Day217就做过了，当时我们的做法是：使用HAVING分别计算上下部分员工的工资，使得上下部分有一个交集: >= COUNT(*)
+- 那么今天这里还能不能使用这种方法呢？显然不能，因为数据被压缩了，我们无法通过COUNT(*)来计算数据总数，但思想其实是一样的
+- 我们同样只需要找出上下两个部分的交集即可，所以我们需要分别按照正序和倒序来累加frequency字段，并获取frequency字段的和，SQL如下
+
+SQL1
+
+```mysql
+SELECT
+		num,
+		SUM(frequency) OVER(
+				ORDER BY num
+		) AS 'asc_sum',
+		SUM(frequency) OVER(
+				ORDER BY num DESC
+		) AS 'desc_sum',
+   	SUM(frequency) OVER() AS 'total_sum'
+FROM
+		Numbers
+```
+
+
+
+- 最后我们只需要参照之前的做法，获取其中的交集数据即可，最终SQL如下
+
+```mysql
+SELECT
+    ROUND(AVG(num), 1) AS 'median'
+FROM (
+    SQL1
+    ) AS temp
+WHERE asc_sum >= total_sum / 2 AND desc_sum >= total_sum / 2 
+```
+
+
+
+
+
+
+
 
 
 

@@ -3242,6 +3242,157 @@ Eg:
 
 ### 3) 时间轴有间断时
 
+Eg Table:
+
+![Xnip2022-03-27_21-02-49](../SQL.assets/Xnip2022-03-27_21-02-49.jpg)
+
+
+
+对于这种表，之前年份 - 1的条件就不能使用了，我们需要让某年的数据与最临近的年份比较，该最临近年份需要满足如下两个条件:
+
+- 与基准年份相比是过去的日期
+- 满足上个的条件下，距基准年份最近
+
+
+
+注意:这里是查询相比前一年营业额不变的数据
+
+SQL:
+
+```mysql
+SELECT
+	year,
+	sale
+FROM
+	Sales2 AS S1
+WHERE sale = (
+	SELECT
+		sale
+	FROM
+		Sales2 AS S2
+	WHERE S2.year = (
+		SELECT
+			MAX(year)
+		FROM
+			Sales2 AS S3
+		WHERE S3.year < S1.year
+	)
+)
+ORDER BY year
+```
+
+
+
+
+
+![Xnip2022-03-27_21-12-14](../SQL.assets/Xnip2022-03-27_21-12-14.jpg)
+
+
+
+使用自连接改写:
+
+```mysql
+SELECT
+	S1.year,
+	S1.sale
+FROM
+	Sales2 AS S1,
+	Sales2 AS S2
+WHERE S1.sale = S2.sale
+AND S1.year = (
+	SELECT
+  	MAX(year)
+ 	FROM
+  	Sales2 AS S3
+  WHERE S3.year < S1.year
+)
+ORDER BY S1.year
+```
+
+
+
+Eg:
+
+![Xnip2022-03-27_21-16-41](../SQL.assets/Xnip2022-03-27_21-16-41.jpg)
+
+
+
+
+
+- 利用该方法查询出每一年与之最临近年份对应的营业额变化
+
+```mysql
+SELECT
+	S2.year AS 'pre_year',
+	S1.year AS 'now_year',
+	S2.sale AS 'pre_sale',
+	S1.sale AS 'now_year',
+	S1.sale - S2.sale AS 'diff'
+FROM
+	Sales2 AS S1,
+	Sales2 AS S2
+WHERE S2.year = (
+	SELECT
+		MAX(year)
+	FROM
+		Sales2 AS S3
+	WHERE S3.year < S1.year
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-03-27_21-22-15](../SQL.assets/Xnip2022-03-27_21-22-15.jpg)
+
+
+
+
+
+- 上述写法中，1990年对应的变化在内连接中被排除了，想要让其出现在结果集中的话，可该为外自连接:
+
+```mysql
+SELECT
+	S2.year AS 'pre_year',
+	S1.year AS 'now_year',
+	S2.sale AS 'pre_sale',
+	S1.sale AS 'now_year',
+	S1.sale - S2.sale AS 'diff'
+FROM
+	Sales2 AS S1
+LEFT JOIN Sales2 AS S2 ON S2.year = (
+	SELECT
+		MAX(year)
+	FROM
+		Sales2 AS S3
+	WHERE S3.year < S1.year
+)
+ORDER BY pre_year
+```
+
+
+
+Eg:
+
+![Xnip2022-03-27_21-25-46](../SQL.assets/Xnip2022-03-27_21-25-46.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
