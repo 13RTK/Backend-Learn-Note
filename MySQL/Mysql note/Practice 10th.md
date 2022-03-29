@@ -1327,8 +1327,89 @@ FROM (
 WHERE asc_sum >= total_sum / 2 AND desc_sum >= total_sum / 2 
 ```
 
+<hr>
 
 
+
+
+
+
+
+
+
+
+
+
+
+# Day248
+
+## Tag: ROW_NUMBER() OVER, DATE_SUB
+
+![Xnip2022-03-29_07-23-40](MySQL Note.assets/Xnip2022-03-29_07-23-40.jpg)
+
+
+
+![Xnip2022-03-29_07-23-54](MySQL Note.assets/Xnip2022-03-29_07-23-54.jpg)
+
+题意:
+
+给你一张任务失败记录表，一张任务成功记录表，请你查询出其中2019年内任务连续同状态的起止日期
+
+
+
+
+
+思路:
+
+- 题目有些费解，可以简单理解为：每天都会运行一个任务，其可能成功，可能失败
+- 你需要做的就是查询出连续成功或者失败区间的起止日期
+- 就这种求连续区间的题目而言，难点在于如何判断日期是在同一个连续的区间内的
+- 其实这种题目在SQL Day240中出现过一次，当时我们的做法是id - 日期的次序，差值相同的说明在同一个日期区间内
+- 相应的，在这道题目里，我们可以通过日期 - 日期次序生成的日期值作为判断是否同组的依据，所以这里我们一并查询出成功和失败日期对应的差值，SQL如下
+
+```mysql
+SELECT
+		state,
+		cur_date,
+		DATE_SUB(cur_date, INTERVAL ROW_NUMBER() OVER(PARTITION BY state ORDER BY cur_date) DAY) AS 'diff'
+FROM (
+		SELECT
+				'failed' AS 'state',
+				fail_date AS 'cur_date'
+		FROM
+				Failed
+		WHERE YEAR(fail_date) = 2019
+		UNION ALL
+		SELECT
+				'succeeded' AS 'state',
+				success_date
+		FROM
+				Succeeded
+		WHERE YEAR(success_date) = 2019
+) AS temp
+```
+
+
+
+
+
+- 有了该表后，我们只需要根据状态和差值分组，求出每组的最值日期值即可，最终SQL如下
+
+```mysql
+SELECT
+    state AS 'period_state',
+    MIN(cur_date) AS 'start_date',
+    MAX(cur_date) AS 'end_date'
+FROM (
+    SQL1
+) AS t1
+GROUP BY state, diff
+ORDER BY start_date
+```
+
+
+
+- 注意: 该条语句中，SELECT列表里的字段和GROUP BY并不对应，在MySQL里想要成功运行的话需要修改sql_mode
 
 
 
