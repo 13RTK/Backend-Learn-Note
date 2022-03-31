@@ -169,3 +169,115 @@ Eg:
 
 
 
+
+
+- 编码问题:
+
+为了解决前端输入乱码的问题，我们需要在SecurityInitializer里重写一个beforeSpringSecurityFilterChiain方法，通过该方法参数中的context实例调用addFilter方法添加一个字符编码过滤器，并指定URL
+
+
+
+
+
+
+
+
+
+
+
+
+
+- 为账户管理Controller统一放行:
+
+![Xnip2022-03-29_12-51-05](SSM Project.assets/Xnip2022-03-29_12-51-05.jpg)
+
+注意这里需要使用重定向
+
+
+
+
+
+
+
+- 注意验证服务的设置:
+
+![Xnip2022-03-29_15-33-06](SSM Project.assets/Xnip2022-03-29_15-33-06.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5. 页面设置
+
+
+
+前端:
+
+- 通过role字段的值显示当前账号的信息
+
+![Xnip2022-03-29_15-34-21](SSM Project.assets/Xnip2022-03-29_15-34-21.jpg)
+
+
+
+![Xnip2022-03-29_15-35-53](SSM Project.assets/Xnip2022-03-29_15-35-53.jpg)
+
+
+
+
+
+- 通过Thymleaf的sec拓展，可根据权限显示页面中的元素:
+
+![Xnip2022-03-29_15-37-02](SSM Project.assets/Xnip2022-03-29_15-37-02.jpg)
+
+
+
+
+
+
+
+
+
+后端:
+
+- 注意为admin设置访问的权限
+
+![Xnip2022-03-29_15-38-02](SSM Project.assets/Xnip2022-03-29_15-38-02.jpg)
+
+
+
+- 在登录后将用户的信息写入到Session中去
+
+![Xnip2022-03-29_15-38-25](SSM Project.assets/Xnip2022-03-29_15-38-25.jpg)
+
+
+
+![Xnip2022-03-29_15-39-39](SSM Project.assets/Xnip2022-03-29_15-39-39.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

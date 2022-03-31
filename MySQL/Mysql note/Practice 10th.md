@@ -1411,6 +1411,243 @@ ORDER BY start_date
 
 - 注意: 该条语句中，SELECT列表里的字段和GROUP BY并不对应，在MySQL里想要成功运行的话需要修改sql_mode
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day249
+
+## Tag: DENSK_RANK, GROUP BY
+
+![Xnip2022-03-30_08-45-29](MySQL Note.assets/Xnip2022-03-30_08-45-29.jpg)
+
+
+
+![Xnip2022-03-30_08-45-52](MySQL Note.assets/Xnip2022-03-30_08-45-52.jpg)
+
+题意:
+
+给你一张选手信息表，一张比赛记录表，请你查询出每组中分数最高的选手，如果分数相同则返回id较小的那个人
+
+
+
+
+
+思路:
+
+- 首先自然是计算每个选手的总分了，因为这里first_player和second_player在同一行，所以我们需要联合查询进行转换，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		first_player AS 'player_id',
+		first_score AS 'score'
+FROM
+		Matches
+UNION ALL
+SELECT
+		second_player AS 'player_id',
+		second_score AS 'score'
+FROM
+		Matches
+```
+
+
+
+- 之后直接进行分组求和即可，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+		player_id,
+		SUM(score) AS 'score_sum'
+FROM (
+		SQL1
+		) AS union_tb
+GROUP BY player_id
+```
+
+
+
+- 有了分数后我们就能根据分数和id进行排序了，这里我选择窗口函数，SQL如下
+
+SQL3:
+
+```mysql
+SELECT
+		t1.group_id,
+		t2.player_id,
+		DENSE_RANK() OVER(
+				PARTITION BY t1.group_id
+				ORDER BY t2.score_sum DESC, t2.player_id
+		) AS 'player_rank'
+FROM
+		Players AS t1
+INNER JOIN (
+		SQL2
+) AS t2 ON t1.player_id = t2.player_id
+```
+
+
+
+- 有了排名后我们只需要筛选出其中排名为1的即可，最终SQL如下
+
+```mysql
+SELECT
+    group_id,
+    player_id
+FROM (
+    SQL2
+WHERE player_rank = 1
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day250
+
+## Tag: LEFT JOIN ... ON 1
+
+![Xnip2022-03-31_08-53-48](MySQL Note.assets/Xnip2022-03-31_08-53-48.jpg)
+
+
+
+![Xnip2022-03-31_08-53-06](MySQL Note.assets/Xnip2022-03-31_08-53-06.jpg)
+
+题意:
+
+给你一张用户行为日志表，请你按照活跃间隔查询出不同等级的用户
+
+
+
+
+
+思路:
+
+- 这里参照大佬的思路：https://blog.nowcoder.net/n/10050f751c994c358957f6744b44d01d
+- 首先，我们可以查询出每一个用户对应最值日期，SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+	uid, 
+	MIN(DATE(in_time)) AS first_dt,
+	MAX(DATE(out_time)) AS last_dt
+FROM 
+	tb_user_log
+GROUP BY uid
+```
+
+
+
+- 之后我们还需要最近一天的日期和用户数以备之后使用，SQL如下
+
+SQL2:
+
+```mysql
+SELECT 
+	MAX(DATE(out_time)) AS cur_dt,
+	COUNT(DISTINCT uid) AS user_cnt
+FROM 
+	tb_user_log
+```
+
+
+
+
+
+- 此时我们只需要连接两表，计算出每个用户的活跃记录与当前日期的差值即可，SQL如下
+
+SQL3:
+
+```mysql
+SELECT 
+	uid,
+	user_cnt,
+	TIMESTAMPDIFF(DAY, first_dt, cur_dt) AS first_dt_diff,
+	TIMESTAMPDIFF(DAY, last_dt, cur_dt) AS last_dt_diff
+FROM (
+	SQL1
+) AS user_boundary_date
+LEFT JOIN (
+	SQL1
+) AS t_overall_info ON 1
+```
+
+
+
+- 有了差值，剩下的就很简单了：
+- 只需要根据差值做判断，对每个用户id进行分类即可，SQL如下
+
+SQL4:
+
+```mysql
+SELECT 
+	uid,
+	user_cnt,
+	CASE WHEN last_dt_diff >= 30 THEN "流失用户"
+	WHEN last_dt_diff >= 7 THEN "沉睡用户"
+	WHEN first_dt_diff < 7 THEN "新晋用户"
+	ELSE "忠实用户" END AS 'user_grade'
+FROM (
+	SQL3
+) AS tb_user_info
+```
+
+
+
+- 最后只需要按照用户分组，统计用户id和用户数量并相除即可，最终SQL如下
+
+```mysql
+SELECT 
+	user_grade, 
+	ROUND(COUNT(uid) / MAX(user_cnt), 2) AS 'ratio'
+FROM (
+	SQL4
+) AS tb_user_grade
+GROUP BY user_grade
+ORDER BY ratio DESC;
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

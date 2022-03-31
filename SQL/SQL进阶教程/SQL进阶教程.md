@@ -3377,6 +3377,7 @@ Eg:
 
 ![Xnip2022-03-27_21-25-46](../SQL.assets/Xnip2022-03-27_21-25-46.jpg)
 
+<hr>
 
 
 
@@ -3385,9 +3386,113 @@ Eg:
 
 
 
+### 4) 移动累计值和移动平均值
+
+Eg Table:
+
+![Xnip2022-03-30_20-59-30](../SQL.assets/Xnip2022-03-30_20-59-30.jpg)
 
 
 
+要求：求出按照时间记录的累计值
+
+
+
+窗口函数:
+
+```mysql
+SELECT
+	prc_date,
+	prc_amt,
+	SUM(prc_amt) OVER(
+    ORDER BY prc_date
+  ) AS onhand_amt
+FROM
+	Accounts
+```
+
+
+
+
+
+使用标准SQL-92:
+
+```mysql
+SELECT
+	A1.prc_date,
+	A1.prc_amt,
+	(
+	SELECT
+		SUM(A2.prc_amt)
+	FROM
+		Accounts AS A2
+	WHERE A1.prc_date >= A2.prc_date
+	) AS 'onhand_amt'
+FROM
+	Accounts AS A1
+ORDER BY A1.prc_date
+```
+
+
+
+Eg:
+
+![Xnip2022-03-30_21-05-22](../SQL.assets/Xnip2022-03-30_21-05-22.jpg)
+
+上述方法和第二节中的位次计算属于同种类型，只是将COUNT替换为了SUM
+
+
+
+
+
+
+
+修改:
+
+- 以3为单位求累计值(每次计算3行以内的数据)
+- 在上述查询中添加条件：A2与A1日期之间的记录在3行以内
+
+
+
+窗口函数:
+
+```mysql
+SELECT
+	prc_date,
+	prc_amt,
+	SUM(prc_amt) OVER(
+  	ORDER BY prc_date
+    ROWS 2 PRECEDING
+  ) AS onhand_amt
+FROM
+	Accounts
+```
+
+
+
+标量子查询:
+
+```mysql
+SELECT
+	A1.prc_date,
+	A1.prc_amt,
+	(
+	SELECT
+		SUM(prc_amt)
+	FROM
+		Accounts AS A2
+	WHERE A1.prc_date >= A2.prc_date
+	AND (
+		SELECT
+			COUNT(*)
+		FROM
+			Accounts AS A3
+		WHERE A3.prc_date BETWEEN A2.prc_date AND A1.prc_date) <= 3
+	) AS 'mvg_sum'
+FROM
+	Accounts AS A1
+ORDER BY A1.prc_date
+```
 
 
 
