@@ -1637,6 +1637,106 @@ GROUP BY user_grade
 ORDER BY ratio DESC;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day251
+
+## Tag: CASE WHEN, JOIN DELETE
+
+![Xnip2022-04-01_08-01-06](MySQL Note.assets/Xnip2022-04-01_08-01-06.jpg)
+
+
+
+![Xnip2022-04-01_08-01-18](MySQL Note.assets/Xnip2022-04-01_08-01-18.jpg)
+
+题目1:
+
+给你一张员工薪资表，请你查询出每个人的奖金，如果该员工的名字不是以M开头且id为奇数，则奖金为其薪资，否则为0
+
+
+
+思路:
+
+- 这里其实需要一个分支判断，自然想到使用IF或者CASE WHEN，为了可移植性，这里选择用CASE WHEN较好
+- 当然，用两条SELECT再用UNION ALL联合也是可以的，但没有CASE WHEN优雅
+
+<hr>
+
+
+
+![Xnip2022-04-01_08-07-00](MySQL Note.assets/Xnip2022-04-01_08-07-00.jpg)
+
+
+
+![Xnip2022-04-01_08-08-11](MySQL Note.assets/Xnip2022-04-01_08-08-11.jpg)
+
+题目2:
+
+给你一张薪资细节表，请你将其中所有员工的性别进行替换
+
+
+
+思路:
+
+- 很多题解都用到了ASCII这个函数，这种做法当然很妙，但需要依赖具体的函数
+- 其实这里也可以使用CASE WHEN，该用法在《SQL进阶教程》第一章第一节就提到过
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-01_08-13-22](MySQL Note.assets/Xnip2022-04-01_08-13-22.jpg)
+
+
+
+![Xnip2022-04-01_08-13-31](MySQL Note.assets/Xnip2022-04-01_08-13-31.jpg)
+
+题意3:
+
+请你删除个人信息表中邮箱重复的信息，且保留id小的那个
+
+
+
+思路:
+
+- 我们先不考虑题意，先尝试查询出需要删除的数据:
+
+```mysql
+SELECT
+	t1.email
+FROM
+	Person AS t1
+INNER JOIN Person AS t2 ON t1.email = t2.email
+WHERE t1.id > t2.id
+```
+
+
+
+- 写出这个SQL之后其实就得到答案了，我们只需要替换一下:
+
+```mysql
+UPDATE
+	t1
+FROM
+	Person AS t1
+INNER JOIN Person AS t2 ON t1.email = t2.email
+WHERE t1.id > t2.id
+```
+
+
+
 
 
 

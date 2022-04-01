@@ -3496,6 +3496,315 @@ ORDER BY A1.prc_date
 
 
 
+Eg:
+
+![Xnip2022-03-31_14-15-47](../SQL.assets/Xnip2022-03-31_14-15-47.jpg)
+
+
+
+
+
+查看聚合后的结果:
+
+![Xnip2022-03-31_14-21-39](../SQL.assets/Xnip2022-03-31_14-21-39.jpg)
+
+- 同样的，我们也可以直接将SUM改为AVG从而得以求出AVG函数
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 重叠的时间区间
+
+Eg Table:
+
+![Xnip2022-03-31_14-30-15](../SQL.assets/Xnip2022-03-31_14-30-15.jpg)
+
+
+
+![Xnip2022-03-31_14-31-29](../SQL.assets/Xnip2022-03-31_14-31-29.jpg)
+
+
+
+要求：查出住宿日期重叠的客人
+
+
+
+- 该题目中有三种日期重叠类型:
+    - 入住日期在别人的住宿期内
+    - 离店日期在别人的住宿期内
+    - 入住和离店都在别人的住宿期内
+
+因此我们只需要查询出满足任意一种条件的客人即可，其中第3个条件其实就是同时满足条件1、2的情况
+
+```mysql
+SELECT
+	reserver,
+	start_date,
+	end_date
+FROM
+	Reservations AS R1
+WHERE EXISTS (
+	SELECT
+		R2.reserver
+	FROM
+		Reservations AS R2
+	WHERE R1.reserver != R2.reserver
+	AND (R1.start_date BETWEEN R2.start_date AND R2.end_date
+	OR R1.end_date BETWEEN R2.start_date AND R2.end_date)
+)
+```
+
+
+
+为了不与自身比较，这里需要使用R1.reserver != R2.reserver进行排除
+
+因为我们需要查询的是满足条件1、2的，所以需要入住日期值或者离店日期值在表二的其他人的住宿期间内
+
+
+
+- 但如果有人的住宿区间被其他人完全包含了，那么这样的住宿记录就不会被查询出来
+- 例如，将山本的入住日期推迟到11-04，那么其住宿期间会被内田完全包含，想要将这样的期间也输出的话，我们就需要追加条件了:
+
+```mysql
+SELECT
+	reserver,
+	start_date,
+	end_date
+FROM
+	Reservations AS R1
+WHERE EXISTS (
+	SELECT
+		R2.reserver
+	FROM
+		Reservations AS R2
+	WHERE R1.reserver != R2.reserver
+	AND ((R1.start_date BETWEEN R2.start_date AND R2.end_date
+		OR R1.end_date BETWEEN R2.start_date AND R2.end_date)
+	OR (R2.start_date BETWEEN R2.start_date AND R2.end_date
+		AND R2.end_date BETWEEN R1.start_date AND R1.end_date))
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-03-31_14-52-51](../SQL.assets/Xnip2022-03-31_14-52-51.jpg)
+
+这样我们就将两种包含关系都解决了
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 6) 小结
+
+关联子查询的缺点:
+
+- 代码的可读性差
+- 性能不好
+
+
+
+要点:
+
+1. 作为面向集合的语言，SQL比较多行数据时，不进行循环和排序
+2. SQL在比较多行数据时，是通过关联子查询偏移处理得到的
+3. 关联子查询的缺点是性能和可读性不好
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 练习
+
+
+
+#### 1-6-1
+
+Eg Table:
+
+![Xnip2022-03-31_15-23-20](../SQL.assets/Xnip2022-03-31_15-23-20.jpg)
+
+
+
+在之前的部分中，我们用如下的SQL查询出了企业每年营业额与上一年相比是和否有增加:
+
+```mysql
+SELECT
+	S1.year,
+	S1.sale,
+	CASE WHEN sale = (SELECT sale FROM Sales AS S2 WHERE S1.year - S2.year = 1) THEN '→'
+	WHEN sale > (SELECT sale FROM Sales AS S2 WHERE S1.year - S2.year = 1) THEN '↑'
+	WHEN sale < (SELECT sale FROM Sales AS S2 WHERE S1.year - S2.year = 1) THEN '↓'
+	ELSE '-' END AS 'var'
+FROM
+	Sales AS S1
+ORDER BY S1.year
+```
+
+在该SQL中，同样的子查询执行了三次，请把它们整合在一个WHEN子句里
+
+
+
+
+
+答案:
+
+```mysql
+SELECT
+	S1.year,
+	S1.sale,
+	CASE SIGN(S1.sale - (SELECT sale FROM Sales AS S2 WHERE S1.year - S2.year = 1))
+	WHEN 0 THEN '→'
+	WHEN -1 THEN '↓'
+	WHEN 1 THEN '↑'
+	ELSE '-' END AS 'var'
+FROM
+	Sales AS S1
+ORDER BY S1.year
+```
+
+- 这里我们需要使用**SIGN谓词将**S1.sale - S2.sale的结果转换为-1, 0, 1
+- 之后只需要通过简单CASE表达式，对三种情况进行判断输出即可
+
+
+
+官方文档:
+
+![Xnip2022-03-31_15-41-19](../SQL.assets/Xnip2022-03-31_15-41-19.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 1-6-2
+
+在重叠的时间区间中，我们其实可以使用SQL-92提供的OVERLAPS谓词，其就是用来查询重叠的时间区间的，请你用Overlaps来重写以下SQL来获取重叠的时间区间:
+
+```mysql
+SELECT
+	reserver,
+	start_date,
+	end_date
+FROM
+	Reservations AS R1
+WHERE EXISTS (
+	SELECT
+		R2.reserver
+	FROM
+		Reservations AS R2
+	WHERE R1.reserver != R2.reserver
+	AND ((R1.start_date BETWEEN R2.start_date AND R2.end_date
+		OR R1.end_date BETWEEN R2.start_date AND R2.end_date)
+	OR (R2.start_date BETWEEN R2.start_date AND R2.end_date
+		AND R2.end_date BETWEEN R1.start_date AND R1.end_date))
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-03-31_18-41-22](../SQL.assets/Xnip2022-03-31_18-41-22.jpg)
+
+
+
+
+
+MySQL:
+
+- 在MySQL5.7.6及之后的版本中，使用MBROverlaps代替Overlaps
+
+
+
+官方文档:
+
+![Xnip2022-03-31_15-55-47](../SQL.assets/Xnip2022-03-31_15-55-47.jpg)
+
+
+
+![Xnip2022-03-31_15-59-13](../SQL.assets/Xnip2022-03-31_15-59-13.jpg)
+
+
+
+
+
+PostgreSQL运行:
+
+```postgresql
+SELECT
+	R1.reserver,
+	R1.start_date,
+	R1.end_date
+FROM
+	reservations R1,
+	reservations R2 
+WHERE R1.reserver != R2.reserver
+AND (R1.start_date, R1.end_date) OVERLAPS (R2.start_date, R2.end_date);
+```
+
+
+
+Eg:
+
+![Xnip2022-03-31_16-59-55](../SQL.assets/Xnip2022-03-31_16-59-55.jpg)
+
+
+
+官方文档:
+
+![Xnip2022-03-31_18-46-50](../SQL.assets/Xnip2022-03-31_18-46-50.jpg)
+
+
+
+这里没有出现荒木和堀，说明Overlaps并不会将只有时间点重叠的记录区间算做重叠区间，这里和BETWEEN AND不同
+
+
+
+
+
 
 
 
