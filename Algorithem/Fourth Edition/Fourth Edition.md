@@ -739,6 +739,438 @@ Code:
 
 ![Xnip2022-03-26_20-31-54](Algorithm Fourth.assets/Xnip2022-03-26_20-31-54.jpg)
 
+<hr>
+
+
+
+
+
+
+
+# 二、栈与队列
+
+栈拥有的方法:
+
+- isEmpty: 栈是否为空
+- push将元素压入栈
+- pop弹出栈顶元素
+
+
+
+
+
+## 1. 栈的简单实现
+
+
+
+### 1) 使用链表实现字符串栈
+
+
+
+1. isEmpty:
+
+判断指向栈顶的节点是否为null
+
+```java
+public boolean isEmpty() {
+  return topNode == null;
+}
+```
+
+
+
+
+
+2. push:
+
+将元素压入栈
+
+- 这里我们将栈顶元素更新为新的链表头节点
+
+```java
+public void push(String item) {
+  Node newNode = new Node();
+  nextNode.item = item;
+  
+  newNode.next = topNode;
+  topNode = newNode;
+}
+```
+
+
+
+
+
+3. pop:
+
+返回指向栈顶的节点对应的值
+
+- 首先获取栈顶元素，再更新栈顶元素对应的节点
+
+```java
+public String pop() {
+  String popString = topNode.item;
+  topNode = topNode.next;
+  
+  return popString;
+}
+```
+
+
+
+Code:
+
+```java
+public class LinkedStackOfStrings {
+    Node topItem = null;
+
+    private static class Node {
+        String item;
+        Node next;
+    }
+
+    public boolean isEmpty() {
+        return topItem == null;
+    }
+
+    public void push(String item) {
+        Node curTopItem = new Node();
+        curTopItem.item = item;
+
+        curTopItem.next = topItem;
+        topItem = curTopItem;
+    }
+
+    public String pop() {
+        String curTopItem = topItem.item;
+
+        topItem = topItem.next;
+        return curTopItem;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 使用数组实现字符串栈
+
+缺陷：需要预先指定数组的长度
+
+
+
+1. isEmpty:
+
+- 判断索引是否指向0
+
+```java
+public boolean isEmpty() {
+  return index == 0;
+}
+```
+
+
+
+2. push:
+
+- 将入栈元素添加到数组对应的位置中
+
+```java
+public void push(String item) {
+  array[index] = item;
+  index++;
+}
+```
+
+
+
+3. pop:
+
+- 首先递减index，然后返回index指向的数组元素
+
+```java
+public String pop() {
+  index--;
+  return array[index];
+}
+```
+
+
+
+对pop的改进:
+
+- 我们暂时只是更新了对应的索引值，但数组中的元素还依然存在且占用空间，所以我们需要手动地将弹出的元素设置为null才能节省空间:
+
+```java
+public String pop() {
+  index--;
+  String popString = array[index];
+  array[index] = null;
+  
+  index--;
+  return popString;
+}
+```
+
+
+
+Code:
+
+```java
+public class FixedCapacityStackOfStrings {
+    int idx = 0;
+    String[] array;
+
+    public FixedCapacityStackOfStrings(int capacity) {
+        this.array = new String[capacity];
+    }
+
+    public void push(String item) {
+        array[idx] = item;
+        idx++;
+    }
+
+    public String pop() {
+        idx--;
+        String topItem = array[idx];
+        array[idx] = null;
+
+        return topItem;
+    }
+
+    public boolean isEmpty() {
+        return idx == 0;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 修改数组大小
+
+
+
+### 1) grow
+
+- 在push上进行修改
+- 如果当前索引值等于数组长度，则扩容为原来的两倍
+
+Code:
+
+```java
+public void push(String item) {
+  if (index == array.length) {
+    resizeArray(array.length * 2);
+  }
+  
+  array[index] = item;
+  index++;
+}
+```
+
+
+
+resize方法:
+
+```java
+private void resizeArray(int capacity) {
+  String[] newArray = new String[capacity];
+
+  for (int i = 0; i < idx; i++) {
+    newArray[i] = strArray[i];
+  }
+
+  strArray = newArray;
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) shrink
+
+- 参照grow的思路，如果index为数组长度 / 2，则减少长度
+- 但这样做的话，如果反复进行push和pop的话，就会反复调用resize方法:
+
+![Xnip2022-04-01_10-42-58](Algorithm Fourth.assets/Xnip2022-04-01_10-42-58.jpg)
+
+
+
+
+
+- 为了避免这种情况，我们将阈值调整为length / 4
+
+Code:
+
+```java
+public String pop() {
+  idx--;
+  String popString = strArray[idx];
+  strArray[idx] = null;
+
+  if (idx == strArray.length / 4) {
+    resizeArray(strArray.length / 2);
+  }
+
+  return popString;
+}
+```
+
+
+
+
+
+
+
+ResizingArrayOfStackStrings实现Code:
+
+```java
+public class ResizingArrayStackOfStrings {
+    String[] strArray;
+    int idx = 0;
+
+    public ResizingArrayStackOfStrings() {
+        this.strArray = new String[1];
+    }
+
+    public boolean isEmpty() {
+        return idx == 0;
+    }
+
+    public void push(String item) {
+        if (idx == strArray.length) {
+            resizeArray(strArray.length * 2);
+        }
+
+        strArray[idx] = item;
+        idx++;
+    }
+
+    public String pop() {
+        idx--;
+        String popString = strArray[idx];
+        strArray[idx] = null;
+
+        if (idx == strArray.length / 4) {
+            resizeArray(strArray.length / 2);
+        }
+
+        return popString;
+    }
+
+    private void resizeArray(int capacity) {
+        String[] newArray = new String[capacity];
+
+        for (int i = 0; i < idx; i++) {
+            newArray[i] = strArray[i];
+        }
+
+        strArray = newArray;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 3. 队列
+
+
+
+### 1) 用链表实现
+
+
+
+- isEmpty
+
+通过头节点判断
+
+```java
+public boolean isEmpty() {
+  return this.first = null;
+}
+```
+
+
+
+- enqueue
+
+将元素入队，尾插法
+
+```java
+public void enqueue(String item) {
+  Node oldLast = this.last;
+  last = new Node();
+  last.item = item;
+  
+  if (this.isEmpty()) {
+    this.first = this.last;
+  } else {
+    oldLast.next = this.last;
+  }
+}
+```
+
+
+
+- dequeue
+
+队头元素出队
+
+```java
+public String dequeue() {
+  String item = first.item;
+  first = first.next;
+  
+  if (this.isEmpty()) {
+    this.last = null;
+  }
+  
+  return item;
+}
+```
+
+
+
+Code:
+
 
 
 

@@ -1727,7 +1727,7 @@ WHERE t1.id > t2.id
 - 写出这个SQL之后其实就得到答案了，我们只需要替换一下:
 
 ```mysql
-UPDATE
+DELETE
 	t1
 FROM
 	Person AS t1
@@ -1735,6 +1735,7 @@ INNER JOIN Person AS t2 ON t1.email = t2.email
 WHERE t1.id > t2.id
 ```
 
+<hr>
 
 
 
@@ -1744,8 +1745,82 @@ WHERE t1.id > t2.id
 
 
 
+# Day252
+
+## Tag: SUBSTRING, LOWER, UPPER, REGEXP, GROUP_CONCAT
+
+![Xnip2022-04-02_07-18-59](MySQL Note.assets/Xnip2022-04-02_07-18-59.jpg)
 
 
+
+![Xnip2022-04-02_07-20-12](MySQL Note.assets/Xnip2022-04-02_07-20-12.jpg)
+
+ 题意:
+
+给你一张用户信息表，请你将其中的姓名按照规定的格式查询出来
+
+
+
+
+
+思路:
+
+- 题目需要我们将name字段分两部分处理：取开头题目很简单，使用LEFT即可，再用UPPER包裹即可变为大写
+- 之后的部分只需要使用SUBSTRINg即可，再用LOWER包裹，最后使用CONCAT将两部分组合在一起
+
+<hr>
+
+
+
+
+
+
+
+
+
+![Xnip2022-04-02_07-31-12](MySQL Note.assets/Xnip2022-04-02_07-31-12.jpg)
+
+
+
+![Xnip2022-04-02_07-31-26](MySQL Note.assets/Xnip2022-04-02_07-31-26.jpg)
+
+题意:
+
+给你一张销售记录表，请你查询出其中每天的销售的商品数量和对应的商品名称
+
+
+
+
+
+思路:
+
+- 因为是按照日期来，所以需要根据日期分组，至于商品数量则需要使用COUNT计算字段数，注意这里要去重
+- 第三个字段，如果没学过GROUP_CONCAT的话可能就会很懵，其实这是一个聚合分组的函数，其中也需要去重和排序
+
+<hr>
+
+
+
+![Xnip2022-04-02_07-43-10](MySQL Note.assets/Xnip2022-04-02_07-43-10.jpg)
+
+
+
+![Xnip2022-04-02_07-43-27](MySQL Note.assets/Xnip2022-04-02_07-43-27.jpg)
+
+题意:
+
+给你一张病人的信息表，请你查询出其中患有1类糖尿病的患者
+
+
+
+
+
+思路:
+
+- 该题目需要我们匹配conditions字段中出现DIAB1的记录
+- 但conditions中有两种出现正确的DIAB1字符的情况：要么在开头，要么作为第2个或之后的词组出现
+- 所以我们需要同时考虑两种情况中的一种，在开头很简单，用正则^DIAB1即可，但第二种情况呢？
+- 其实只需要匹配' DIAB1'即可，也就是在前面加一个空格，在正则中表示或需要使用｜，所以最终正则为(^DIAB1| DIAB1)
 
 
 
