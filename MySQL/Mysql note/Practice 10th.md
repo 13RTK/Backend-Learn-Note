@@ -1822,7 +1822,107 @@ WHERE t1.id > t2.id
 - 所以我们需要同时考虑两种情况中的一种，在开头很简单，用正则^DIAB1即可，但第二种情况呢？
 - 其实只需要匹配' DIAB1'即可，也就是在前面加一个空格，在正则中表示或需要使用｜，所以最终正则为(^DIAB1| DIAB1)
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Day253
+
+## Tag: UNION ALL
+
+![Xnip2022-04-03_07-36-59](MySQL Note.assets/Xnip2022-04-03_07-36-59.jpg)
+
+
+
+![Xnip2022-04-03_07-36-30](MySQL Note.assets/Xnip2022-04-03_07-36-30.jpg)
+
+题意:
+
+给你一张雇员信息表，一张薪资表，请你查询出其中所有信息缺失的员工(缺失姓名或者薪资)
+
+
+
+
+
+思路:
+
+- 因为在MySQL中不支持全外连接，所以这里我们需要使用两次外连接，这两次连接中name或salary为NULL的其实就是我们需要的结果，之后用UNION ALL获取并集即可
+- 如果使用的是支持全外连接的DBMS的话(比如PostgreSQL)，则可以这样写:
+
+```postgresql
+WITH tb_temp AS (
+	SELECT
+		t1.employee_id AS "first_id",
+		t2.employee_id AS "second_id"
+	FROM
+		"Employees" AS t1
+	FULL JOIN "Salaries" AS t2 ON t1.employee_id = t2.employee_id
+	WHERE t1.name IS NULL
+	OR t2.salary IS NULL
+)
+
+SELECT
+	first_id AS "employee_id"
+FROM
+	"tb_temp"
+WHERE first_id IS NOT NULL
+UNION ALL
+SELECT
+	second_id
+FROM
+	"tb_temp"
+WHERE second_id IS NOT NULL
+ORDER BY employee_id
+	
+```
+
+- 这样一来就只需要一次连接操作了
+
+<hr>
+
+
+
+![Xnip2022-04-03_08-05-12](MySQL Note.assets/Xnip2022-04-03_08-05-12.jpg)
+
+
+
+![Xnip2022-04-03_08-05-41](MySQL Note.assets/Xnip2022-04-03_08-05-41.jpg)
+
+<hr>
+
+
+
+
+
+
+
+![Xnip2022-04-03_08-04-00](MySQL Note.assets/Xnip2022-04-03_08-04-00.jpg)
+
+
+
+![Xnip2022-04-03_08-06-10](MySQL Note.assets/Xnip2022-04-03_08-06-10.jpg)
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-03_08-09-40](MySQL Note.assets/Xnip2022-04-03_08-09-40.jpg)
+
+
+
+![Xnip2022-04-03_08-09-44](MySQL Note.assets/Xnip2022-04-03_08-09-44.jpg)
 
 
 

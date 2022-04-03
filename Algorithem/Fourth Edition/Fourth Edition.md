@@ -1171,7 +1171,307 @@ public String dequeue() {
 
 Code:
 
+```java
+public class LinkedQueueOfStrings {
+    private static class Node {
+        String item;
+        Node next;
+    }
 
+    Node first;
+    Node last;
+    int size;
+
+    public void enqueue(String item) {
+        Node oldLast = this.last;
+
+        this.last = new Node();
+        this.last.item = item;
+
+        if (this.isEmpty()) {
+            this.first = this.last;
+        } else {
+            oldLast.next = this.last;
+        }
+
+        this.size++;
+    }
+
+
+    public String dequeue() {
+        String removeItem = this.first.item;
+        this.first = this.first.next;
+
+        if (this.isEmpty()) {
+            this.last = null;
+        }
+
+        return removeItem;
+    }
+
+
+    public boolean isEmpty() {
+        return this.first == null;
+    }
+
+    public int size() {
+        return this.size;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. Generic泛型
+
+- 如果还按照之前的方式实现栈/队列的话，我们一次只能针对一种类型设计
+- 如果有多个类需要使用栈/队列呢？针对每个类型创建一个对应的实现类？
+
+![Xnip2022-04-02_20-40-59](Algorithm Fourth.assets/Xnip2022-04-02_20-40-59.jpg)
+
+
+
+- 引入泛型就可以轻松解决该问题
+
+
+
+
+
+### 1) 链表实现
+
+
+
+Code:
+
+```java
+public class GenericStack<T> {
+    private class Node {
+        T item;
+        Node next;
+    }
+
+    Node topNode;
+    int size = 0;
+
+    public boolean isEmpty() {
+        return topNode == null;
+    }
+
+    public void push(T item) {
+        Node curTopNode = new Node();
+        curTopNode.item = item;
+
+        curTopNode.next = topNode;
+        topNode = curTopNode;
+
+        this.size++;
+    }
+
+    public T pop() {
+        T popItem = topNode.item;
+        topNode = topNode.next;
+
+        this.size--;
+
+        return popItem;
+    }
+
+    public int getSize() {
+        return this.size;
+    }
+}
+```
+
+- 因为范型的本质还是强制类型转换，所以不能使用基础类型，需要使用对应的包装类
+- 注意：Java中不允许创建范型数组(所以数组实现中会出现强制类型转换)
+
+
+
+
+
+
+
+### 2) 数组实现
+
+
+
+Code:
+
+```java
+public class GenericFixedCapacityStack<T> {
+    private T[] array;
+    private int idx;
+
+    public GenericFixedCapacityStack() {
+        this.array = (T[]) new Object[1];
+        this.idx = 0;
+    }
+
+    public boolean isEmpty() {
+        return idx == 0;
+    }
+
+    public void push(T item) {
+        if (idx == array.length) {
+            resizeArray(idx * 2);
+        }
+
+        array[idx] = item;
+        idx++;
+    }
+
+    public T pop() {
+        idx--;
+        T popItem = array[idx];
+        array[idx] = null;
+
+        if (idx == array.length / 4) {
+            resizeArray(array.length / 2);
+        }
+
+        return popItem;
+    }
+
+    private void resizeArray(int capacity) {
+        Object [] newArray = new Object[capacity];
+
+        for (int i = 0; i < idx; i++) {
+            newArray[i] = array[i];
+        }
+
+        array = (T[]) newArray;
+    }
+
+    public int size() {
+        return this.array.length;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5. Iterator迭代器
+
+- 对于不同的数据类型，遍历的方式不同
+- 我们可以让对应的类实现Iterable接口中的方法:
+- 其中的iterator方法可以返回一个Iterator实例
+
+![Xnip2022-04-02_21-13-26](Algorithm Fourth.assets/Xnip2022-04-02_21-13-26.jpg)
+
+
+
+
+
+- 通过Iterator实例，我们可以调用hasNext和next方法来实现遍历
+
+![Xnip2022-04-02_21-14-33](Algorithm Fourth.assets/Xnip2022-04-02_21-14-33.jpg)
+
+
+
+
+
+- 在之前的Generic类上实现Iterable<T>接口，在重写的方法中返回一个实现了Iterator<T>接口的迭代器实例即可
+
+
+
+Code:
+
+```java
+public class GenericStack<T> implements Iterable<T> {
+    @Override
+    public Iterator<T> iterator() {
+        return new ListNodeIterator();
+    }
+
+    private class ListNodeIterator implements Iterator<T> {
+        private Node curNode = topNode;
+
+        @Override
+        public boolean hasNext() {
+            return curNode != null;
+        }
+
+        @Override
+        public T next() {
+            T item = curNode.item;
+            curNode = curNode.next;
+
+            return item;
+        }
+    }
+
+    private class Node {
+        T item;
+        Node next;
+    }
+
+    Node topNode;
+    int size = 0;
+
+    public boolean isEmpty() {
+        return topNode == null;
+    }
+
+    public void push(T item) {
+        Node curTopNode = new Node();
+        curTopNode.item = item;
+
+        curTopNode.next = topNode;
+        topNode = curTopNode;
+
+        this.size++;
+    }
+
+    public T pop() {
+        T popItem = topNode.item;
+        topNode = topNode.next;
+
+        this.size--;
+
+        return popItem;
+    }
+
+    public int getSize() {
+        return this.size;
+    }
+}
+```
 
 
 

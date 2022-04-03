@@ -4019,6 +4019,132 @@ S UNION S = S
 
 
 
+### 3) 比较表和表: 检查集合相等性(advanced)
+
+在集合论中，判断两个集合是否相等的方法:
+
+1. A包含B 且 B 包含 A，则可得到: A = B
+2. A并B = A 交 B，则可得到: A = B
+
+
+
+其中第二种方法在SQL中可表示为: 如果 A UNION B = A INTERSECT B，则集合A和集合B相等
+
+
+
+- 如果集合A = B，则A UNION B = A = B以及A INTERSECT B = A = B都是成立的
+
+所以INTERSECT也是具有幂等性!
+
+- 但如果A ≠ B，则UNION的结果 > INTERSECT，**UNION的结果肯定会变多**
+
+
+
+
+
+在SQL中，因为A并B 包含 A交B，所以如果A = B的话，A并B 排除掉 A交B = 空集
+
+```postgresql
+SELECT
+	CASE WHEN COUNT(*) = 0
+	THEN '相等'
+	ELSE '不相等' END AS "result"
+FROM ((SELECT * FROM "tbl_A"
+			UNION
+			 SELECT * FROM "tbl_B")
+			EXCEPT
+			(SELECT * FROM "tbl_A"
+			INTERSECT
+			SELECT * 	FROM "tbl_B")) AS temp
+```
+
+- 该写法不需要统计表的行数，但需要四次排序，所以性能不行
+
+
+
+
+
+如果知道表有差异后，查询出它们的异或集:
+
+```postgresql
+(SELECT * FROM "tbl_A"
+EXCEPT
+SELECT * FROM "tbl_B")
+UNION ALL
+(SELECT * FROM "tbl_B"
+EXCEPT
+SELECT * FROM "tbl_A")
+```
+
+Eg:
+
+![Xnip2022-04-02_09-13-20](../SQL.assets/Xnip2022-04-02_09-13-20.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 用差集实现关系除法
+
+- 因为标准SQL还没能将设置标准的关系除法，所以需要我们自己来实现
+- 其中有代表性的方法有三个:
+    1. 嵌套使用NOT EXISTS
+    2. 使用HAVING子句转换一对一关系
+    3. 将除法变为乘法
+
+
+
+在1-5外连接实现差集时提到过：外连接本身不是用来获取差集的，只是在没有差集运算符的数据库上实现差集的代替方法
+
+
+
+
+
+Eg Table:
+
+![Xnip2022-04-02_16-46-03](../SQL.assets/Xnip2022-04-02_16-46-03.jpg)
+
+要求:
+
+找出所有精通表Skills中所有技术的员工
+
+
+
+SQL:
+
+```postgresql
+SELECT
+	emp
+FROM
+	"EmpSkills" AS t1
+WHERE NOT EXISTS (
+	SELECT
+		skill
+	FROM
+		"Skills"
+	EXCEPT
+	SELECT
+		skill
+	FROM
+		"EmpSkills" AS t2
+	WHERE t2.emp = t1.emp
+)
+GROUP BY emp
+```
+
+
+
+
+
+
 
 
 
