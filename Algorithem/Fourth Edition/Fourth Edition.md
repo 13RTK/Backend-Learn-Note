@@ -1473,6 +1473,126 @@ public class GenericStack<T> implements Iterable<T> {
 }
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6. 应用
+
+
+
+### 1)  Dijkstra(迪杰斯特拉) two-stack algorithm
+
+利用两个栈，计算常规的算式:
+
+![Xnip2022-04-03_20-40-13](Algorithm Fourth.assets/Xnip2022-04-03_20-40-13.jpg)
+
+
+
+- 创建两个栈，一个用来存放数字，一个存放运算符
+- 遇到右括号则弹出两个数并进行与运算符对应的操作
+
+Code:
+
+```java
+public static void plusAndMultiply(String input) {
+  GenericStack<Character> signStack = new GenericStack<>();
+  GenericStack<Integer> numStack = new GenericStack<>();
+
+  for (char curChar : input.toCharArray()) {
+    if (Character.isDigit(curChar)) {
+      numStack.push(Integer.valueOf((String.valueOf(curChar))));
+      //                System.out.println("number push, number is " + curChar);
+
+    } else if (curChar == '+' || curChar == '*') {
+      signStack.push(curChar);
+      //                System.out.println("sign push, sign is " + curChar);
+
+    } else if (curChar == ')') {
+      int num1 = numStack.pop();
+      int num2 = numStack.pop();
+
+      char operator = signStack.pop();
+
+      if (operator == '*') {
+        numStack.push(num1 * num2);
+        //                    System.out.println("Multiply: " + (num1 * num2));
+      } else if (operator == '+') {
+        numStack.push(num1 + num2);
+        //                    System.out.println("Plus: " + (num1 + num2));
+      }
+    }
+  }
+
+  System.out.println("The result of input equation is: " + numStack.pop());
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 进制转换
+
+- 利用栈的性质可将每次的余数存放在栈中，最后按照弹出顺序获取的组合就是转换后的数
+
+
+
+Code:
+
+```java
+public static void decimalToBinary(int decimalInt) {
+  GenericStack<Integer> stack = new GenericStack<>();
+
+  while (decimalInt > 0) {
+    stack.push(decimalInt % 2);
+    decimalInt /= 2;
+  }
+
+  while (!stack.isEmpty()) {
+    System.out.print(stack.pop());
+  }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 7. 作业
+
+
+
+
+
+
+
+
+
 
 
 

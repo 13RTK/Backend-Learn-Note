@@ -4140,7 +4140,211 @@ WHERE NOT EXISTS (
 GROUP BY emp
 ```
 
+Eg:
 
+![Xnip2022-04-03_08-52-31](../SQL.assets/Xnip2022-04-03_08-52-31.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 寻找相等的子集
+
+Eg Table
+
+![Xnip2022-04-03_09-02-13](../SQL.assets/Xnip2022-04-03_09-02-13.jpg)
+
+要求:
+
+查询出所有零件数和种类完全相同的供应商组合(A-C和B-D)
+
+
+
+- SQL并没有检查集合包含关系或者相等性的谓词，IN只针对单个元素
+- 所以该问题的难点在于比较的对象为集合，且这次比较的双方都不固定。我们需要比较所有子集的全部组合
+
+
+
+第一步：生成供应商的全部组合
+
+```postgresql
+SELECT
+	SP1.sup AS s1,
+	SP2.sup AS s2
+FROM
+	"SupParts" AS SP1,
+	"SupParts" AS SP2
+WHERE SP1.sup < SP2.sup
+GROUP BY SP1.sup, SP2.sup
+```
+
+
+
+Eg:
+
+![Xnip2022-04-03_09-07-58](../SQL.assets/Xnip2022-04-03_09-07-58.jpg)
+
+
+
+
+
+- 第二步：检查条件
+
+我们需要检查供应组合是否满足以下公式:
+
+A 包含 B 且 B 包含 A -> A = B
+
+
+
+该公式等价于:
+
+1. 两个供应商都经营同种类型的零件
+2. 两个供应商经营的零件种类相同
+
+
+
+条件一只需要连接part字段，条件二则需要比较COUNT函数的结果
+
+```postgresql
+SELECT
+	SP1.sup AS s1,
+	SP2.sup AS s2
+FROM
+	"SupParts" AS SP1,
+	"SupParts" AS SP2
+WHERE SP1.sup < SP2.sup
+AND SP1.part = SP2.part
+GROUP BY SP1.sup, SP2.sup
+HAVING COUNT(*) = (
+	SELECT
+		COUNT(*)
+	FROM
+		"SupParts" AS SP3
+	WHERE SP3.sup = SP1.sup
+)
+AND COUNT(*) = (
+	SELECT
+		COUNT(*)
+	FROM
+		"SupParts" AS SP4
+	WHERE SP4.sup = SP2.sup
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-03_09-17-10](../SQL.assets/Xnip2022-04-03_09-17-10.jpg)
+
+- 其中HAVING子句对比了两个供应商的零件数量，而WHERE子句又保证了两个供应商的零件类型相同
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 6) 删除重复行的高效SQL
+
+Eg Table:
+
+![Xnip2022-04-03_17-50-27](../SQL.assets/Xnip2022-04-03_17-50-27.jpg)
+
+请你删除其中重复的行
+
+
+
+之前的做法:
+
+```postgresql
+DELETE 
+FROM
+	"Products" AS P1 
+WHERE
+	P1.rowid < ( SELECT MAX ( P2.rowid ) FROM "Products" AS P2 WHERE P1.NAME = P2.NAME AND P1.price = P2.price )
+```
+
+
+
+
+
+不使用相关子查询的做法:
+
+```postgresql
+DELETE FROM "Products"
+WHERE rowid IN (
+	SELECT
+		rowid
+	FROM
+		"Products"
+	EXCEPT
+	SELECT
+		MAX(rowid)
+	FROM
+		"Products"
+	GROUP BY name, price
+)
+```
+
+
+
+改写为NOT IN:
+
+```postgresql
+DELETE FROM "Products"
+WHERE rowid NOT IN (
+	SELECT
+		MAX(rowid)
+	FROM
+		"Products"
+	GROUP BY name, price
+)
+```
+
+- 该种方法可以用在不支持EXCEPT的数据库上
+- 两种方法的性能优劣取决于表的规模，以及删除的行与留下的行之间的比例
+
+
+
+逻辑:
+
+![Xnip2022-04-03_18-18-55](../SQL.assets/Xnip2022-04-03_18-18-55.jpg)
+
+
+
+- 实现了行id的数据库只有Oracle和PostgreSQL
+- 在PostgreSQL想要使用，还必须在创建表的时候指定选项WITH OLDS
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 7) 小结
 
 
 
