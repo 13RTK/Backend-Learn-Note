@@ -1978,6 +1978,7 @@ ORDER BY employee_id
 
 ![Xnip2022-04-04_09-00-55](MySQL Note.assets/Xnip2022-04-04_09-00-55.jpg)
 
+<hr>
 
 
 
@@ -1991,8 +1992,48 @@ ORDER BY employee_id
 
 
 
+# Day255
+
+## Tag: DATEDIFF, EXISTS
+
+![Xnip2022-04-05_10-10-53](MySQL Note.assets/Xnip2022-04-05_10-10-53.jpg)
 
 
+
+![Xnip2022-04-05_10-12-07](MySQL Note.assets/Xnip2022-04-05_10-12-07.jpg)
+
+题意:
+
+给你一张每天的气温记录表，请你查询出相比前一天气温升高的记录id
+
+
+
+思路:
+
+- 
+
+- 因为需要不同行对比，所以我们需要使用内连接，连接的关系即为日期差值为1和温度的高低关系，所以SQL如下
+
+```mysql
+SELECT
+    t1.id
+FROM
+    Weather AS t1
+INNER JOIN Weather AS t2 ON DATEDIFF(t1.recordDate, t2.recordDate) = 1
+AND t1.Temperature > t2.Temperature
+```
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-05_10-24-04](MySQL Note.assets/Xnip2022-04-05_10-24-04.jpg)
+
+
+
+![Xnip2022-04-05_10-24-12](MySQL Note.assets/Xnip2022-04-05_10-24-12.jpg)
 
 
 

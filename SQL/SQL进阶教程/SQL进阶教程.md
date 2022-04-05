@@ -4346,11 +4346,148 @@ WHERE rowid NOT IN (
 
 ### 7) 小结
 
+1. 在集合运算标准化上，目前进行得很缓慢，所以在使用的时候需要参照具体的数据库
+2. 集合运算符在不指定ALL选项的情况下会排除重复项并排序，所以性能不好
+3. UNION和INTERSECT都具有幂等性(仅针对数学定义上的集合)，EXCEPT不具有幂等性
+4. 标准SQL中没有关系除法运算符，需要自己来实现
+5. 判断两个集合是否相等可通过幂等性进行映射
+6. 通过EXCEPT可以求出补集
+
+<hr>
 
 
 
 
 
+
+
+
+
+
+
+### 8) 练习
+
+
+
+#### 1-7-1
+
+
+
+Eg Table:
+
+![Xnip2022-04-01_16-28-22](../SQL.assets/Xnip2022-04-01_16-28-22.jpg)
+
+
+
+![Xnip2022-04-01_16-28-34](../SQL.assets/Xnip2022-04-01_16-28-34.jpg)
+
+
+
+不统计行数，判断这两张表是否相等
+
+
+
+我的解答:
+
+```postgresql
+SELECT
+	CASE WHEN COUNT(*) = 0 
+	THEN '相等'
+	ELSE '不相等' END AS "result"
+FROM (
+	(SELECT * FROM "tbl_A"
+	UNION
+	SELECT * FROM "tbl_B")
+	EXCEPT
+	(SELECT * FROM "tbl_A"
+	INTERSECT
+	SELECT * FROM "tbl_B")
+) AS "temp"
+```
+
+
+
+答案:
+
+```sql
+SELECT CASE WHEN COUNT(*) = (SELECT COUNT(*) FROM tbl_A )
+             AND COUNT(*) = (SELECT COUNT(*) FROM tbl_B )
+            THEN '相等'
+            ELSE '不相等' END AS result
+  FROM ( SELECT * FROM tbl_A
+         UNION
+         SELECT * FROM tbl_B ) TMP;
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### 1-7-2
+
+Eg Table:
+
+![Xnip2022-04-02_16-46-03](../SQL.assets/Xnip2022-04-02_16-46-03.jpg)
+
+请查询出刚好拥有全部技术的员工(不能多也不能少)
+
+
+
+
+
+我的解答(同答案二):
+
+```postgresql
+SELECT
+	emp
+FROM
+	"EmpSkills" AS t1
+WHERE NOT EXISTS (
+	SELECT
+		skill
+	FROM
+		"Skills"
+	EXCEPT
+	SELECT
+		skill
+	FROM
+		"EmpSkills" AS t2
+	WHERE t2.emp = t1.emp
+)
+GROUP BY emp
+HAVING COUNT(t1.skill) = (SELECT COUNT(*) FROM "Skills")
+```
+
+
+
+答案一:
+
+```sql
+SELECT DISTINCT emp
+  FROM EmpSkills ES1
+ WHERE NOT EXISTS
+        (SELECT skill
+           FROM Skills
+         EXCEPT
+         SELECT skill
+           FROM EmpSkills ES2
+          WHERE ES1.emp = ES2.emp)
+  AND NOT EXISTS
+        (SELECT skill
+           FROM EmpSkills ES3
+          WHERE ES1.emp = ES3.emp
+         EXCEPT
+         SELECT skill
+           FROM Skills );
+```
 
 
 

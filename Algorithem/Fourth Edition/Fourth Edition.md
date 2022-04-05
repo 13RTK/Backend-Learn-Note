@@ -1587,7 +1587,619 @@ public static void decimalToBinary(int decimalInt) {
 
 
 
+### 1) 实现一个双端队列
 
+
+
+要求:
+
+![Xnip2022-04-04_11-16-04](Algorithm Fourth.assets/Xnip2022-04-04_11-16-04.jpg)
+
+
+
+![Xnip2022-04-04_11-16-19](Algorithm Fourth.assets/Xnip2022-04-04_11-16-19.jpg)
+
+
+
+思路:
+
+- 因为需要从队尾和队头出入队列，所以简单的单链表是不行的，需要一个双向链表
+- 这里的code可以参照LRU
+
+
+
+Code:
+
+```java
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+public class Deque<Item> implements Iterable<Item> {
+
+    private class Node {
+        Item item;
+        Node next;
+        Node pre;
+    }
+
+    private final Node head;
+    private final Node tail;
+    private int size;
+
+    public Deque() {
+        this.head = new Node();
+        this.tail = new Node();
+
+        this.head.next = this.tail;
+        this.tail.pre = this.head;
+
+        this.size = 0;
+    }
+
+    // is the deque empty?
+    public boolean isEmpty() {
+        return this.size == 0;
+    }
+
+    // return the number of items on the deque
+    public int size() {
+        return this.size;
+    }
+
+    // add the item to the front
+    public void addFirst(Item item) {
+        if (item == null) {
+            throw new IllegalArgumentException();
+        }
+
+        Node newHead = new Node();
+        newHead.item = item;
+        newHead.next = this.head.next;
+        newHead.pre = this.head;
+
+        this.head.next.pre = newHead;
+        this.head.next = newHead;
+        this.size++;
+    }
+
+    // add the item to the back
+    public void addLast(Item item) {
+        if (item == null) {
+            throw new IllegalArgumentException();
+        }
+
+        Node newTail = new Node();
+        newTail.item = item;
+        newTail.pre = this.tail.pre;
+        newTail.next = this.tail;
+
+        this.tail.pre.next = newTail;
+        this.tail.pre = newTail;
+
+        this.size++;
+    }
+
+    // remove and return the item from the front
+    public Item removeFirst() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException();
+        }
+
+        Item removeFirstItem = this.head.next.item;
+        removeNode(this.head.next);
+
+        return removeFirstItem;
+    }
+
+    // remove and return the item from the back
+    public Item removeLast() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException();
+        }
+
+        Item removeLastItem = this.tail.pre.item;
+        removeNode(this.tail.pre);
+
+        return removeLastItem;
+    }
+
+    private void removeNode(Node curNode) {
+        curNode.next.pre = curNode.pre;
+        curNode.pre.next = curNode.next;
+
+        this.size--;
+    }
+
+    // return an iterator over items in order from front to back
+    public Iterator<Item> iterator() {
+        return new DequeIterator();
+    }
+
+    private class DequeIterator implements Iterator<Item> {
+        Node curNode = head.next;
+
+        @Override
+        public boolean hasNext() {
+            return curNode.next != null;
+        }
+
+        @Override
+        public Item next() {
+            if (curNode.next == null) {
+                throw new NoSuchElementException();
+            }
+
+            Item item = curNode.item;
+            curNode = curNode.next;
+
+            return item;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * For test
+     *
+     * @param args
+     */
+    public static void main(String[] args) {
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+### 2) 实现一个随机队列
+
+![Xnip2022-04-04_12-30-01](Algorithm Fourth.assets/Xnip2022-04-04_12-30-01.jpg)
+
+
+
+![Xnip2022-04-04_12-30-51](Algorithm Fourth.assets/Xnip2022-04-04_12-30-51.jpg)
+
+- 实现队列可以使用链表或者数组，但这里我们需要均摊操作时间，所以这里只有使用数组
+- 使用数组的话，我们就需要考虑动态更新容量，即在enqueue和dequeue时实现resize
+- 在使用迭代器遍历的时候，我们还需要以随机的顺序进行遍历，所以在创建迭代器的时候还需要打乱其中的元素顺序
+
+
+
+- Iterator内部类方法:
+
+```java
+private class RandomizedQueueIterator implements Iterator<Item> {
+  private Item[] randomQueue;
+  private int curIdx;
+
+  public RandomizedQueueIterator() {
+    randomQueue = (Item[]) new Object[size];
+    for (int i = 0; i < size; ++i) {
+      randomQueue[i] = array[i];
+    }
+
+    shuffle(randomQueue);
+    curIdx = 0;
+  }
+
+  public boolean hasNext() {
+    return curIdx < randomQueue.length;
+  }
+
+  public void remove() {
+    throw new UnsupportedOperationException();
+  }
+
+  public Item next() {
+    if (!this.hasNext()) {
+      throw new NoSuchElementException();
+    }
+
+    Item item = randomQueue[curIdx];
+    curIdx++;
+    return item;
+  }
+
+  // Shuffle all element to random
+  private void shuffle(Item[] arr) {
+    for (int i = 1; i < arr.length; i++) {
+      int idx = StdRandom.uniform(i + 1);
+      swap(arr, idx, i);
+    }
+  }
+}
+```
+
+
+
+完整code:
+
+```java
+package part1.two.stackandqueue.work;
+
+import edu.princeton.cs.algs4.StdRandom;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.lang.NullPointerException;
+import java.lang.UnsupportedOperationException;
+
+public class RandomizedQueue<Item> implements Iterable<Item> {
+    private Item[] array;
+    private int size;
+
+    public RandomizedQueue() {
+        array = (Item[]) new Object[1];
+        size = 0;
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public void enqueue(Item item) {
+        if (item == null) {
+            throw new NullPointerException();
+        }
+
+        if (size == array.length) {
+            resize(2 * array.length);
+        }
+
+        array[size] = item;
+        size++;
+    }
+
+    public Item dequeue() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException();
+        }
+
+        int idx = StdRandom.uniform(size);
+        Item item = array[idx];
+        array[idx] = null;
+
+        swap(array, idx, size - 1);
+
+        size--;
+        if (size > 0 && size == array.length / 4) {
+            resize(array.length / 2);
+        }
+        return item;
+    }
+
+    public Item sample() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
+
+        int idx = StdRandom.uniform(size);
+        return array[idx];
+    }
+
+    public Iterator<Item> iterator() {
+        return new RandomizedQueueIterator();
+    }
+
+    private class RandomizedQueueIterator implements Iterator<Item> {
+        private Item[] randomQueue;
+        private int curIdx;
+
+        public RandomizedQueueIterator() {
+            randomQueue = (Item[]) new Object[size];
+            for (int i = 0; i < size; ++i) {
+                randomQueue[i] = array[i];
+            }
+
+            shuffle(randomQueue);
+            curIdx = 0;
+        }
+
+        public boolean hasNext() {
+            return curIdx < randomQueue.length;
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        public Item next() {
+            if (!this.hasNext()) {
+                throw new NoSuchElementException();
+            }
+
+            Item item = randomQueue[curIdx];
+            curIdx++;
+            return item;
+        }
+
+        // Shuffle all element to random
+        private void shuffle(Item[] arr) {
+            for (int i = 1; i < arr.length; i++) {
+                int idx = StdRandom.uniform(i + 1);
+                swap(arr, idx, i);
+            }
+        }
+    }
+
+    private void resize(int capacity) {
+        Item[] newArray = (Item[]) new Object[capacity];
+
+        if (size >= 0) {
+            System.arraycopy(array, 0, newArray, 0, size);
+        }
+
+        array = newArray;
+    }
+
+    private void swap(Item[] arr, int left, int right) {
+        if (left == right) {
+            return;
+        }
+
+        Item temp = arr[left];
+        arr[left] = arr[right];
+        arr[right] = temp;
+    }
+
+    /**
+     * For test
+     *
+     * @param args
+     */
+    public static void main(String[] args) {
+
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 三、基础排序
+
+
+
+## 1) 排序的规则
+
+- 排序是根据实例的某个值进行的
+
+![Xnip2022-04-04_14-29-39](Algorithm Fourth.assets/Xnip2022-04-04_14-29-39.jpg)
+
+
+
+示例：
+
+传入一个目录路径，将目录下所有的文件名进行排序
+
+![Xnip2022-04-04_14-30-31](Algorithm Fourth.assets/Xnip2022-04-04_14-30-31.jpg)
+
+
+
+
+
+
+
+- 在sort方法中，我们需要知道在没给出类型的情况下，比较哪一个数据的类型
+- 我们需要使用回调功能: 在sort方法中，回调了传入对象的compareTo()方法
+- Java中对回调的实现是通过接口得到的
+
+
+
+在需要排序的类上实现Comparable接口
+
+Code:
+
+```java
+import java.io.File;
+
+public class FileSorter implements Comparable<File>{
+    @Override
+    public int compareTo(File o) {
+        return o.getName().length();
+    }
+}
+```
+
+
+
+需要排序的对象需要有以下三种性质:
+
+- Antisymmetric: 非对称性，如果a <= b且 b <= a，则a = b
+- Transitivity: 传递性，如果a <= b 且 b <= c，则 a <= c
+- Totality: 整体性，两个数之间只有 < , >, = 三种关系
+
+
+
+
+
+按照日期类对Comparable排序的实现:
+
+![Xnip2022-04-04_16-24-18](Algorithm Fourth.assets/Xnip2022-04-04_16-24-18.jpg)
+
+
+
+
+
+- 实现两个方法用来判断数组是否有序:
+
+
+
+Less:
+
+![Xnip2022-04-04_16-25-37](Algorithm Fourth.assets/Xnip2022-04-04_16-25-37.jpg)
+
+
+
+swap:
+
+![Xnip2022-04-04_16-25-59](Algorithm Fourth.assets/Xnip2022-04-04_16-25-59.jpg)
+
+
+
+
+
+测试数组是否有序:
+
+![Xnip2022-04-04_16-26-34](Algorithm Fourth.assets/Xnip2022-04-04_16-26-34.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 2) 选择排序selection sort
+
+Principle:
+
+- 每次遍历未排序部分中的最小值，将其交换到当前未排序部分的开头位置
+
+
+
+不变性:
+
+- 指针左边的一定是排好序的
+- 右边的元素里没有一个小于左边的元素
+
+![Xnip2022-04-04_20-02-39](Algorithm Fourth.assets/Xnip2022-04-04_20-02-39.jpg)
+
+
+
+Code:
+
+```java
+public void selectionSort(int[] nums) {
+  for (int left = 0; left < nums.length - 1; left++) {
+    int curMin = nums[left];
+    int curMinIdx = left;
+
+    for (int curIdx = left + 1; curIdx < nums.length; curIdx++) {
+      if (curMin > nums[curIdx]) {
+        curMin = nums[curIdx];
+        curMinIdx = curIdx;
+      }
+    }
+
+    swap(nums, left, curMinIdx);
+  }
+}
+
+private void swap(int[] nums, int left, int right) {
+  int temp = nums[left];
+  nums[left] = nums[right];
+  nums[right] = temp;
+}
+```
+
+
+
+
+
+- 时间复杂度为O(n^2^)，其需要进行大约 N^2^ / 2次比较，以及N次交换
+
+
+![Xnip2022-04-04_20-06-23](Algorithm Fourth.assets/Xnip2022-04-04_20-06-23.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 3) 插入排序insertion sort
+
+Principle:
+
+- 遍历每个元素，保证其自身以及左边的元素是有序的
+- 通过与其左边的元素比较判断左边是否有序
+
+
+
+不变性:
+
+- 左边以及当前位置是有序的
+- 右边未处理
+
+![Xnip2022-04-04_20-21-12](Algorithm Fourth.assets/Xnip2022-04-04_20-21-12.jpg)
+
+
+
+
+
+Code:
+
+```java
+public void insertionSort(int[] nums) {
+  for (int startIdx = 0; startIdx < nums.length; startIdx++) {
+    for (int curIdx = startIdx; curIdx >= 1; curIdx--) {
+      if (nums[curIdx] < nums[curIdx - 1]) {
+        swap(nums, curIdx, curIdx - 1);
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+private void swap(int[] nums, int left, int right) {
+  int temp = nums[left];
+  nums[left] = nums[right];
+  nums[right] = temp;
+}
+```
+
+
+
+
+
+
+
+复杂度:
+
+- 时间复杂度为O(n^2^)，其中需要1/4 N^2^ 次比较，1/4 N^2^次交换
+
+
+
+
+
+
+
+比较:
+
+- 如果数组已经是有序的了，那么插入排序的用时是线性的
+- 如果是倒序的，那么插入排序的用时和选择排序相同 ，但会进行更多次的交换操作
+
+![Xnip2022-04-04_20-35-05](Algorithm Fourth.assets/Xnip2022-04-04_20-35-05.jpg)
 
 
 
