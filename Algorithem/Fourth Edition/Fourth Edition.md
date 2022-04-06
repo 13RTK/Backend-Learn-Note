@@ -2201,6 +2201,7 @@ private void swap(int[] nums, int left, int right) {
 
 ![Xnip2022-04-04_20-35-05](Algorithm Fourth.assets/Xnip2022-04-04_20-35-05.jpg)
 
+<hr>
 
 
 
@@ -2208,6 +2209,207 @@ private void swap(int[] nums, int left, int right) {
 
 
 
+
+
+
+
+## 4) 希尔排序shell sort
+
+
+
+
+
+- 每次进行一次h-排序，h是指有序的递增子序列长度，最后进行插入排序即可
+
+![Xnip2022-04-05_14-50-15](Algorithm Fourth.assets/Xnip2022-04-05_14-50-15.jpg)
+
+
+
+理论：
+
+一个g-排序的数组在h-排序后依然是g-排序的
+
+![Xnip2022-04-05_14-53-05](Algorithm Fourth.assets/Xnip2022-04-05_14-53-05.jpg)
+
+
+
+目前较好的h取值:
+
+![Xnip2022-04-05_14-54-09](Algorithm Fourth.assets/Xnip2022-04-05_14-54-09.jpg)
+
+
+
+
+
+这里我们取3x + 1进行实现:
+
+```java
+public void shellSort(int[] nums) {
+  int arrayLength = nums.length;
+
+  int h = 1;
+  while (h < arrayLength / 3) {
+    h = 3 * h + 1;
+  }
+
+  while (h >= 1) {
+    for (int startIdx = h; startIdx < arrayLength; startIdx++) {
+      for (int curIdx = startIdx; curIdx >= h && nums[curIdx] < nums[curIdx - h]; curIdx -= h) {
+        swap(nums, curIdx, curIdx - h);
+      }
+    }
+
+    h /= 3;
+  }
+}
+```
+
+
+
+
+
+
+
+复杂度:
+
+- 最坏的情况下为O(N^3/2^)
+
+![Xnip2022-04-05_14-57-03](Algorithm Fourth.assets/Xnip2022-04-05_14-57-03.jpg)
+
+
+
+
+
+
+
+希尔排序的特点:
+
+- 对小数组来说很有效
+- 代码量少，可用于硬件中
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5) 洗牌(shuffle)
+
+- 如何打乱一个数组，使得每个元素被均匀的打乱
+
+
+
+- 遍历有序数组，保证左边的数字都是随机的
+- 每次从左边随机获取一个元素与当前位置的数字进行交换
+
+![Xnip2022-04-05_15-36-53](Algorithm Fourth.assets/Xnip2022-04-05_15-36-53.jpg)
+
+
+
+
+
+Code:
+
+```java
+public void shuffle(int[] nums) {
+  for (int i = 1; i < nums.length; i++) {
+    int curRandomNum = StdRandom.uniform(0, i);
+    ShellSort.swap(nums, curRandomNum, i);
+  }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 6) 凸包Convex hull(排序的应用)
+
+- 凸包(convex hull)代表将所有平面上的点都框在一个封闭图形里的最小面积
+
+
+
+定义:
+
+- 包含所有点的最小凸面
+- 包含所有点的最小的封闭图形
+- 顶点都是平面内的点
+
+![Xnip2022-04-05_16-31-00](Algorithm Fourth.assets/Xnip2022-04-05_16-31-00.jpg)
+
+
+
+
+
+- 输出：逆时针顺序输出顶点序列
+
+
+
+具体应用:
+
+- 对障碍物建模后获取了一个对应的convex hull凸包，可根据它获取绕过障碍物的最短路径
+
+![Xnip2022-04-05_16-36-17](Algorithm Fourth.assets/Xnip2022-04-05_16-36-17.jpg)
+
+
+
+
+
+- 求两个点之间的距离 
+- ![Xnip2022-04-05_16-37-19](Algorithm Fourth.assets/Xnip2022-04-05_16-37-19.jpg)
+
+
+
+
+
+
+
+- 计算的方式: 格雷厄姆扫描(Graham scan)
+    - 选择一个最小的点p
+    - 从p点开始排序
+    - 判断每个点，只将按照逆时针转动的点作为顶点
+
+
+
+![Xnip2022-04-05_16-39-48](Algorithm Fourth.assets/Xnip2022-04-05_16-39-48.jpg)
+
+
+
+![Xnip2022-04-05_16-41-29](Algorithm Fourth.assets/Xnip2022-04-05_16-41-29.jpg)
+
+
+
+- 难点：判断是否为逆时针(ccw: counterclockwise)
+
+​	![Xnip2022-04-05_16-43-02](Algorithm Fourth.assets/Xnip2022-04-05_16-43-02.jpg)
+
+
+
+- 实现：通过三个点之间的斜率
+
+![Xnip2022-04-05_16-43-53](Algorithm Fourth.assets/Xnip2022-04-05_16-43-53.jpg)
+
+
+
+- code implement:
+
+![Xnip2022-04-05_16-44-36](Algorithm Fourth.assets/Xnip2022-04-05_16-44-36.jpg)
 
 
 

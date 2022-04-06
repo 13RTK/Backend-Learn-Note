@@ -2035,12 +2035,72 @@ AND t1.Temperature > t2.Temperature
 
 ![Xnip2022-04-05_10-24-12](MySQL Note.assets/Xnip2022-04-05_10-24-12.jpg)
 
+<hr>
 
 
 
 
 
 
+
+
+
+# Day256
+
+## Tag: GROUP BY, DATEDIFF
+
+![Xnip2022-04-06_07-13-35](MySQL Note.assets/Xnip2022-04-06_07-13-35.jpg)
+
+
+
+![Xnip2022-04-06_07-14-10](MySQL Note.assets/Xnip2022-04-06_07-14-10.jpg)
+
+
+
+题意:
+
+给你一张用户活跃记录表，请你查询出2019-07-27近30天中每天的活跃用户数量
+
+
+
+
+
+思路:
+
+- 因为需要统计每天的数据，所以需要按照日期分组
+- 在统计用户数的时候需要去重，最后再使用日期函数限制日期值即可，最终SQL如下
+
+```mysql
+SELECT
+    activity_date AS 'day',
+    COUNT(DISTINCT user_id) AS 'active_users'
+FROM
+    Activity
+WHERE DATEDIFF('2019-07-27', activity_date) < 30
+GROUP BY day
+```
+
+<hr>
+
+
+
+![Xnip2022-04-06_07-24-02](MySQL Note.assets/Xnip2022-04-06_07-24-02.jpg)
+
+
+
+![Xnip2022-04-06_07-24-29](MySQL Note.assets/Xnip2022-04-06_07-24-29.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-06_07-26-50](MySQL Note.assets/Xnip2022-04-06_07-26-50.jpg)
+
+
+
+![Xnip2022-04-06_07-27-47](MySQL Note.assets/Xnip2022-04-06_07-27-47.jpg)
+
+<hr>
 
 
 
