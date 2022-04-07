@@ -2109,3 +2109,110 @@ GROUP BY day
 
 
 
+# Day257
+
+## Tag: LIMIT
+
+![Xnip2022-04-07_07-03-53](MySQL Note.assets/Xnip2022-04-07_07-03-53.jpg)
+
+
+
+![Xnip2022-04-07_07-06-37](MySQL Note.assets/Xnip2022-04-07_07-06-37.jpg)
+
+题意:
+
+给你一张订单信息表，请你查询出其中下了最多订单的客户number
+
+
+
+
+
+思路:
+
+- 这里很明显需要分组，而且很特别的是，分组的和我们需要的是同一个字段
+- 又因为需要的是最多的数据，所以这里使用LIMIT 1进行分表即可，SQL如下
+
+```mysql
+SELECT
+    customer_number
+FROM
+    Orders
+GROUP BY customer_number
+ORDER BY COUNT(*) DESC
+LIMIT 1
+```
+
+
+
+- 题目中有一个进阶要求即：如果有多个订单数最多并列的用户呢？
+- 其实只需要查询出最值再进行匹配即可，这里只需要使用HAVING子句，SQL如下
+
+```mysql
+SELECT
+    customer_number
+FROM
+    Orders
+GROUP BY customer_number
+HAVING COUNT(*) = (
+    SELECT 
+        COUNT(customer_number) AS 'cnt' 
+    FROM 
+        Orders 
+    GROUP BY customer_number 
+    ORDER BY cnt DESC  
+    LIMIT 1
+    )
+```
+
+<hr>
+
+
+
+![Xnip2022-04-07_07-14-25](MySQL Note.assets/Xnip2022-04-07_07-14-25.jpg)
+
+
+
+![Xnip2022-04-07_07-14-39](MySQL Note.assets/Xnip2022-04-07_07-14-39.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+![Xnip2022-04-07_07-17-21](MySQL Note.assets/Xnip2022-04-07_07-17-21.jpg)
+
+
+
+![Xnip2022-04-07_07-17-48](MySQL Note.assets/Xnip2022-04-07_07-17-48.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-07_07-19-58](MySQL Note.assets/Xnip2022-04-07_07-19-58.jpg)
+
+
+
+![Xnip2022-04-07_07-20-02](MySQL Note.assets/Xnip2022-04-07_07-20-02.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

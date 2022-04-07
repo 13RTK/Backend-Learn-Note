@@ -2411,5 +2411,159 @@ public void shuffle(int[] nums) {
 
 ![Xnip2022-04-05_16-44-36](Algorithm Fourth.assets/Xnip2022-04-05_16-44-36.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 四、归并排序/快速排序(merge/quick sort)
+
+
+
+## 1. 归并排序
+
+Principle:
+
+- 将一个数组分为两半
+- 递归排序每个部分
+- 合并两个排序后的部分
+
+![Xnip2022-04-06_14-36-39](Algorithm Fourth.assets/Xnip2022-04-06_14-36-39.jpg)
+
+
+
+
+
+示例:
+
+![Xnip2022-04-06_14-38-29](Algorithm Fourth.assets/Xnip2022-04-06_14-38-29.jpg)
+
+确保从lo到mid和从mid + 1到hi是有序的，之后将两个数组进行merge合并即可
+
+
+
+
+
+Java实现合并(merge):
+
+![Xnip2022-04-06_14-41-01](Algorithm Fourth.assets/Xnip2022-04-06_14-41-01.jpg)
+
+- 我们需要一个辅助数组(auxiliary)来表示排序后的数组
+- 在示例中用到了断言(assert)来判断左右两边是否有序
+
+
+
+
+
+断言解释:
+
+![Xnip2022-04-06_14-44-35](Algorithm Fourth.assets/Xnip2022-04-06_14-44-35.jpg)
+
+
+
+
+
+- Java实现排序
+
+![Xnip2022-04-06_14-45-49](Algorithm Fourth.assets/Xnip2022-04-06_14-45-49.jpg)
+
+
+
+
+
+
+
+
+
+- 递归分析:
+
+![Xnip2022-04-06_14-46-20](Algorithm Fourth.assets/Xnip2022-04-06_14-46-20.jpg)
+
+
+
+
+
+
+
+复杂度:
+
+- 时间复杂度: nlog(n)
+- 空间复杂度: nlog(n)
+
+
+
+时间复杂度证明:
+
+- 每次划分都是将数组除以2得到两个子数组，直到子数组长度为1
+
+![Xnip2022-04-06_14-48-43](Algorithm Fourth.assets/Xnip2022-04-06_14-48-43.jpg)
+
+
+
+
+
+
+
+空间复杂度证明:
+
+- 归并排序并非是希尔排序、选择/插入排序那样的原地排序算法(in-place)，其需要额外空间
+
+![Xnip2022-04-06_14-51-38](Algorithm Fourth.assets/Xnip2022-04-06_14-51-38.jpg)
+
+
+
+
+
+
+
+
+
+归并排序的优化
+
+
+
+
+
+- 优化一
+
+
+
+如果数组较小，则使用之前的排序方式即可
+
+![Xnip2022-04-06_14-55-04](Algorithm Fourth.assets/Xnip2022-04-06_14-55-04.jpg)
+
+
+
+
+
+
+
+- 优化二
+
+如果两个数组以及排好序了，且两个数组之间接触的元素也是有序的，则该数组已经有序了，不再需要排序
+
+![Xnip2022-04-06_14-56-18](Algorithm Fourth.assets/Xnip2022-04-06_14-56-18.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
 
 

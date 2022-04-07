@@ -178,14 +178,87 @@ SHOW ENGINE INNODB STATUS\G;
 
 1. 缓冲池
 
+InnoDB是基于磁盘进行存储的，其将记录以页的单位进行管理
+
+在数据库中，由于CPU和磁盘速度之间存在鸿沟，所以基于磁盘的数据库系统往往会使用缓冲池技术来提高数据库的整体性能
+
+- 在数据中进行读取页的操作，首先**将从磁盘读到的页存放在缓冲池中，该过程称为"FIX"**
+- 之后读取时会先到缓冲池中查看，**没有的话再从磁盘中读取到缓冲池**
+- 在修改页上的数据时，会**先修改缓冲池内的页，之后再以一定的频率刷新到磁盘中**，为了保证效率，会使用checkpoint机制刷新会磁盘中去
+
+
+
+缓冲池的设置:
+
+Syntax:
+
+```mysql
+SHOW VARIABLES LIEK 'innodb_buffer_pool_size'\G;
+```
+
+Eg:
+
+![Xnip2022-04-06_09-38-20](MySQL技术内幕/Xnip2022-04-06_09-38-20.jpg)
+
+
+
+- 缓冲池中会存放index页、undo页、插入缓冲(insert buffer)、自适应哈希索引(adaptive hash index)、锁的信息、数据字典信息
+
+
+
+InnoDB内存结构:
+
+![Xnip2022-04-06_09-42-05](MySQL技术内幕/Xnip2022-04-06_09-42-05.jpg)
+
+
+
+从InnoDB 1.0.x版本开始，允许有多个缓冲池实例，这样**每个页都能根据哈希值平均分配到不同的缓冲池实例**，这样就能减少内部的资源竞争
+
+syntax:
+
+```mysql
+SHOW VARIABLES LIKE 'innodb_buffer_pool_instances'\G;
+```
+
+
+
+![Xnip2022-04-06_09-45-55](MySQL技术内幕/Xnip2022-04-06_09-45-55.jpg)
+
+
+
+通过status可以查看缓冲池实例的状态:
+
+```mysql
+SHOW ENGINE INNODB STATUS\G;
+```
+
+
+
+Eg:
+
+![Xnip2022-04-06_09-47-46](MySQL技术内幕/Xnip2022-04-06_09-47-46.jpg)
 
 
 
 
 
+- 从MySQL5.6开始，可以在information_schema架构下的表INNODB_BUFFER_POOL_STATS来观察缓冲的状态
+
+Syntax:
+
+```mysql
+SELECT
+	POOL_ID,
+	POOL_SIZE,
+	FREE_BUFFERS,
+	DATABASE_PAGES
+FROM
+	INNODB_BUFFER_POOL_STATS\G;
+```
 
 
 
+![Xnip2022-04-06_09-50-54](MySQL技术内幕/Xnip2022-04-06_09-50-54.jpg)
 
 
 

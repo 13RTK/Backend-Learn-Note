@@ -4562,7 +4562,6 @@ Eg Table:
 
 
 
-
 **实体的阶层**
 
 
@@ -4641,6 +4640,423 @@ EXISTS和其他谓词不同的是输入值的阶数(输出值都是真值)
 又因为谓词其实是特殊的函数，所以我们也可以称其为一个高阶函数
 
 ![Xnip2022-04-05_21-37-29](../SQL.assets/Xnip2022-04-05_21-37-29.jpg)
+
+
+
+
+
+- 开头中，我提到过SQL使用的是"一阶谓词逻辑"，这是因为EXISTS谓词最高只能接受一阶的实体作为参数
+
+<hr>
+
+
+
+
+
+
+
+
+
+**全称量化和存在量化**
+
+
+
+谓词逻辑中有量词这类的特殊谓词，可以用它们表达这样的命题: "所有的x都满足条件p"或者"存在满足条件p的x"。前者为"全称量词"，后者为"存在量词"，分别记为$\forall$和$\exists$
+
+
+
+来历:
+
+- 其中全称量词是A颠倒得到的，由来为: for All x
+- 存在的英语为 there Exists x that
+
+
+
+- 在SQL中，全称量词并没有对应的实现
+- 但这样并不是致命的缺陷，因为全称量词只要定义了一个，另一个就能推导出来
+
+
+
+德·摩根定律:
+
+$\forall$ xPx = !$\exists$ x!P
+
+(所有x满足条件P = 不存在不满足条件P的x)
+
+
+
+$\exists$ xPx = !$\forall$ x!Px
+
+(存在满足条件P的x = 并非所有的x都不满足条件P)
+
+
+
+
+
+- 所以在SQL不支持全称量词的当下，为了表达全称量化，需要将"所有的行/命题都满足P"转换为"不存在不满足条件的行/命题"
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 实践
+
+
+
+**查询表中"不"存在的数据**
+
+
+
+一般来说，我们的需求是从表中查询即存的数据，但有时候也需要我们查询出不存在的数据
+
+Eg Table:
+
+![Xnip2022-04-06_16-35-39](../SQL.assets/Xnip2022-04-06_16-35-39.jpg)
+
+要求查询出每次会议中没有参加的人
+
+
+
+
+
+- 在该示例中，我们不是要根据现有数据进行查询"满足添加"的数据，而是要查询"数据是否存在"
+- 所以这是更高一阶的问题了
+
+
+
+思路:
+
+- 假设所有人都参加了会议，并生成对应的集合，然后从中减去实际参加会议的人即可
+
+
+
+交叉连接获取笛卡尔积:
+
+```postgresql
+SELECT
+	DISTINCT M1.meeting,
+	M2.meeting
+FROM
+	"Meetings" AS M1
+CROSS JOIN "Meetings" AS M2
+```
+
+
+
+Eg:
+
+![Xnip2022-04-06_16-42-00](../SQL.assets/Xnip2022-04-06_16-42-00.jpg)
+
+
+
+之后我们从该表中减去实际的参会者即可:
+
+```postgresql
+SELECT
+	DISTINCT M1.meeting,
+	M2.person
+FROM
+	"Meetings" AS M1
+CROSS JOIN "Meetings" AS M2
+WHERE NOT EXISTS (
+	SELECT
+		*
+	FROM
+		"Meetings" AS M3
+	WHERE M1.meeting = M3.meeting
+	AND M2.person = M3.person
+)
+```
+
+
+
+
+
+同样，我们可以用集合论的方式来解答:
+
+```postgresql
+SELECT
+	DISTINCT M1.meeting,
+	M2.person
+FROM
+	"Meetings" AS M1,
+	"Meetings" AS M2
+EXCEPT
+SELECT
+	meeting,
+	person
+FROM
+	"Meetings"
+```
+
+所以**NOT EXISTS是具备差集功能的**
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+**全称量化(1): 习惯 "肯定 $\leftrightarrow$ 双重否定"之间的转换**
+
+
+
+使用EXISTS谓词可以表达全称量化，这是EXISTS一个很有代表性的一个用法
+
+Eg Table:
+
+![Xnip2022-04-06_17-46-59](../SQL.assets/Xnip2022-04-06_17-46-59.jpg)
+
+查询出"所有科目分数都在50分以上的学生"
+
+
+
+解法:
+
+- 将查询条件"所有科目分数都在50分以上"，转换为它的双重否定:"没有一个科目不满90分"，然后用`NOT EXISTS`来转换即可
+
+```postgresql
+SELECT
+	DISTINCT student_id
+FROM
+	"TestScores" AS TS1
+WHERE NOT EXISTS (
+	SELECT
+		*
+	FROM
+		"TestScores" TS2
+	WHERE TS2.student_id = TS1.student_id
+	AND TS2.score < 50
+)
+```
+
+
+
+- 再将条件改复杂一些:
+    1. 数学的分数在80分以上
+    2. 语文的分数在50分以上
+
+
+
+结果应该为: 100, 200, 400；其中学号为400的学生没有语文分数，但依然需要包含在结果集中
+
+
+
+稍微改一下题意以匹配全称量化:
+
+> 某个学生的所有行数据中，如果科目为数学，则分数在80分以上，如果为语文，则分数为50分以上
+
+
+
+所以要求就是针对同一个集合内行数据进行了条件分枝后的全称量化，分支:
+
+```sql
+CASE WHEN subject = '数学' AND score >= 80 THEN 1
+		 WHEN subject = '语文' AND score >= 50 THEN 1
+		 ELSE 0 END
+```
+
+
+
+为了用EXISTS来表示，我们只需要将条件反过来即可
+
+```postgresql
+SELECT
+	DISTINCT student_id
+FROM
+	"TestScores" AS TS1
+WHERE subject IN ('数学', '语文')
+AND NOT EXISTS (
+	SELECT
+		*	
+	FROM
+		"TestScores" AS TS2
+	WHERE TS1.student_id = TS2.student_id
+	AND 1 = CASE WHEN subject = '数学' AND score < 80 THEN 1
+				 WHEN subject = '语文' AND score < 50 THEN 1
+				 ELSE 0 END
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-06_18-04-31](../SQL.assets/Xnip2022-04-06_18-04-31.jpg)
+
+
+
+想要去掉没有语文分数的id为400的学生的话，只需要使用HAVING子句即可
+
+```postgresql
+SELECT
+	student_id
+FROM
+	"TestScores" AS TS1
+WHERE subject IN ('数学', '语文')
+AND NOT EXISTS (
+	SELECT
+		*	
+	FROM
+		"TestScores" AS TS2
+	WHERE TS1.student_id = TS2.student_id
+	AND 1 = CASE WHEN subject = '数学' AND score < 80 THEN 1
+				 WHEN subject = '语文' AND score < 50 THEN 1
+				 ELSE 0 END
+)
+GROUP BY student_id
+HAVING COUNT(*) = 2
+```
+
+
+
+这里有了GROUP BY后，就不再需要DISTINCT去重了
+
+<hr>
+
+
+
+
+
+
+
+**集合/谓词 -> 谁更强大**
+
+EXISTS和HAVING都以集合为单位来操作数据，所以两者在很多情况下是可以互换的
+
+
+
+Eg Table:
+
+![Xnip2022-04-06_18-11-59](../SQL.assets/Xnip2022-04-06_18-11-59.jpg)
+
+问题：哪些项目已经完成到了工程1(超过的不算)
+
+
+
+解法:
+
+```postgresql
+SELECT
+	project_id
+FROM
+	"Projects"
+GROUP BY project_id
+HAVING COUNT(*) = SUM(CASE WHEN step_nbr <= 1 AND status = '完成' THEN 1
+						   WHEN step_nbr > 1 AND status = '等待' THEN 1
+						   ELSE 0 END)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-06_18-19-53](../SQL.assets/Xnip2022-04-06_18-19-53.jpg)
+
+这里通过统计编号为1以下且状态为"完成"的行数，和工程编号大于1且状态为"等待的"行数之和，如果等于项目数据总行数则符合条件
+
+
+
+
+
+谓词逻辑的解法:
+
+
+
+转换后的全称量词:
+
+> "某个项目中的所有行数据中，如果工程编号小于1，则该工程已完成；如果工程编号大于1，则该工程还在等待"
+
+
+
+对应的分支:
+
+```sql
+step_status = CASE WHEN step_nbr <= 1
+								    THEN '完成'
+								    ELSE '等待' END
+```
+
+
+
+最终SQL使用上述条件的否定形式:
+
+```postgresql
+SELECT
+	*
+FROM
+	"Projects" AS P1
+WHERE NOT EXISTS (
+	SELECT
+		status
+	FROM
+		"Projects" AS P2
+	WHERE P1.project_id = P2.project_id
+	AND status != CASE WHEN step_nbr <= 1
+					   THEN '完成'
+					   ELSE '等待' END
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-06_18-26-17](../SQL.assets/Xnip2022-04-06_18-26-17.jpg)
+
+
+
+
+
+对比分析：
+
+NOT EXISTS写法的优劣:
+
+缺点1:
+
+使用HAVING和NOT EXISTS都能实现全称量化，但NOT EXISTS因为使用了双重否定，所以代码可读性很差
+
+
+
+优点1:
+
+但其性能较好，只要有一行满足条件，那么查询就会终止；而且这里通过连接使用到了`project_id`列的索引
+
+
+
+优点2:
+
+其不需要像HAVING那样聚合，所以能获取更多的信息
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
