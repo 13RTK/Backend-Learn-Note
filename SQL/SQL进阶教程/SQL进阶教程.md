@@ -5049,6 +5049,405 @@ NOT EXISTS写法的优劣:
 
 
 
+**对列进行量化：查询全是1的行**
+
+
+
+Eg Table:
+
+![Xnip2022-04-07_14-27-23](../SQL.assets/Xnip2022-04-07_14-27-23.jpg)
+
+
+
+需求:
+
+1. 查询"都为1"的行
+2. 查询"至少有一个9"的行
+
+
+
+EXISTS主要用于行的量化，但该问题需要进行列的量化
+
+Bad Version:
+
+```sql
+SELECT
+	*
+FROM
+	ArrayTbl
+WHERE col1 = 1
+AND col2 = 1
+.
+.
+.
+AND col10 = 1
+```
+
+
+
+- 其实我们使用ALL就能解决这个问题:
+
+```postgresql
+SELECT
+	*
+FROM
+	"ArrayTbl"
+WHERE 1 = ALL(values(col1), (col2), (col3), (col4), (col5), (col6), (col7), (col8), (col9), (col10))
+```
+
+
+
+Eg:
+
+![Xnip2022-04-07_14-34-33](../SQL.assets/Xnip2022-04-07_14-34-33.jpg)
+
+
+
+**注意：**在PostgreSQL中，需要将IN/ANY/ALL中的多个值用values包裹，且每个值用括号括好即可
+
+
+
+- 反过来使用ALL的反义词ANY就能解决"至少一个9"这个命题
+
+```postgresql
+SELECT
+	*
+FROM
+	"ArrayTbl"
+WHERE 9 = ANY(values(col1), (col2), (col3), (col4), (col5), (col6), (col7), (col8), (col9), (col10))
+```
+
+
+
+Eg:
+
+![Xnip2022-04-07_14-37-01](../SQL.assets/Xnip2022-04-07_14-37-01.jpg)
+
+
+
+同样，使用IN也是可以的:
+
+```postgresql
+SELECT
+	*
+FROM
+	"ArrayTbl"
+WHERE 9 IN (values(col1), (col2), (col3), (col4), (col5), (col6), (col7), (col8), (col9), (col10))
+```
+
+
+
+
+
+- 但如果要用这种方法查询NULL值的话就不行了
+
+```sql
+-- 错误解法
+SELECT
+	*
+FROM
+	ArrayTbl
+WHERE NULL = ALL(col1, col2, col3...col10);
+```
+
+
+
+- 此时需要我们使用COALESCE函数(返回第一个不为NULL的值，否则返回NULL)
+
+```postgresql
+SELECT
+	*
+FROM
+	"ArrayTbl"
+WHERE COALESCE(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10) IS NULL
+```
+
+
+
+Eg:
+
+![Xnip2022-04-07_14-45-12](../SQL.assets/Xnip2022-04-07_14-45-12.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 小结
+
+1. SQL中的谓词是返回真值的函数
+2. EXISTS接收的参数为集合(一阶逻辑谓词)
+3. 因此EXISTS可以看作是一个高阶函数
+4. SQL中没有与全称量词对应的谓词，可以使用NOT EXISTS替代
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 练习
+
+
+
+#### 1-8-1
+
+将ArrayTbl改为行结构，并以此为基础来练习(主键为key, i)
+
+
+
+Eg Table:
+
+![Xnip2022-04-07_15-08-09](../SQL.assets/Xnip2022-04-07_15-08-09.jpg)
+
+请查询出其中val全为1的key
+
+
+
+我的解答一:
+
+```postgresql
+SELECT
+	key
+FROM
+	"ArrayTbl2"
+WHERE key NOT IN (
+	SELECT
+		DISTINCT key
+	FROM
+		"ArrayTbl2"
+	WHERE val != 1
+	OR val IS NULL
+)
+GROUP BY key
+```
+
+
+
+我的解答二:
+
+```postgresql
+SELECT
+	key
+FROM
+	"ArrayTbl2"
+WHERE val = 1
+GROUP BY key
+HAVING COUNT(*) = (SELECT COUNT(*) FROM "ArrayTbl2" WHERE val = 1 GROUP BY key)
+```
+
+
+
+我的解答三(同答案一):
+
+```postgresql
+SELECT
+	t1.key
+FROM
+	"ArrayTbl2" AS t1
+WHERE NOT EXISTS(
+	SELECT
+		DISTINCT t2.key
+	FROM
+		"ArrayTbl2" AS t2
+	WHERE (val != 1
+	OR val IS NULL)
+	AND t1.key = t2.key
+)
+GROUP BY t1.key
+```
+
+
+
+
+
+我的解答四(同答案三):
+
+```postgresql
+SELECT 
+	key
+FROM "ArrayTbl2"
+GROUP BY key
+HAVING SUM(CASE WHEN val = 1 THEN 1 ELSE 0 END) = 10
+```
+
+
+
+
+
+
+
+答案二:
+
+```postgresql
+SELECT 
+	DISTINCT KEY 
+FROM
+	"ArrayTbl2" A1 
+WHERE
+	1 = ALL (SELECT val FROM "ArrayTbl2" A2 WHERE A1.KEY = A2.KEY);
+```
+
+
+
+
+
+答案四:
+
+```postgresql
+SELECT 
+	key
+FROM "ArrayTbl2"
+GROUP BY key
+HAVING MAX(val) = 1 AND MIN(val) = 1;
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 1-8-2
+
+![Xnip2022-04-06_18-11-59](../SQL.assets/Xnip2022-04-06_18-11-59.jpg)
+
+原需求:
+
+哪些项目已经完成到了工程1？(超过的不算)
+
+
+
+```postgresql
+SELECT
+	*
+FROM
+	"Projects" AS P1
+WHERE NOT EXISTS (
+	SELECT
+		status
+	FROM
+		"Projects" AS P2
+	WHERE P1.project_id = P2.project_id
+	AND status != CASE WHEN step_nbr <= 1
+					   THEN '完成'
+					   ELSE '等待' END
+)
+```
+
+
+
+
+
+问题: 用ALL改写上述SQL
+
+(无思路...)
+
+
+
+答案:
+
+```postgresql
+SELECT 
+	*
+FROM 
+	"Projects" P1
+WHERE 1 = ALL(
+	SELECT 
+		CASE WHEN step_nbr <= 1 AND status = '完成' THEN 1
+			 WHEN step_nbr > 1  AND status = '等待' THEN 1	
+			 ELSE 0 END
+	FROM 
+		"Projects" P2
+	WHERE P1.project_id = P2. project_id
+)
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### 1-8-3
+
+给你一张存有数字1到100的表，请你查询出其中的质数(这里我们通过CTE的RECURSIVE方式生成存储有1到100数字的临时表)
+
+Eg Table:
+
+![Xnip2022-04-07_16-05-23](../SQL.assets/Xnip2022-04-07_16-05-23.jpg)
+
+
+
+
+
+我的解法:
+
+```postgresql
+WITH RECURSIVE temp (num) AS (
+	SELECT 
+		2 
+	UNION ALL 
+	SELECT 
+		num + 1 
+	FROM 
+		temp
+	WHERE num < 100
+) 
+
+SELECT 
+  num AS prime 
+FROM
+  temp a 
+WHERE num > 1
+AND NOT EXISTS
+  (SELECT 
+    NULL
+  FROM
+    temp b
+  WHERE b.num <= SQRT(a.num) 
+    AND a.num % b.num = 0)
+```
+
+
+
+答案:
+
+```sql
+SELECT num AS prime
+  FROM Numbers Dividend
+ WHERE num > 1
+   AND NOT EXISTS
+        (SELECT *
+           FROM Numbers Divisor
+          WHERE Divisor.num <= Dividend.num / 2 /* 除了自身之外的约数必定小于等于自身值的一半 */
+            AND Divisor.num <> 1 /* 约数中不包含1 */
+            AND MOD(Dividend.num, Divisor.num) = 0)  /*“除不尽”的否定条件是“除尽” */
+ORDER BY prime;
+```
+
+
 
 
 

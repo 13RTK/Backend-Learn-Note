@@ -2200,8 +2200,70 @@ HAVING COUNT(*) = (
 
 ![Xnip2022-04-07_07-20-02](MySQL Note.assets/Xnip2022-04-07_07-20-02.jpg)
 
+<hr>
 
 
+
+
+
+
+
+
+
+
+
+# Day258
+
+## Tag: CASE
+
+![Xnip2022-04-08_07-07-35](MySQL Note.assets/Xnip2022-04-08_07-07-35.jpg)
+
+
+
+![Xnip2022-04-08_07-10-52](MySQL Note.assets/Xnip2022-04-08_07-10-52.jpg)
+
+题意:
+
+给你一张股票交易记录表，请你查询出每只股票对应的盈亏
+
+
+
+思路:
+
+- 判断盈亏其实就是根据operation字段，这里我们用CASE做条件分支即可，然后累加结果
+- 当然要根据股票分组才行，最终SQL如下
+
+```mysql
+SELECT
+    stock_name,
+    SUM(
+        CASE WHEN operation = 'Buy' THEN -price 
+        ELSE price END
+    ) AS 'capital_gain_loss'
+FROM
+    Stocks
+GROUP BY stock_name
+```
+
+<hr>
+
+
+
+![Xnip2022-04-08_07-16-48](MySQL Note.assets/Xnip2022-04-08_07-16-48.jpg)
+
+
+
+![Xnip2022-04-08_07-16-53](MySQL Note.assets/Xnip2022-04-08_07-16-53.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-08_07-25-25](MySQL Note.assets/Xnip2022-04-08_07-25-25.jpg)
+
+
+
+![Xnip2022-04-08_07-25-49](MySQL Note.assets/Xnip2022-04-08_07-25-49.jpg)
 
 
 

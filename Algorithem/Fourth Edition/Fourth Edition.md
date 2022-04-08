@@ -2562,6 +2562,96 @@ Java实现合并(merge):
 
 
 
+## 2. Comparable接口
+
+- 很多时候，针对同一个数据集，我们需要根据不同的key进行排序，所以在需要排序的key上建立一个实现了Comparable的类或者lambda表达式即可
+
+Eg:
+
+![Xnip2022-04-07_10-30-04](Algorithm Fourth.assets/Xnip2022-04-07_10-30-04.jpg)
+
+
+
+
+
+- 创建后只需要将该排序规则传入到Arrays.sort方法中的第二参数位置即可
+
+Eg:
+
+![Xnip2022-04-07_10-32-01](Algorithm Fourth.assets/Xnip2022-04-07_10-32-01.jpg)
+
+
+
+![Xnip2022-04-07_10-32-32](Algorithm Fourth.assets/Xnip2022-04-07_10-32-32.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 3. 稳定性
+
+迄今为止排序算法的稳定性：
+
+- Insertion sort: 稳定
+- Selection sort: 不稳定
+- Shell sort: 不稳定
+- Merge sort: 稳定(前提是两数相同时始终先添加左边那个数)
+
+
+
+判断排序算法是否稳定的依据：
+
+检查其是否有跨多个数字的交换
+
+![Xnip2022-04-07_10-46-58](Algorithm Fourth.assets/Xnip2022-04-07_10-46-58.jpg)
+
+
+
+![Xnip2022-04-07_10-46-19](Algorithm Fourth.assets/Xnip2022-04-07_10-46-19.jpg)
+
+
+
+![Xnip2022-04-07_10-46-27](Algorithm Fourth.assets/Xnip2022-04-07_10-46-27.jpg)
+
+
+
+![Xnip2022-04-07_10-47-04](Algorithm Fourth.assets/Xnip2022-04-07_10-47-04.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 4. 作业
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
