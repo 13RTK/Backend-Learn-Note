@@ -2639,6 +2639,160 @@ Eg:
 
 
 
+### 1) Point
+
+![Xnip2022-04-09_20-00-02](Algorithm Fourth.assets/Xnip2022-04-09_20-00-02.jpg)
+
+
+
+要求:
+
+创建一个Point类，其结构如图，需要你实现compareTo方法(重写Comparable里的方法)、slopTo方法，slopOrder方法，其余方法都有固定实现
+
+
+
+- 其中compareTo方法当且仅当当前点的y值小于参数y值，或者当前y值=参数y值且当前x值小于参数x值时才返回负数(表示小于参数点)
+- slopTo方法应该返回调用点与参数点连线的斜率，计算公式为: (y1 − y0) / (x1 − x0)，如果是一条水平线，则返回；如果是一条垂直的线，则返回正无穷；如果两点重合则返回负无穷
+- slopOrder方法应该返回一个通过斜率比较两个参数点的比较器，其中斜率的计算通过slopTo方法实现
+
+
+
+
+
+compareTo方法:
+
+```java
+@Override
+public int compareTo(Point that) {
+  return this.y == that.y ? this.x - that.x : this.y - that.y;
+}
+```
+
+
+
+slopTo方法:
+
+```java
+public double slopeTo(Point that) {
+  if (this.y == that.y && this.x == that.x) {
+    return Double.NEGATIVE_INFINITY;
+  }
+
+  else if (this.y == that.y) {
+    return 0;
+  } else if (this.x == that.x) {
+    return Double.POSITIVE_INFINITY;
+  }
+
+  return (that.y * 1.0 - this.y) / (that.x - this.x);
+}
+```
+
+
+
+slopeOrder方法:
+
+```java
+public Comparator<Point> slopeOrder() {
+  return new SlopeComparator(this);
+}
+
+private static class SlopeComparator implements Comparator<Point> {
+  private final Point point;
+
+  SlopeComparator(Point point) {
+    this.point = point;
+  }
+
+  @Override
+  public int compare(Point p1, Point p2) {
+    double slope1 = p1.slopeTo(point);
+    double slope2 = p2.slopeTo(point);
+    return Double.compare(slope1, slope2);
+  }
+}
+```
+
+
+
+Full Code:
+
+```java
+import edu.princeton.cs.algs4.StdDraw;
+
+import java.util.Comparator;
+
+public class Point implements Comparable<Point> {
+  private final int x;
+  private final int y;
+
+  public Point(int x, int y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  public void draw() {
+    StdDraw.point(this.x, this.y);
+  }
+
+  public void drawTo(Point that) {
+    StdDraw.line(this.x, this.y, that.x, that.y);
+  }
+
+  public String toString() {
+    return "(" + x + ", " + y + ")";
+  }
+
+  @Override
+  public int compareTo(Point that) {
+    return this.y == that.y ? this.x - that.x : this.y - that.y;
+  }
+
+  public double slopeTo(Point that) {
+    if (this.y == that.y && this.x == that.x) {
+      return Double.NEGATIVE_INFINITY;
+    }
+
+    else if (this.y == that.y) {
+      return 0;
+    } else if (this.x == that.x) {
+      return Double.POSITIVE_INFINITY;
+    }
+
+    return (that.y * 1.0 - this.y) / (that.x - this.x);
+  }
+
+  public Comparator<Point> slopeOrder() {
+    return new SlopeComparator(this);
+  }
+
+  private static class SlopeComparator implements Comparator<Point> {
+    private final Point point;
+
+    SlopeComparator(Point point) {
+      this.point = point;
+    }
+
+    @Override
+    public int compare(Point p1, Point p2) {
+      double slope1 = p1.slopeTo(point);
+      double slope2 = p2.slopeTo(point);
+      return Double.compare(slope1, slope2);
+    }
+  }
+
+  /**
+     * For test
+     *
+     * @param args
+     */
+  public static void main(String[] args) {
+
+  }
+}
+```
+
+<hr>
 
 
 
@@ -2648,10 +2802,199 @@ Eg:
 
 
 
+### 2) BruteCollinearPoints
+
+给你一个类：LineSegment，其代表平面上的线，该类可作为工具类直接使用
+
+![Xnip2022-04-09_20-25-29](Algorithm Fourth.assets/Xnip2022-04-09_20-25-29.jpg)
+
+
+
+- 我们需要一个BruteCollinearPoints类检查4个点是否在同一条直线上，返回所有这样的直线
+- 为了检查p, q, r, s四个点，需要检查它们彼此之间的斜率是否一致
+- 你需要实现一个构造方法，其接收的参数为一堆点(上一道题写的类)
+- 还需要实现一个numberOfSegements方法以返回输入到构造函数中在同一直线上的四个点的组合数(返回对应的直线数量)
+- 最后还需要实现一个segments方法返回所有的直线实例
+
+
+
+- 其中segments方法应该返回的数字是不重复的线段数(起始点位置交换算做同一直线)，同时也不应该包含子线段
+- 如果构造方法的参数为null，或者该数组中存在元素为null，则抛出非法参数异常
+
+
+
+- 构造方法:
+
+首先我们需要检验参数，这里判断参数本身后再遍历参数数组中的元素即可
+
+之后为了不重复计算，我们需要检查参数中是否有重复的点
+
+for循环嵌套获取4个点，如果斜率相同则添加头尾point元素到集合中去
+
+或完所有的组合后，将集合转换为数组
+
+```java
+public BruteCollinearPoints(Point[] points) {
+
+  // Check null
+  if (points == null) {
+    throw new NullPointerException("The array is null.");
+  }
+  for (Point curPoint : points) {
+    if (curPoint == null) {
+      throw new NullPointerException("The current point is a null element.");
+    }
+  }
+
+  Arrays.sort(points);
+
+  // Check duplicate
+  for (int i = 0; i < points.length - 1; i++) {
+    if (points[i].compareTo(points[i + 1]) == 0) {
+      throw new IllegalArgumentException();
+    }
+  }
+
+
+  final int length = points.length;
+  List<LineSegment> curLineSegment = new LinkedList<>();
+
+  for (int a = 0; a < length - 3; a++) {
+    Point ptA = points[a];
+
+    for (int b = a + 1; b < length - 2; b++) {
+      Point ptB = points[b];
+      double slopeAB = ptA.slopeTo(ptB);
+
+      for (int c = b + 1; c < length - 1; c++) {
+        Point ptC = points[c];
+        double slopeAC = ptA.slopeTo(ptC);
+
+        if (slopeAB == slopeAC) {
+          for (int d = c + 1; d < length; d++) {
+            Point ptD = points[d];
+            double slopeAD = ptA.slopeTo(ptD);
+
+            if (slopeAB == slopeAD) {
+              curLineSegment.add(new LineSegment(ptA, ptD));
+            }
+          }
+        }
+      }
+    }
+  }
+  lineSegments = curLineSegment.toArray(new LineSegment[0]);
+}
+```
 
 
 
 
+
+
+
+- numberOfSegements:
+
+该方法直接返回数组的长度即可
+
+```java
+public int numberOfSegments() {
+  return lineSegments.length;
+}
+```
+
+
+
+
+
+
+
+- segments:
+
+该方法直接返回数组即可
+
+```java
+public LineSegment[] segments() {
+  return lineSegments;
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) FastCollinearPoints
+
+和之前一样的问题，但这次我们需要用更好的性能来解决
+
+![Xnip2022-04-09_20-50-12](Algorithm Fourth.assets/Xnip2022-04-09_20-50-12.jpg)
+
+
+
+大部分与上一题一样，不过我们需要在构造方法内对获取点的操作做一些改动
+
+之前的操作为for循环暴力遍历，这里我们则只需要遍历一次原数组，获取每个元素对应的slopOrder规则并以此为基础对原数组排序
+
+之后从不同的起始点开始遍历排序后的数组，如果斜率相同的继续，结束当前循环后，如果点的数量大于等于3，且排序数组中的起点位置在原数组当前点的后面，则将原数组当前点作为起点，最后一个遍历的排序数组中的点作为终点添加到结果集中
+
+
+
+Code:
+
+```java
+public FastCollinearPoints(Point[] points) {
+  // Check null
+  if (points == null) {
+    throw new NullPointerException("The array is null.");
+  }
+  for (Point curPoint : points) {
+    if (curPoint == null) {
+      throw new NullPointerException("The current point is a null element.");
+    }
+  }
+  Arrays.sort(points);
+
+  // Check duplicate
+  for (int i = 0; i < points.length - 1; i++) {
+    if (points[i].compareTo(points[i + 1]) == 0) {
+      throw new IllegalArgumentException();
+    }
+  }
+
+
+  final int length = points.length;
+  final List<LineSegment> maxLineSegments = new LinkedList<>();
+
+  for (Point p : points) {
+
+    Point[] pointsBySlope = points.clone();
+    Arrays.sort(pointsBySlope, p.slopeOrder());
+
+    int idx = 1;
+    while (idx < length) {
+
+      LinkedList<Point> candidates = new LinkedList<>();
+      final double CUR_SLOPE = p.slopeTo(pointsBySlope[idx]);
+      do {
+        candidates.add(pointsBySlope[idx]);
+        idx++;
+      } while (idx < length && p.slopeTo(pointsBySlope[idx]) == CUR_SLOPE);
+
+      if (candidates.size() >= 3 && p.compareTo(candidates.getFirst()) < 0) {
+        Point max = candidates.removeLast();
+        maxLineSegments.add(new LineSegment(p, max));
+      }
+    }
+  }
+  lineSegments = maxLineSegments.toArray(new LineSegment[0]);
+}
+```
 
 
 

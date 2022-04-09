@@ -2265,10 +2265,80 @@ GROUP BY stock_name
 
 ![Xnip2022-04-08_07-25-49](MySQL Note.assets/Xnip2022-04-08_07-25-49.jpg)
 
+<hr>
 
 
 
 
+
+
+
+
+
+
+
+# Day259
+
+## Tag: HAVING
+
+![Xnip2022-04-09_09-47-58](MySQL Note.assets/Xnip2022-04-09_09-47-58.jpg)
+
+
+
+![Xnip2022-04-09_09-48-26](MySQL Note.assets/Xnip2022-04-09_09-48-26.jpg)
+
+题意:
+
+给你一张信息表，请你查询出其中重复的邮箱
+
+
+
+思路:
+
+- 重复的邮箱其实等价于出现次数>1的邮箱
+- 所以我们只需要统计每个邮箱的出现次数，再筛选出其中出现超过一次的即可
+- 计算出现次数需要分组，所以我们对分组后的数据进行筛选，这里需要用到HAVING，SQL如下
+
+```mysql
+SELECT
+    Email
+FROM
+    Person
+GROUP BY Email
+HAVING COUNT(*) > 1
+```
+
+<hr>
+
+
+
+![Xnip2022-04-09_10-00-04](MySQL Note.assets/Xnip2022-04-09_10-00-04.jpg)
+
+
+
+![Xnip2022-04-09_10-00-08](MySQL Note.assets/Xnip2022-04-09_10-00-08.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-09_10-05-15](MySQL Note.assets/Xnip2022-04-09_10-05-15.jpg)
+
+
+
+![Xnip2022-04-09_10-05-23](MySQL Note.assets/Xnip2022-04-09_10-05-23.jpg)
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-09_10-13-51](MySQL Note.assets/Xnip2022-04-09_10-13-51.jpg)
+
+
+
+![Xnip2022-04-09_10-13-57](MySQL Note.assets/Xnip2022-04-09_10-13-57.jpg)
 
 
 

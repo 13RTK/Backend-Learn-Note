@@ -5447,6 +5447,7 @@ SELECT num AS prime
 ORDER BY prime;
 ```
 
+<hr>
 
 
 
@@ -5457,6 +5458,223 @@ ORDER BY prime;
 
 
 
+
+
+## 9. SQL处理数列
+
+在数据库关系模型中，并没有"顺序"这一概念，所以基于其的表/视图的行/列也没有顺序
+
+所以SQL并不是用来处理顺序集合的
+
+<hr>
+
+
+
+
+
+
+
+### 1) 生成连续编号
+
+
+
+前置:
+
+在00到99这100个数中，0～9这十个数字分别出现了多少次？
+
+![Xnip2022-04-09_17-50-57](../SQL.assets/Xnip2022-04-09_17-50-57.jpg)
+
+把0到99这100个数看作字符串，每个数其实就是各个数位上的数字组成的集合
+
+
+
+生成一张存储了0～9这10个数字的表(10行)，在该表的基础上，任何数字都能生成出来
+
+Eg Table:
+
+![Xnip2022-04-09_17-59-11](../SQL.assets/Xnip2022-04-09_17-59-11.jpg)
+
+
+
+求出0～99的数字:
+
+```postgresql
+SELECT
+	D1.digit + (D2.digit * 10) AS seq
+FROM
+	"Digits" AS D1
+CROSS JOIN "Digits" AS D2
+ORDER BY seq
+```
+
+
+
+Eg:
+
+![Xnip2022-04-09_18-02-05](../SQL.assets/Xnip2022-04-09_18-02-05.jpg)
+
+
+
+
+
+- 同样的，想要生成更大数位的数，只需要再追加交叉连接的表即可
+
+例如：生成1～542，只需要使用WHERE子句加上限制即可
+
+```postgresql
+SELECT
+	D1.digit + (D2.digit * 10) + (D3.digit * 100) AS seq
+FROM
+	"Digits" AS D1
+CROSS JOIN "Digits" AS D2
+CROSS JOIN "Digits" AS D3
+WHERE D1.digit + (D2.digit * 10) + (D3.digit * 100) BETWEEN 1 AND 542
+ORDER BY seq
+```
+
+- 这一解法抛弃了顺序这一概念，只是将数看作是单个数字的组合
+
+
+
+
+
+- 将查询结果存储在视图中:
+
+```postgresql
+CREATE VIEW Sequence (seq) AS 
+SELECT
+	D1.digit + (D2.digit * 10) + (D3.digit * 100) AS seq
+FROM
+	"Digits" AS D1
+CROSS JOIN "Digits" AS D2
+CROSS JOIN "Digits" AS D3
+```
+
+
+
+Eg:
+
+![Xnip2022-04-09_18-12-54](../SQL.assets/Xnip2022-04-09_18-12-54.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 寻找全部缺失的编号
+
+1-4中的方法只查询出了缺失编号中的最小值，如果要查询出全部缺失的编号呢？
+
+- 其实我们只需要生成对应的自然数集合，然后与缺失的表进行差集运算即可，这里可以使用EXCEPT、NOT EXISTS、IN，甚至外连接
+
+
+
+Eg:
+
+![Xnip2022-04-09_18-20-58](../SQL.assets/Xnip2022-04-09_18-20-58.jpg)
+
+
+
+在已知表中最大值为12的情况下，我们只需要获取1到12的集合再与表进行差集运算即可
+
+```postgresql
+-- EXCEPT
+SELECT
+	seq
+FROM
+	sequence
+WHERE seq BETWEEN 1 AND 12
+EXCEPT
+SELECT
+	seq
+FROM
+	"Seqtbl"
+	
+	
+-- NOT IN
+SELECT
+	seq
+FROM
+	sequence
+WHERE seq BETWEEN 1 AND 12
+AND seq NOT IN(
+	SELECT
+		seq
+	FROM
+		"Seqtbl"
+	)
+	
+	
+-- NOT EXISTS
+SELECT
+	seq
+FROM
+	sequence AS t1
+WHERE seq BETWEEN 1 AND 12
+AND NOT EXISTS(
+	SELECT
+		seq
+	FROM
+		"Seqtbl" AS t2
+	WHERE t1.seq = t2.seq
+	)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-09_18-24-27](../SQL.assets/Xnip2022-04-09_18-24-27.jpg)
+
+
+
+- 但如果不知道表的上下限呢？这里我们将BETWEEN AND进行扩展即可
+
+```postgresql
+SELECT
+	seq
+FROM
+	sequence
+WHERE seq BETWEEN (SELECT MIN(seq) FROM "Seqtbl")
+AND (SELECT MAX(seq) FROM "Seqtbl")
+EXCEPT
+SELECT
+	seq
+FROM
+	"Seqtbl"
+```
+
+<hr>
+
+
+
+
+
+
+
+### 3) 连坐问题
+
+Eg Table:
+
+![Xnip2022-04-09_18-35-57](../SQL.assets/Xnip2022-04-09_18-35-57.jpg)
+
+
+
+问题:
+
+请你查询出其中三个连续的空位组合，希望的四种结果:
+
+- 3 ~ 5
+- 7 ~ 9
+- 8 ~ 10
+- 9 ~ 11
 
 
 
