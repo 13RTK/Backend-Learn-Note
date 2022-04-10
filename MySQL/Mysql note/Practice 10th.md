@@ -2340,6 +2340,92 @@ HAVING COUNT(*) > 1
 
 ![Xnip2022-04-09_10-13-57](MySQL Note.assets/Xnip2022-04-09_10-13-57.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day260
+
+## Tag: CASE
+
+![Xnip2022-04-10_07-58-41](MySQL Note.assets/Xnip2022-04-10_07-58-41.jpg)
+
+
+
+![Xnip2022-04-10_07-58-21](MySQL Note.assets/Xnip2022-04-10_07-58-21.jpg)
+
+题意:
+
+给你一张交易记录表，请你查询出每个月每个国家对应的交易总数、允许的交易记录数、交易总额、允许的交易总额
+
+
+
+
+
+思路:
+
+- 我们交易总数很简单，统计行数就行
+- 而允许的交易总数即为state列为"approved"的列，所以这里我们需要条件分支，这里用CASE即可
+- 交易总额同样只需要用SUM总计amount即可
+- 而允许的交易总额则同样使用CASE做分支判断即可，最终SQL如下
+
+```mysql
+SELECT
+    LEFT(trans_date, 7) AS 'month',
+    country,
+    COUNT(*) AS 'trans_count',
+    SUM(CASE WHEN state = 'approved' THEN 1 ELSE 0 END) AS 'approved_count',
+    SUM(amount) AS 'trans_total_amount',
+    SUM(CASE WHEN state = 'approved' THEN amount ELSE 0 END) AS 'approved_total_amount'
+FROM
+    Transactions
+GROUP BY month, country
+```
+
+<hr>
+
+
+
+![Xnip2022-04-10_08-08-12](MySQL Note.assets/Xnip2022-04-10_08-08-12.jpg)
+
+
+
+![Xnip2022-04-10_08-08-21](MySQL Note.assets/Xnip2022-04-10_08-08-21.jpg)
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-10_08-11-38](MySQL Note.assets/Xnip2022-04-10_08-11-38.jpg)
+
+
+
+![Xnip2022-04-10_08-11-48](MySQL Note.assets/Xnip2022-04-10_08-11-48.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-10_08-21-06](MySQL Note.assets/Xnip2022-04-10_08-21-06.jpg)
+
+
+
+![Xnip2022-04-10_08-21-16](MySQL Note.assets/Xnip2022-04-10_08-21-16.jpg)
+
+
+
+
+
+
+
 
 
 
