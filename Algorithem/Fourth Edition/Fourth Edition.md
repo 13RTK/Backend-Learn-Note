@@ -2425,7 +2425,7 @@ public void shuffle(int[] nums) {
 
 
 
-# 四、归并排序/快速排序(merge/quick sort)
+# 四、归并排序(merge sort)
 
 
 
@@ -2995,6 +2995,146 @@ public FastCollinearPoints(Point[] points) {
   lineSegments = maxLineSegments.toArray(new LineSegment[0]);
 }
 ```
+
+<hr>
+
+
+
+
+
+
+
+
+
+# 五、快速排序(quick sort)
+
+
+
+## 1. 理论(basic)
+
+- 打乱数组(shuffle)
+- 以一个随机数j进行分组(partition)
+    - 保证j的左边没有比它大的数，右边没有比它小的数
+    - a[j]的位置固定
+- 排序(sort): 对每个分组进行递归排序
+
+![Xnip2022-04-10_20-59-53](Algorithm Fourth.assets/Xnip2022-04-10_20-59-53.jpg)
+
+图中选择了打乱后数组中的第一个字母
+
+
+
+
+
+
+
+- 分组(partition)
+    - 从左到右扫描i，直到等式a[i] < a[lo]不成立
+    - 从右到左扫描j，直到等式a[j] > a[lo]不成立
+    - 当等式不满足时交换a[i]和a[j]指向的数字
+
+![Xnip2022-04-10_21-03-51](Algorithm Fourth.assets/Xnip2022-04-10_21-03-51.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 实现
+
+Partition的实现(针对Comparable实例数组):
+
+![Xnip2022-04-10_21-06-37](Algorithm Fourth.assets/Xnip2022-04-10_21-06-37.jpg)
+
+
+
+![Xnip2022-04-10_21-07-13](Algorithm Fourth.assets/Xnip2022-04-10_21-07-13.jpg)
+
+
+
+
+
+- 将partition带入
+- 通过递归调用partition即可通过不断的分组使得数组有序
+- 注意这里引入了打乱操作使得排序的性能得以保证
+
+![Xnip2022-04-10_21-08-39](Algorithm Fourth.assets/Xnip2022-04-10_21-08-39.jpg)
+
+
+
+- 如果引入额外的数组可以使得分组更加简单且稳定，但会使得性能变差
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 3. 分析
+
+![Xnip2022-04-10_21-13-38](Algorithm Fourth.assets/Xnip2022-04-10_21-13-38.jpg)
+
+
+
+- 在最理想的情况下，比较次数为NlgN
+- 最坏的情况下，比较次数为 $$\frac{1}{2}$$ N^2^
+- 平均情况为1.39NlgN
+
+其比归并排序要多一些比较的操作，但移动操作更少
+
+
+
+
+
+- 快速排序是一个原地的排序算法，但其递归调用的栈空间为对数logn
+- 快速排序是一个不稳定的算法，因为其涉及到长距离的元素交换
+
+<hr>
+
+
+
+
+
+## 4. 优化
+
+如果数组比较小，那么我们可以使用插入排序来替代它
+
+![Xnip2022-04-10_21-24-06](Algorithm Fourth.assets/Xnip2022-04-10_21-24-06.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

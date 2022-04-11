@@ -5678,10 +5678,156 @@ Eg Table:
 
 
 
+在表中，(7, 8, 9, 10 ,11)这个序列里有3个长度为3的子序列(7, 8, 9), (8, 9, 10), (9, 10, 11)，我们将它们看作不同的序列，而且这里我们也忽略掉座位不在一排的情况
+
+
+
+解法:
+
+```postgresql
+SELECT
+	S1.seat AS "Start_seat",
+	'~' AS "~",
+	S2.seat AS "end_seat"
+FROM
+	"Seats" AS S1,
+	"Seats" AS S2
+WHERE S2.seat = S1.seat + 2
+AND NOT EXISTS (
+	SELECT
+		*
+	FROM
+		"Seats" AS S3
+	WHERE S3.seat BETWEEN S1.seat AND S2.seat
+	AND S3.status != '未预定'
+)
+```
+
+- 注意，其中2 = 3 - 1
+
+
+
+解析:
+
+1. 通过自连接生成起始组合
+
+通过S2.seat = S1.seat + cnt - 1将长度不是3的组合排除了，从而保证序列的长度正好为3
+
+
+
+2. 描述起点到终点需要满足的条件
+
+有了起点和终点后，我们需要描述内部的点满足的条件，这里我们用S3表示在起点和终点之间移动的点的集合，所以用到了BETWEEN
+
+我们需要满足的是序列中的点都是未预定，所以需要全称量化，但SQL中没有对应的实现，所以我们只能将其转换为双重否定: "都是未预定" -> "没有一个不是未预定"
 
 
 
 
+
+
+
+增加条件，即所有的座位现在都有对应的行号
+
+Eg Table
+
+![Xnip2022-04-10_18-09-27](../SQL.assets/Xnip2022-04-10_18-09-27.jpg)
+
+
+
+- 解决这个问题则需要在之前的前提下，加入"都在一排"这样的一个条件
+
+
+
+解法:
+
+```postgresql
+SELECT
+	S1.seat AS "Start_seat",
+	'~' AS "~",
+	S2.seat AS "end_seat"
+FROM
+	"Seats2" AS S1,
+	"Seats2" AS S2
+WHERE S2.seat = S1.seat + 2
+AND NOT EXISTS (
+	SELECT
+		*
+	FROM
+		"Seats2" AS S3
+	WHERE S3.seat BETWEEN S1.seat AND S2.seat
+	AND (S3.status != '未预定' OR S1.row_id != S3.row_id)
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-10_18-15-30](../SQL.assets/Xnip2022-04-10_18-15-30.jpg)
+
+因为不存在全称量词，所以原条件:
+
+"所有座位都是未预定且行编号相同"改为"没有一个座位不是未预定且不在同一排"
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 最长序列问题
+
+Eg Table:
+
+![Xnip2022-04-10_18-21-15](../SQL.assets/Xnip2022-04-10_18-21-15.jpg)
+
+
+
+查询出的数据需要满足的条件:
+
+- 起点到终点之间的所有座位状态都是"未预定"
+- 起点之前的座位状态不是"未预定"
+- 终点之后的座位状态不是"未预定"
+
+表现如图:
+
+![Xnip2022-04-10_18-26-28](../SQL.assets/Xnip2022-04-10_18-26-28.jpg)
+
+
+
+我们分两步解决，首先创建一个存储了所有序列的视图:
+
+```postgresql
+ SELECT 
+ 	s1.seat AS start_seat,
+	s2.seat AS end_seat,
+	s2.seat - s1.seat + 1 AS seat_cnt
+FROM 
+	"Seat3" s1,
+	"Seat3" s2
+WHERE s1.seat <= s2.seat 
+AND NOT EXISTS (
+  SELECT 
+  	s3.seat,
+		s3.status
+	FROM 
+  	"Seat3" s3
+	WHERE (s3.seat BETWEEN s1.seat AND s2.seat AND s3.status <> '未预订')
+  OR (s3.seat = (s2.seat + 1) AND s3.status = '未预订')
+  OR (s3.seat = (s1.seat - 1) AND s3.status::text = '未预订')
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-10_18-39-19](../SQL.assets/Xnip2022-04-10_18-39-19.jpg)
 
 
 
