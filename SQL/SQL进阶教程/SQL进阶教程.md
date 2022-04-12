@@ -5819,7 +5819,7 @@ AND NOT EXISTS (
   	"Seat3" s3
 	WHERE (s3.seat BETWEEN s1.seat AND s2.seat AND s3.status <> '未预订')
   OR (s3.seat = (s2.seat + 1) AND s3.status = '未预订')
-  OR (s3.seat = (s1.seat - 1) AND s3.status::text = '未预订')
+  OR (s3.seat = (s1.seat - 1) AND s3.status = '未预订')
 )
 ```
 
@@ -5828,6 +5828,173 @@ AND NOT EXISTS (
 Eg:
 
 ![Xnip2022-04-10_18-39-19](../SQL.assets/Xnip2022-04-10_18-39-19.jpg)
+
+
+
+通过该视图，我们只需要获取座位数最大的数据即可
+
+```postgresql
+SELECT
+	start_seat,
+	'~' AS "~",
+	end_seat
+FROM
+	"Sequences"
+WHERE seat_cnt = (SELECT MAX(seat_cnt) FROM "Sequences")
+```
+
+
+
+Eg:
+
+![Xnip2022-04-11_16-39-27](../SQL.assets/Xnip2022-04-11_16-39-27.jpg)
+
+
+
+方法总结：
+
+1. 通过自连接获取起点和终点的集合
+2. 通过存在量化的否定形式表达全称量化
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 5) 单调递减和递增
+
+Eg Table:
+
+![Xnip2022-04-11_16-45-48](../SQL.assets/Xnip2022-04-11_16-45-48.jpg)
+
+
+
+需求:
+
+求出股价单调递增的时间区间
+
+
+
+
+
+根据基本方法：
+
+第一步，通过内连接生成起点和终点的组合
+
+```postgresql
+SELECT
+	S1.deal_date AS Start_date,
+	S2.deal_date AS end_date
+FROM
+	"MyStock" AS S1,
+	"MyStock" AS S2
+WHERE S1.deal_date < S2.deal_date
+```
+
+
+
+第二步，描述起点到终点之间所有点需要满足的条件:
+
+- 在区间内的任意两个时间点内，"较晚时间的股价高于较高时间的股价"这一命题应该成立
+- 反过来，需要的条件为: "区间内不存在两个时间点，使得较早时间的股价高于之后时间的股价"
+
+```postgresql
+SELECT
+	S1.deal_date AS Start_date,
+	S2.deal_date AS end_date
+FROM
+	"MyStock" AS S1,
+	"MyStock" AS S2
+WHERE S1.deal_date < S2.deal_date -- First step: get all interval
+-- Set all the conditions
+AND NOT EXISTS (
+	SELECT
+		*
+	FROM
+		"MyStock" AS S3,
+		"MyStock" AS S4
+	WHERE S3.deal_date BETWEEN S1.deal_date AND S2.deal_date
+	AND S4.deal_date BETWEEN S1.deal_date AND S2.deal_date
+	AND S3.deal_date < S4.deal_date
+	AND S3.price >= S4.price
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-11_17-58-49](../SQL.assets/Xnip2022-04-11_17-58-49.jpg)
+
+
+
+解析:
+
+- 因为我们需要取区间内的两个点，所以我们需要增加两个集合来表示两个点
+- 最后的两个AND表示了日期关系和股价关系
+
+
+
+- 查询结果中有2007-01-14~2007-01-16这样的子集，所以需要将它们排除掉，这里使用极值函数即可
+
+```postgresql
+SELECT
+	MIN(start_date) AS start_date,
+	end_date
+FROM (
+	SELECT
+		S1.deal_date AS start_date,
+		MAX(S2.deal_date) AS end_date
+	FROM
+		"MyStock" AS S1,
+		"MyStock" AS S2
+	WHERE S1.deal_date < S2.deal_date
+	AND NOT EXISTS (
+		SELECT
+			*
+		FROM
+			"MyStock" AS S3,
+			"MyStock" AS S4
+		WHERE S3.deal_date BETWEEN S1.deal_date AND S2.deal_date
+		AND S4.deal_date BETWEEN S1.deal_date AND S2.deal_date
+		AND S3.deal_date < S4.deal_date
+		AND S3.price >= S4.price
+	)
+	GROUP BY S1.deal_date
+) AS temp
+GROUP BY end_date
+```
+
+
+
+Eg:
+
+![Xnip2022-04-11_18-04-15](../SQL.assets/Xnip2022-04-11_18-04-15.jpg)
+
+- 此处的修改在与最大程度的延伸起点和终点，如果想要包含持平的区间，则去掉S3.price >= S4.price里的等号即可(≤取反为>)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 小结
+
+1. 
+
+
+
+
 
 
 

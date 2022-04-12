@@ -3010,7 +3010,11 @@ public FastCollinearPoints(Point[] points) {
 
 
 
-## 1. 理论(basic)
+## 1. 快速排序
+
+
+
+### 1) 理论(basic)
 
 - 打乱数组(shuffle)
 - 以一个随机数j进行分组(partition)
@@ -3049,7 +3053,7 @@ public FastCollinearPoints(Point[] points) {
 
 
 
-## 2. 实现
+### 2) 实现
 
 Partition的实现(针对Comparable实例数组):
 
@@ -3083,7 +3087,7 @@ Partition的实现(针对Comparable实例数组):
 
 
 
-## 3. 分析
+### 3) 分析
 
 ![Xnip2022-04-10_21-13-38](Algorithm Fourth.assets/Xnip2022-04-10_21-13-38.jpg)
 
@@ -3108,16 +3112,218 @@ Partition的实现(针对Comparable实例数组):
 
 
 
-## 4. 优化
+### 4) 优化
 
 如果数组比较小，那么我们可以使用插入排序来替代它
 
 ![Xnip2022-04-10_21-24-06](Algorithm Fourth.assets/Xnip2022-04-10_21-24-06.jpg)
 
+<hr>
 
 
 
 
+
+
+
+
+
+## 2. 选择算法
+
+在一个有序的数组中找出其中第k小的数字，可以用于top k等问题
+
+
+
+- 将快速排序的分组思想应用在其中就能够解决选择问题:
+
+![Xnip2022-04-11_10-23-56](Algorithm Fourth.assets/Xnip2022-04-11_10-23-56.jpg)
+
+
+
+示例：
+
+创建一个实现Comparable接口的学生类，在compareTo方法中指定排序为年龄降序
+
+![Xnip2022-04-11_10-38-49](Algorithm Fourth.assets/Xnip2022-04-11_10-38-49.jpg)
+
+
+
+
+
+![Xnip2022-04-11_10-40-38](Algorithm Fourth.assets/Xnip2022-04-11_10-40-38.jpg)
+
+
+
+![Xnip2022-04-11_10-42-07](Algorithm Fourth.assets/Xnip2022-04-11_10-42-07.jpg)
+
+
+
+- 同样的，我们可以在Arrays.sort方法中通过lambda表达式指定我们自己的排序方式:
+
+![Xnip2022-04-11_10-44-08](Algorithm Fourth.assets/Xnip2022-04-11_10-44-08.jpg)
+
+- 这里我们指定排序规则为年龄倒序
+
+
+
+- 这种结合partition的选择算法称为快速选择(select sort)
+
+其平均用时是线性的，最坏为$$\frac{1}{2}$$N^2^(同快速排序)
+
+![Xnip2022-04-11_10-48-12](Algorithm Fourth.assets/Xnip2022-04-11_10-48-12.jpg)
+
+<hr>
+
+
+
+
+
+
+
+## 3. 重复的key
+
+- 如果在待排序的数组中有重复的key，那么常规的快速排序就会得出错误的结果
+
+![Xnip2022-04-11_11-05-09](Algorithm Fourth.assets/Xnip2022-04-11_11-05-09.jpg)
+
+- 图中以城市名作为排序的依据，因为城市名重复，所以排序后的时间并不对
+
+
+
+
+
+
+
+### 1. 比较
+
+在对含有重复key数组进行排序的时候，不同排序算法的情况:
+
+- 归并排序:
+
+需要进行$$\frac{1}{2}$$NlgN到NlgN次比较
+
+
+
+- 快速排序:
+
+除非停止对重复的key分组，否则会进行N^2^次比较
+
+![Xnip2022-04-11_11-10-05](Algorithm Fourth.assets/Xnip2022-04-11_11-10-05.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2. 3-way partition
+
+- 重写partition，将数组划分为三个部分以解决这个问题
+
+![Xnip2022-04-11_11-13-33](Algorithm Fourth.assets/Xnip2022-04-11_11-13-33.jpg)
+
+
+
+![Xnip2022-04-11_11-15-08](Algorithm Fourth.assets/Xnip2022-04-11_11-15-08.jpg)
+
+
+
+
+
+实现:
+
+![Xnip2022-04-11_11-16-14](Algorithm Fourth.assets/Xnip2022-04-11_11-16-14.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3. 用时
+
+- 当所有的key都重复时，用时为NlgN，如果之后常数级别的重复key，则为线性用时
+
+![Xnip2022-04-11_11-30-51](Algorithm Fourth.assets/Xnip2022-04-11_11-30-51.jpg)
+
+
+
+Eg:
+
+![Xnip2022-04-11_11-30-19](Algorithm Fourth.assets/Xnip2022-04-11_11-30-19.jpg)
+
+<hr>
+
+
+
+
+
+
+
+## 4. 应用
+
+![Xnip2022-04-11_14-54-19](Algorithm Fourth.assets/Xnip2022-04-11_14-54-19.jpg)
+
+<hr>
+
+
+
+### 1) Java实现的排序算法
+
+Arrays.sort():
+
+- 其对每种原始类型(primitive type)都有不同的重载方法
+- 对于Comparator示例实现了一种方法
+- 对于原始类型使用调整后的快速排序，对于引用类型(object)则使用调整后的归并排序
+
+![Xnip2022-04-11_15-00-34](Algorithm Fourth.assets/Xnip2022-04-11_15-00-34.jpg)
+
+
+
+
+
+
+
+
+
+为什么两种类型要使用不同的算法？
+
+对于原始类型：比较在意性能，所以选择不会创建额外空间的快速排序
+
+对于引用类型：稳定即可
+
+<hr>
+
+
+
+
+
+
+
+# 排序总结
+
+|                         | inplace? | Stable? |       worst       |      average      |       best        |          descrbie          |
+| :---------------------: | :------: | :-----: | :---------------: | :---------------: | :---------------: | :------------------------: |
+|        selection        |   yes    |         | $$\frac{N^2}{2}$$ | $$\frac{N^2}{2}$$ | $$\frac{N^2}{2}$$ |          N次交换           |
+|        insertion        |   yes    |   yes   | $$\frac{N^2}{2}$$ | $$\frac{N^2}{4}$$ |         N         | 用于小数组排列或者部分排列 |
+|          shell          |   yes    |         |         ?         |         ?         |         N         |          代码量少          |
+|          merge          |          |   yes   |       NlgN        |       NlgN        |       NlgN        |     能够保证NlgN，稳定     |
+|          quick          |   yes    |         | $$\frac{N^2}{2}$$ |       2NlgN       |       NlgN        | 原地修改，比较快，但不稳定 |
+| 3-way quick(快排改进版) |   yes    |   yes   |       NlgN        |       NlgN        |         N         |          圣杯级别          |
+
+<hr>
 
 
 
