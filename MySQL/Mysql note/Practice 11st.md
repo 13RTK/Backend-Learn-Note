@@ -162,6 +162,7 @@ INNER JOIN Variables AS t3 ON t1.right_operand = t3.name
 
 ![Xnip2022-04-12_07-38-44](MySQL Note.assets/Xnip2022-04-12_07-38-44.jpg)
 
+<hr>
 
 
 
@@ -175,6 +176,78 @@ INNER JOIN Variables AS t3 ON t1.right_operand = t3.name
 
 
 
+
+
+# Day263
+
+## Tag: CROSS JOIN
+
+![Xnip2022-04-13_07-28-55](MySQL Note.assets/Xnip2022-04-13_07-28-55.jpg)
+
+
+
+![Xnip2022-04-13_07-30-05](MySQL Note.assets/Xnip2022-04-13_07-30-05.jpg)
+
+题意:
+
+给你一张学生信息表，一张学科信息表，一张考试记录表，请你查询出其中每个学生参加每个科目的次数
+
+
+
+
+
+思路:
+
+- 这里需要注意的是，不管该学生是否参与了所有的科目，我们都要查询出每个学生对应的每个科目的次数
+- 所以这里需要一个由学生id和学科组成的嵌套表侧栏，我们通过交叉连接生成一个笛卡尔积即可
+- 最后将生成的笛卡尔积作为驱动表连接到考试记录表即可，最终SQL如下(COUNT(字段)不会统计NULL)
+
+```mysql
+SELECT
+    t1.student_id,
+    t1.student_name,
+    t2.subject_name,
+    COUNT(t3.subject_name) AS 'attended_exams'
+FROM
+    Students AS t1
+CROSS JOIN Subjects AS t2
+LEFT JOIN Examinations AS t3 ON t1.student_id = t3.student_id
+AND t2.subject_name = t3.subject_name
+GROUP BY t1.student_id, t1.student_name, t2.subject_name
+ORDER BY t1.student_id, t2.subject_name
+```
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-13_07-59-26](MySQL Note.assets/Xnip2022-04-13_07-59-26.jpg)
+
+
+
+![Xnip2022-04-13_07-59-43](MySQL Note.assets/Xnip2022-04-13_07-59-43.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-13_08-00-21](MySQL Note.assets/Xnip2022-04-13_08-00-21.jpg)
+
+
+
+![Xnip2022-04-13_08-00-26](MySQL Note.assets/Xnip2022-04-13_08-00-26.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-13_08-05-51](MySQL Note.assets/Xnip2022-04-13_08-05-51.jpg)
+
+
+
+![Xnip2022-04-13_08-05-56](MySQL Note.assets/Xnip2022-04-13_08-05-56.jpg)
 
 
 

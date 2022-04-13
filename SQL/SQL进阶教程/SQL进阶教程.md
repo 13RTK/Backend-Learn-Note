@@ -5733,8 +5733,6 @@ Eg Table
 
 ![Xnip2022-04-10_18-09-27](../SQL.assets/Xnip2022-04-10_18-09-27.jpg)
 
-
-
 - 解决这个问题则需要在之前的前提下，加入"都在一排"这样的一个条件
 
 
@@ -5990,7 +5988,197 @@ Eg:
 
 ### 小结
 
-1. 
+1. SQL处理数据的两种方法:
+    - 将数据看作忽略顺序的集合
+    - 把数据看作有序的集合，此时的两步方法:
+        1. 用自连接生成起点和终点
+        2. 在子查询中描述内部每个元素需要满足的元素
+
+2. 在SQL表达全称量化，需要将全称量化命题转换为量化命题的否定形式，并使用NOT EXISTS
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 练习
+
+#### 1-9-1
+
+
+
+Eg Table:
+
+![Xnip2022-04-09_18-20-58](../SQL.assets/Xnip2022-04-09_18-20-58.jpg)
+
+问题：用NOT EXISTS和外连接查询出表中缺失的编号
+
+
+
+- 我的解法
+
+NOT EXISTS(同解法1):
+
+```postgresql
+SELECT
+	t1.seq
+FROM
+	"Sequence" AS t1
+WHERE t1.seq BETWEEN (SELECT MIN(seq) FROM "Seqtbl") AND (SELECT MAX(seq) FROM "Seqtbl") 
+AND NOT EXISTS (
+	SELECT
+		t2.seq
+	FROM
+		"Seqtbl" AS t2
+	WHERE t1.seq = t2.seq
+)
+```
+
+
+
+外连接:
+
+```postgresql
+SELECT
+	t1.seq
+FROM (
+	SELECT
+		t1.seq
+	FROM
+		"Sequence" AS t1
+	WHERE t1.seq BETWEEN (SELECT MIN(seq) FROM "Seqtbl") AND (SELECT MAX(seq) FROM "Seqtbl")
+	) AS t1
+LEFT JOIN "Seqtbl" AS t2 ON t1.seq = t2.seq
+WHERE t2.seq IS NULL
+```
+
+
+
+
+
+答案:
+
+```sql
+SELECT N.seq
+  FROM Sequence N LEFT OUTER JOIN SeqTbl S
+    ON N.seq = S.seq
+ WHERE N.seq BETWEEN 1 AND 12
+   AND S.seq IS NULL;
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### 1-9-2
+
+Eg Table:
+
+![Xnip2022-04-09_18-35-57](../SQL.assets/Xnip2022-04-09_18-35-57.jpg)
+
+
+
+问题：查询出其中三个同一排的未预定的座位，请你使用HAVING而不是NOT EXISTS解决
+
+
+
+太菜不会
+
+
+
+答案:
+
+```postgresql
+SELECT
+	S1.seat AS Start_seat,
+	'～' AS "~",
+	S2.seat AS end_seat
+FROM
+	"Seats" S1,
+	"Seats" S2,
+	"Seats" S3
+WHERE S2.seat = S1.seat + 2
+AND S3.seat BETWEEN S1.seat AND S2.seat
+GROUP BY S1.seat, S2.seat
+HAVING COUNT (*) = SUM (CASE WHEN S3.status = '未预订' THEN 1 ELSE 0 END)
+
+
+/* 坐位有换排时 */
+SELECT 
+	S1.seat AS start_seat,
+	' ～ ' AS "~",
+	S2.seat AS end_seat
+FROM 
+	"Seats2" S1, 
+	"Seats2" S2, 
+	"Seats2" S3
+WHERE S2.seat = S1.seat + 2
+AND S3.seat BETWEEN S1.seat AND S2.seat
+GROUP BY S1.seat, S2.seat
+HAVING COUNT(*) = SUM(CASE WHEN S3.status = '未预订' AND S3.row_id = S1.row_id THEN 1 ELSE 0 END);
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 1-9-3
+
+Eg Table:
+
+![Xnip2022-04-10_18-21-15](../SQL.assets/Xnip2022-04-10_18-21-15.jpg)
+
+问题:
+
+使用HAVING查询出其中所有的未预定序列
+
+
+
+解答(同答案)
+
+```postgresql
+SELECT
+	S1.seat AS "start_seat",
+	S2.seat AS "end_seat",
+	S2.seat - S1.seat + 1 AS "seat_cnt"
+FROM
+	"Seats3" AS S1,
+	"Seats3" AS S2,
+	"Seats3" AS S3
+WHERE S1.seat <= S2.seat
+AND S3.seat BETWEEN S1.seat - 1 AND S2.seat + 1
+GROUP BY S1.seat, S2.seat
+HAVING COUNT(*) = SUM(CASE WHEN S3.seat BETWEEN S1.seat AND S2.seat 
+	AND S3.status = '未预订' THEN 1
+	WHEN S3.seat = S2.seat + 1 AND S3.status = '已预订' THEN 1
+	WHEN S3.seat = S1.seat - 1 AND S3.status = '已预订' THEN 1
+	ELSE 0 END);
+```
+
+
+
+
 
 
 

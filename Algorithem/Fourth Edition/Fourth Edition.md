@@ -3338,6 +3338,372 @@ Arrays.sort():
 
 
 
+# 六、优先队列(Priority Queue)
+
+
+
+## 1. API/概念
+
+与其他数据结构的对比:
+
+![Xnip2022-04-12_13-56-53](Algorithm Fourth.assets/Xnip2022-04-12_13-56-53.jpg)
+
+- 优先队列可以删除最值
+
+
+
+- 最大优先队列中的方法和对应的泛型
+
+![Xnip2022-04-12_13-58-16](Algorithm Fourth.assets/Xnip2022-04-12_13-58-16.jpg)
+
+
+
+
+
+- 不同的实现和对应的消耗
+
+![Xnip2022-04-12_13-59-54](Algorithm Fourth.assets/Xnip2022-04-12_13-59-54.jpg)
+
+其中二叉堆的消耗最接近理想情况
+
+
+
+- 优先队列可以分为有序和无序的实现方法
+
+![Xnip2022-04-12_14-00-56](Algorithm Fourth.assets/Xnip2022-04-12_14-00-56.jpg)
+
+
+
+
+
+- 无序最大优先队列的数组实现
+
+![Xnip2022-04-12_14-02-09](Algorithm Fourth.assets/Xnip2022-04-12_14-02-09.jpg)
+
+
+
+implements:
+
+![Xnip2022-04-12_14-14-54](Algorithm Fourth.assets/Xnip2022-04-12_14-14-54.jpg)
+
+
+
+![Xnip2022-04-12_14-15-05](Algorithm Fourth.assets/Xnip2022-04-12_14-15-05.jpg)
+
+
+
+
+
+
+
+- 有序和无序优先队列的消耗区别
+
+![Xnip2022-04-12_14-15-35](Algorithm Fourth.assets/Xnip2022-04-12_14-15-35.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 2. 二叉堆(Binary heap)
+
+二叉堆的基础结构: 完全二叉树
+
+![Xnip2022-04-12_14-57-29](Algorithm Fourth.assets/Xnip2022-04-12_14-57-29.jpg)
+
+
+
+特性(property):
+
+- 完全二叉树的高度 = lgN (N为节点的数量)
+- 只有当节点数N增加到2的幂时，树的高度才会增加(重要性质)
+
+
+
+
+
+
+
+二叉堆的表示(大根堆):
+
+- 二叉堆: 用数组表示一个堆顺序的完全二叉树
+- 堆顺序二叉树:
+    - 节点上是值
+    - 父节点都不会小于子节点
+- 实现的数组:
+    - 将节点通过层级顺序进行排列
+    - 节点之间不需要显式的连接
+
+![Xnip2022-04-12_15-05-02](Algorithm Fourth.assets/Xnip2022-04-12_15-05-02.jpg)
+
+
+
+
+
+
+
+- 二叉堆的特性(大根堆):
+    - 数组中第一个元素的值是最大的，其作为二叉树的根节点
+    - 可通过数组的索引遍历整颗树:
+        - 如果节点对应的索引为k，其父节点对应的索引为k / 2
+        - 一个父节点对应的索引为k，其两个子节点的索引为2k和2k + 1
+
+![Xnip2022-04-12_15-08-42](Algorithm Fourth.assets/Xnip2022-04-12_15-08-42.jpg)
+
+
+
+
+
+
+
+- 大根堆上浮(swim)
+
+
+
+如果子节点大于其父节点，那么需要进行上浮操作
+
+为了消除错误的操作:
+
+1. 交换子节点和父节点的值
+2. 重复步骤1直到整个数组恢复堆顺序
+
+swim实现:
+
+```java
+// The k represent the child node which value is greater then parent
+private void swim(int k) {
+  while (k > 1 && less(k / 2, k) {
+    swap(k, k / 2);
+    k /= 2;
+  }
+}
+```
+
+
+
+![Xnip2022-04-12_16-31-15](Algorithm Fourth.assets/Xnip2022-04-12_16-31-15.jpg)
+
+
+
+
+
+- 插入操作:
+
+将一个新的节点插入到数组末尾，并将其上浮
+
+最多进行1 + lgN(树的高度)次比较
+
+
+
+insert实现:
+
+```java
+public void insert(Key x) {
+  pq[++N] = x;
+  swim(N);
+}
+```
+
+
+
+![Xnip2022-04-12_16-35-21](Algorithm Fourth.assets/Xnip2022-04-12_16-35-21.jpg)
+
+
+
+
+
+
+
+- 堆的降级(与上浮相对)
+
+如果一个父节点的值小于其一个子节点/或者两个，此时需要降级/下沉
+
+
+
+为了消除错误的操作:
+
+1. 交换父节点和较大的那个子节点的值
+2. 重复步骤1直到数组恢复栈顺序
+
+
+
+sink实现:
+
+```java
+// K represent the parent index which value is smaller then its child node
+private void sink(int k) {
+  while (2 * k <= N) {
+    int j = 2 * K;
+    
+    // Get the bigger child
+    if (j < N && less(j, j + 1)) {
+      j++;
+    }
+    
+    // Already restored
+    if (!less(k, j)) {
+      break;
+    }
+    
+    swap(k, j);
+    
+    // Judge the new parent
+    k = j;
+  }
+}
+```
+
+
+
+![Xnip2022-04-12_16-44-10](Algorithm Fourth.assets/Xnip2022-04-12_16-44-10.jpg)
+
+
+
+
+
+- 删除最大值
+    1. 将数组中的第一个元素与最后一个元素进行交换
+    2. 将新的根节点进行下沉
+    3. 将最后一个元素删除
+
+最多进行2lgN次比较
+
+
+
+delMax实现:
+
+```java
+public Key delMax() {
+  Key max = pq[0];
+  swap(0, N);
+  
+  sink(0);
+  pq[N] = null;
+  N--;
+  
+  return max;
+}
+```
+
+
+
+![Xnip2022-04-12_16-49-12](Algorithm Fourth.assets/Xnip2022-04-12_16-49-12.jpg)
+
+
+
+
+
+最大优先队列的实现(大根堆):
+
+![Xnip2022-04-12_17-38-03](Algorithm Fourth.assets/Xnip2022-04-12_17-38-03.jpg)
+
+
+
+
+
+- 不同实现的消耗分析
+
+![Xnip2022-04-12_17-38-43](Algorithm Fourth.assets/Xnip2022-04-12_17-38-43.jpg)
+
+
+
+
+
+
+
+- 其余一些细节
+    - 对于下溢: 如果尝试对空的优先队列使用delete方法，则抛出异常
+    - 对于溢出: 添加一个空的构造方法，并通过方法重写分配数组的大小
+    - 改为最小优先队列(小根堆): 将less改为greater并实现即可
+
+
+
+![Xnip2022-04-12_17-40-33](Algorithm Fourth.assets/Xnip2022-04-12_17-40-33.jpg)
+
+<hr>
+
+
+
+
+
+完整版:
+
+```java
+import part1.utils.SortAPI;
+
+public class MaxPQ <Key extends Comparable<Key>>{
+    private Key[] pq;
+    private int idx;
+    public Key[] quoteArray;
+
+    public MaxPQ(int capacity) {
+        pq = (Key[]) new Comparable[capacity];
+        quoteArray = pq;
+    }
+
+    public boolean isEmpty() {
+        return idx == 0;
+    }
+
+    public void insert(Key key) {
+        pq[idx] = key;
+
+        swim(idx);
+        idx++;
+    }
+
+    private void swim(int childIdx) {
+        while (childIdx >= 0 && less(childIdx / 2, childIdx)) {
+            SortAPI.swap(pq, childIdx / 2, childIdx);
+            childIdx /= 2;
+        }
+    }
+
+    public Key delMax() {
+        Key max = pq[0];
+        SortAPI.swap(pq, 0, idx);
+
+        sink(0);
+        pq[idx] = null;
+        idx--;
+
+        return max;
+    }
+
+    private void sink(int parentIdx) {
+         while (2 * parentIdx <= idx) {
+             int childIdx = 2 * parentIdx;
+
+             if (childIdx < idx && less(childIdx, childIdx + 1)) {
+                 childIdx++;
+             }
+
+             if (!less(parentIdx, childIdx)) {
+                 break;
+             }
+
+             SortAPI.swap(pq, parentIdx, childIdx);
+             parentIdx = childIdx;
+         }
+    }
+
+    private boolean less(int firstIdx, int secondIdx) {
+        return pq[firstIdx].compareTo(pq[secondIdx]) < 0;
+    }
+}
+```
+
+
+
+
+
+
+
 
 
 
