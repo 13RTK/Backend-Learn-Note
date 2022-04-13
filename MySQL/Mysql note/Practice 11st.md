@@ -242,12 +242,123 @@ ORDER BY t1.student_id, t2.subject_name
 <hr>
 
 
-
-![Xnip2022-04-13_08-05-51](MySQL Note.assets/Xnip2022-04-13_08-05-51.jpg)
-
-
+![Xnip2022-04-13_08-01-34](MySQL Note.assets/Xnip2022-04-13_08-01-34.jpg)
 
 ![Xnip2022-04-13_08-05-56](MySQL Note.assets/Xnip2022-04-13_08-05-56.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day264
+
+## Tag: CASE
+
+![Xnip2022-04-14_07-07-47](MySQL Note.assets/Xnip2022-04-14_07-07-47.jpg)
+
+
+
+![Xnip2022-04-14_07-09-38](MySQL Note.assets/Xnip2022-04-14_07-09-38.jpg)
+
+题意:
+
+给你一张国家信息表，一张天气信息表，请你根据每个国家2019年11月的平均天气状态值查询出每个国家对应的天气类型
+
+
+
+
+
+思路:
+
+- 很明显，我们需要根据状态值的平均值查询进行分支判断
+- 获取平均值则需要分组，而分支判断则使用CASE即可，最后用WHERE子句限制日期即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.country_name,
+    CASE WHEN AVG(t2.weather_state) <= 15 THEN 'Cold'
+    WHEN AVG(t2.weather_state) >= 25 THEN 'Hot'
+    ELSE 'Warm' END AS 'weather_type'
+FROM
+    Countries AS t1
+INNER JOIN Weather AS t2 ON t1.country_id = t2.country_id
+WHERE YEAR(t2.day) = 2019
+AND MONTH(t2.day) = 11
+GROUP BY t1.country_name
+```
+
+<hr>
+
+
+
+![Xnip2022-04-14_07-19-28](MySQL Note.assets/Xnip2022-04-14_07-19-28.jpg)
+
+
+
+![Xnip2022-04-14_07-19-47](MySQL Note.assets/Xnip2022-04-14_07-19-47.jpg)
+
+题意:
+
+给你一张座位信息表，请你将其中相邻座位的学生进行交换，如果最后一个学生的id是奇数则他/她不交换，请你查询出交换后的信息
+
+
+
+
+
+思路:
+
+- 这里一看到交换可能就想到要更新表，或者通过判断id的奇偶来交换姓名，但这样做其实很麻烦
+- 最简单的方式还是替换id:
+- 如果id为奇数，当前id等于总数，那么说明其是最后一个学生，则不对其进行任何处理；如果只是奇数，则id + 1；是偶数则id - 1，就这样解决了
+- 最终SQL如下
+
+```mysql
+SELECT
+    CASE WHEN id % 2 != 0 AND id = (SELECT COUNT(*) FROM Seat) THEN id
+    WHEN id % 2 != 0 THEN id + 1
+    WHEN id % 2 = 0 THEN id - 1
+    ELSE NULL END AS 'id',
+    student
+FROM
+    Seat
+ORDER BY id
+```
+
+<hr>
+
+
+
+![Xnip2022-04-14_07-32-07](MySQL Note.assets/Xnip2022-04-14_07-32-07.jpg)
+
+
+
+![Xnip2022-04-14_07-32-11](MySQL Note.assets/Xnip2022-04-14_07-32-11.jpg)
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-14_07-42-32](MySQL Note.assets/Xnip2022-04-14_07-42-32.jpg)
+
+
+
+![Xnip2022-04-14_07-42-37](MySQL Note.assets/Xnip2022-04-14_07-42-37.jpg)
+
+
+
+
+
+
 
 
 

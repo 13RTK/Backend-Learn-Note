@@ -6176,6 +6176,267 @@ HAVING COUNT(*) = SUM(CASE WHEN S3.seat BETWEEN S1.seat AND S2.seat
 	ELSE 0 END);
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+## 10. 更高级的HAVING用法
+
+
+
+### 1) 全队点名
+
+Eg Table:
+
+![Xnip2022-04-13_16-36-04](../SQL.assets/Xnip2022-04-13_16-36-04.jpg)
+
+
+
+问题: 查询出可以出勤的队伍(队伍里所有人都处于"待命状态")
+
+
+
+- 这里"所有队员都处于待命状态"是一个全称量词，所以我们要转换为其双重否定命题: "没有一个队员不是待命状态"
+
+```postgresql
+SELECT
+	team_id,
+	member
+FROM
+	"Teams" AS t1
+WHERE NOT EXISTS (
+	SELECT
+		*
+	FROM
+		"Teams" AS t2
+	WHERE t1.team_id = t2.team_id
+	AND t2.status != '待命'
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-13_16-42-14](../SQL.assets/Xnip2022-04-13_16-42-14.jpg)
+
+
+
+
+
+- 使用HAVING改写会变得更简单:
+
+```postgresql
+SELECT
+	team_id
+FROM
+	"Teams"
+GROUP BY team_id
+HAVING COUNT(*) = SUM(
+	CASE WHEN status = '待命' THEN 1
+	ELSE 0 END
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-13_16-51-19](../SQL.assets/Xnip2022-04-13_16-51-19.jpg)
+
+
+
+释义:
+
+1. 使用GROUP BY将Teams集合以队伍为单位划分为几个子集
+
+![Xnip2022-04-13_18-02-50](../SQL.assets/Xnip2022-04-13_18-02-50.jpg)
+
+目标集合为S3和S4，它们拥有其他集合没有的特征: 处于"待命"状态的数据行数与集合中数据总行数相等，所以这里我们使用了CASE作为特征函数
+
+
+
+
+
+- 另外的写法:
+
+```postgresql
+SELECT
+	team_id
+FROM
+	"Teams"
+GROUP BY team_id
+HAVING MAX(status) = '待命'
+AND MIN(status) = '待命'
+```
+
+释义:
+
+集合中如果最大值和最小值相同，则说明集合里只有一种值
+
+这种利用极值函数的写法可以使用参数字段的索引
+
+
+
+
+
+
+
+- 可以将条件放在SELECT子句里:
+
+```postgresql
+SELECT
+	team_id,
+	CASE WHEN MAX(status) = '待命' AND MIN(status) = '待命'
+	THEN '全队待命'
+	ELSE '人手不够' END AS "status"
+FROM
+	"Teams"
+GROUP BY team_id
+```
+
+
+
+Eg:
+
+![Xnip2022-04-13_18-10-37](../SQL.assets/Xnip2022-04-13_18-10-37.jpg)
+
+
+
+但这样做的话，查询可能就不会被优化了，所以性能比HAVING的写法要差一些
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 单重集合/多重集合
+
+Eg Table:
+
+![Xnip2022-04-13_18-20-33](../SQL.assets/Xnip2022-04-13_18-20-33.jpg)
+
+问题:
+
+查询出有重复材料的生产地
+
+
+
+分组后:
+
+![Xnip2022-04-13_18-22-49](../SQL.assets/Xnip2022-04-13_18-22-49.jpg)
+
+
+
+利用目标集合的特性即可，SQL如下
+
+```postgresql
+SELECT
+	center
+FROM
+	"Materials"
+GROUP BY center
+HAVING COUNT(material) != COUNT(DISTINCT material)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-13_18-24-58](../SQL.assets/Xnip2022-04-13_18-24-58.jpg)
+
+通过WHERE子句我们就能判断某种材料是否存在重复的生产地
+
+
+
+
+
+- 将条件转移到SELECT子句中:
+
+```postgresql
+SELECT
+	center,
+	CASE WHEN COUNT(material) != COUNT(DISTINCT material) THEN '存在重复'
+	ELSE '不存在重复' END AS "status"
+FROM
+	"Materials"
+GROUP BY center
+```
+
+
+
+Eg:
+
+![Xnip2022-04-13_18-29-16](../SQL.assets/Xnip2022-04-13_18-29-16.jpg)
+
+
+
+
+
+
+
+**理论**:
+
+通过GROUP BY生成的子集有一个对应的名字，叫做**划分(partition)**
+
+- 它是集合论和群论中的重要概念，指的是**将某个集合按照某种规则分割后得到的子集**
+- 这些**子集之间没有重复的元素，而且它们的并集就是原来的集合**
+- 这样的分割操作称为划分操作，SQL中的GROUP BY就是针对集合划分操作的具体实现
+
+
+
+改写为EXISTS形式:
+
+```postgresql
+SELECT
+	center,
+	material
+FROM
+	"Materials" M1
+WHERE EXISTS (
+	SELECT
+		*
+	FROM
+		"Materials" M2
+	WHERE M1.center = M2.center
+	AND M1.receive_date != M2.receive_date
+	AND M1.material = M2.material
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-13_18-50-48](../SQL.assets/Xnip2022-04-13_18-50-48.jpg)
+
+改为NOT EXISTS后就能查询出没有重复材料的生产地了
+
+<hr>
+
+
+
+
+
+
+
+
+
 
 
 

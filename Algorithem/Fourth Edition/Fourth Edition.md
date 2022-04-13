@@ -3475,7 +3475,6 @@ implements:
 swim实现:
 
 ```java
-// The k represent the child node which value is greater then parent
 private void swim(int k) {
   while (k > 1 && less(k / 2, k) {
     swap(k, k / 2);
@@ -3697,6 +3696,195 @@ public class MaxPQ <Key extends Comparable<Key>>{
     }
 }
 ```
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 3. 堆排序
+
+
+
+### 1) 原地排序的基础步骤
+
+- 将所有的节点值创建为一个最大堆
+- 重复移除最大的值
+
+![Xnip2022-04-13_13-50-43](Algorithm Fourth.assets/Xnip2022-04-13_13-50-43.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 构建堆(大根堆)
+
+
+
+1. 使用自下而上的方法构建堆
+
+Code:
+
+```java
+for (int idx = n / 2; idx >= 0; idx--) {
+  sink(array, idx, n)
+}
+```
+
+释义: 
+
+- 这里的idx初始化为n / 2，其中n为整个数组的长度，其除以2即为末尾节点的父节点对应的索引值(堆的特性)
+- 因为这里是大根堆，所以根节点一定是最大的才行，因此需要进行下沉操作使得整个数组变为堆顺序
+
+![Xnip2022-04-13_13-55-49](Algorithm Fourth.assets/Xnip2022-04-13_13-55-49.jpg)
+
+
+
+
+
+
+
+2. 将最大值移动到数组末尾
+
+堆构建完毕后(大根堆)，此时数组中的第一个值(根节点值)是最大的，此时我们将其与数组末尾的值进行交换
+
+此时最大值就完成了排序，我们将数组的长度减一，将最后一个节点踢出堆
+
+对交换的头节点进行下沉操作
+
+
+
+Code:
+
+```java
+while (n > 0) {
+  swap(array, 0, n);
+  n--;
+  sink(array, 1, n);
+}
+```
+
+
+
+![Xnip2022-04-13_13-59-25](Algorithm Fourth.assets/Xnip2022-04-13_13-59-25.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 实现
+
+
+
+Full Code:
+
+```java
+import java.util.Arrays;
+
+public class MyHeap <Key extends Comparable<Key>>{
+
+    public static void sort(Comparable[] array) {
+        int lastIdx = array.length - 1;
+        for (int parentIdx = lastIdx / 2; parentIdx >= 0; parentIdx--) {
+            sink(array, parentIdx, lastIdx);
+        }
+
+        System.out.println(Arrays.toString(array));
+
+        while (lastIdx > 0) {
+            swap(array, 0, lastIdx);
+            lastIdx--;
+
+            sink(array, 0, lastIdx);
+        }
+    }
+
+    private static void sink(Comparable[] array, int parentIdx, int lastIdx) {
+        while (parentIdx * 2 <= lastIdx) {
+            int childIdx = parentIdx * 2;
+
+            if (childIdx <= lastIdx - 1 && less(array, childIdx, childIdx  + 1)) {
+                childIdx++;
+            }
+
+            if (!less(array, parentIdx, childIdx)) {
+                break;
+            }
+
+            swap(array, parentIdx, childIdx);
+            parentIdx = childIdx;
+        }
+    }
+
+    private static boolean less(Comparable[] array, int firstIdx, int secondIdx) {
+        return array[firstIdx].compareTo(array[secondIdx]) < 0;
+    }
+
+    private static void swap(Comparable[] array, int left, int right) {
+        Comparable temp = array[left];
+        array[left] = array[right];
+        array[right] = temp;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 分析与特性
+
+特性:
+
+- 最多进行2N次比较和交换
+- 堆排序最多进行2NlgN次比较和交换
+- 相比归并排序: 原地算法，不需要额外空间
+- 相比快速排序: 其最坏情况下只需要NlgN
+
+
+
+
+
+堆排序的缺点:
+
+- 内部循环次数比快速排序要多(因为需要获取两个子节点中较大的那个，之后还需要与根节点比较)，为2NlgN
+- 无法应用在缓存中(因为引用的索引值比较分散)
+- 不稳定(有长距离的交换)
+
+
+
+
+
+# 排序总结:
+
+![Xnip2022-04-13_15-11-14](Algorithm Fourth.assets/Xnip2022-04-13_15-11-14.jpg)
 
 
 
