@@ -6436,6 +6436,397 @@ Eg:
 
 
 
+### 3) 寻找缺失的编号
+
+1-4中解决寻找缺失的编号问题对应的SQL:
+
+```sql
+SELECT
+	'存在缺失的编号' AS 'gap'
+FROM
+	SeqTbl
+HAVING COUNT(*) != MAX(seq);
+```
+
+- 该种解法的前提是，数列的起始值必须为1，那如果起始值不为1呢？
+
+
+
+Eg Table:
+
+![Xnip2022-04-14_13-39-46](../SQL.assets/Xnip2022-04-14_13-39-46.jpg)
+
+
+
+
+
+
+
+```postgresql
+SELECT
+	'存在缺失的编号' AS gap
+FROM
+	"SeqTbl"
+HAVING COUNT(*) != MAX(seq) - MIN(seq) + 1
+```
+
+- 这里通过最大值 - 最小值 + 1获取了应该包含的元素个数
+
+
+
+
+
+将条件写在SELECT里:
+
+```postgresql
+SELECT
+	CASE WHEN COUNT(*) = 0
+	THEN '表为空'
+	WHEN COUNT(*) != MAX(seq) - MIN(seq) + 1
+	THEN '存在缺失的编号'
+	ELSE '连续' END AS gap
+FROM
+	"SeqTbl"
+```
+
+
+
+
+
+
+
+- 查找最小的缺失编号
+
+
+
+之前的写法:
+
+```sql
+SELECT
+	MIN(t1.seq + 1) AS 'gap'
+FROM
+	SeqTbl AS t1
+WHERE NOT EXISTS (
+	SELECT
+		t2.seq
+	FROM
+		SeqTbl AS t2
+	WHERE (t1.seq + 1) = t2.seq
+	)
+```
+
+
+
+这种写法会返回5，但我们原表中并不是从1开始的，所以我们需要一个分支让它返回1
+
+```postgresql
+SELECT
+	CASE WHEN COUNT(*) = 0 OR MIN(seq) > 1 THEN 1
+	ELSE (
+		SELECT
+			MIN(seq + 1)
+		FROM
+			"SeqTbl" S1
+		WHERE NOT EXISTS (
+			SELECT
+				*
+			FROM
+				"SeqTbl" S2
+			WHERE S2.seq = S1.seq + 1
+		)) END
+FROM
+	"SeqTbl"
+```
+
+- 我们将SQL整体嵌入到了CASE返回的结果块中，然后用NOT EXISTS改写了NOT IN，这样优化性能的同时还能处理值为NULL的情况
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 为集合设置详细条件
+
+
+
+
+
+
+
+Eg Table:
+
+![Xnip2022-04-14_13-49-00](../SQL.assets/Xnip2022-04-14_13-49-00.jpg)
+
+需求1:
+
+查询出75%以上的学生分数都在80分以上的班级
+
+
+
+SQL:
+
+```postgresql
+SELECT
+	class
+FROM
+	"TestResults"
+GROUP BY class
+HAVING COUNT(*) * 0.75 <= SUM(
+	CASE WHEN score >= 80 THEN 1
+	ELSE 0 END
+)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-14_13-54-56](../SQL.assets/Xnip2022-04-14_13-54-56.jpg)
+
+
+
+
+
+
+
+需求2:
+
+查询出分数在50分以上的男生的人数比分数50分以上的女生人数多的班级
+
+
+
+SQL:
+
+```postgresql
+SELECT
+	class
+FROM
+	"TestResults"
+GROUP BY class
+HAVING SUM(CASE WHEN score >= 50 AND sex = '男' THEN 1 ELSE 0 END) > SUM(CASE WHEN score >= 50 AND sex = '女' THEN 1 ELSE 0 END)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-14_13-58-30](../SQL.assets/Xnip2022-04-14_13-58-30.jpg)
+
+
+
+
+
+
+
+
+
+需求3:
+
+查询出女生平均分比男生平均分高的班级
+
+
+
+SQL:
+
+```postgresql
+SELECT
+	class
+FROM
+	"TestResults"
+GROUP BY class
+HAVING AVG(CASE WHEN sex = '男' THEN score ELSE 0 END) < AVG(CASE WHEN sex = '女' THEN score ELSE 0 END)
+```
+
+
+
+![Xnip2022-04-14_14-03-09](../SQL.assets/Xnip2022-04-14_14-03-09.jpg)
+
+
+
+问题:
+
+这里我们查询出了D班，该班没有男生，如果D班的所有女生分数都为0，那么按理说，D班不应该被查询出
+
+为了满足这样的返回值，我们应该在计算平均分时设置空集为未定义
+
+```postgresql
+SELECT
+	class
+FROM
+	"TestResults"
+GROUP BY class
+HAVING AVG(CASE WHEN sex = '男' THEN score ELSE NULL END) < AVG(CASE WHEN sex = '女' THEN score ELSE NULL END)
+```
+
+
+
+Eg:
+
+![Xnip2022-04-14_14-07-06](../SQL.assets/Xnip2022-04-14_14-07-06.jpg)
+
+
+
+
+
+- 关注集合的性质，反过来说就是忽略掉单个元素的特征
+- 这种**确保成员隐秘性的同时研究集体趋势的思考方式**与**统计学的方法论**不谋而合
+- 正因为SQL面向集合的特性以及其与统计学之间的相似之处，数据库常常用来进行统计分析
+
+<hr>
+
+
+
+
+
+
+
+### 小结
+
+![Xnip2022-04-14_14-12-00](../SQL.assets/Xnip2022-04-14_14-12-00.jpg)
+
+
+
+要点:
+
+1. 在SQL中指定搜索条件时，最重要的是明白搜索的实体是集合还是集合的元素(表和记录)
+    - 如果一个实体对应一行数据，则搜索实体为元素，使用`WHERE`
+    - 如果一个实体对应多行数据，则搜索实体为集合，使用`HAVING`
+2. `HAVING`子句可以通过聚合函数(极值函数尤为高效)针对集合指定各种条件
+3. 通过`CASE`表达式生成的特征函数，可以表示各种复杂的条件
+4. HAVING is powerful!
+
+
+
+
+
+
+
+### 练习
+
+
+
+#### 1-10-1
+
+![Xnip2022-04-14_14-26-29](../SQL.assets/Xnip2022-04-14_14-26-29.jpg)
+
+
+
+需求:
+
+请从表中查出材料和原产国两个字段都重复的生产地(答案只有(锌 , 泰国)重复了的东京)
+
+
+
+我的解答:
+
+```postgresql
+SELECT
+	t1.center
+FROM
+	"Materials2" AS t1
+WHERE EXISTS(
+	SELECT
+		*
+	FROM
+		"Materials2" AS t2
+	WHERE t1.receive_date != t2.receive_date
+	AND t1.material = t2.material
+	AND t1.center = t2.center
+	AND t1.orgland = t2.orgland
+)
+GROUP BY t1.center
+```
+
+
+
+答案:
+
+```postgresql
+SELECT 
+	center
+FROM 
+	"Materials2"
+GROUP BY center
+HAVING COUNT(material || orgland) != COUNT(DISTINCT material || orgland);
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 1-10-2
+
+
+
+Eg Table:
+
+![Xnip2022-04-14_14-35-01](../SQL.assets/Xnip2022-04-14_14-35-01.jpg)
+
+
+
+需求:
+
+使用`HAVING`子句和特征函数获取下面两种数据(需要排除掉没有对应学科成绩的学生)
+
+1. 数学分数在80分及以上的学生
+2. 语文分数在50分及以上的学生
+
+
+
+我的解答:
+
+```postgresql
+SELECT
+	student_id
+FROM
+	"TestScores"
+GROUP BY student_id
+HAVING SUM(
+	CASE WHEN subject = '数学' AND score >= 80 THEN 1
+	WHEN subject = '语文' AND score >= 50 THEN 1
+	ELSE NULL END
+	) >= 2
+```
+
+
+
+答案:
+
+```sql
+/* 练习题1-10-2：多个条件的特征函数 */
+SELECT student_id
+  FROM TestScores
+ WHERE subject IN ('数学', '语文')
+ GROUP BY student_id
+HAVING SUM(CASE WHEN subject = '数学' AND score >= 80 THEN 1
+                WHEN subject = '语文' AND score >= 50 THEN 1
+                ELSE 0 END) = 2;
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -354,6 +354,109 @@ ORDER BY id
 
 ![Xnip2022-04-14_07-42-37](MySQL Note.assets/Xnip2022-04-14_07-42-37.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day265
+
+## Tag: 连续空余座位
+
+![Xnip2022-04-15_07-19-29](MySQL Note.assets/Xnip2022-04-15_07-19-29.jpg)
+
+
+
+![Xnip2022-04-15_07-26-43](MySQL Note.assets/Xnip2022-04-15_07-26-43.jpg)
+
+题意:
+
+给你一张电影院的座位信息，请你查询出其中连续的空缺座位号
+
+
+
+思路:
+
+- 连续其实意味着id相差为1，而空缺则说明free字段值为1，所以我们通过自连接即可，SQL如下
+
+```mysql
+SELECT
+    t1.seat_id
+FROM
+    Cinema AS t1
+INNER JOIN Cinema AS t2 ON ABS(t2.seat_id - t1.seat_id) = 1
+WHERE (t1.free && t2.free) = 1
+GROUP BY t1.seat_id
+ORDER BY t1.seat_id
+```
+
+<hr>
+
+
+
+![Xnip2022-04-15_07-45-36](MySQL Note.assets/Xnip2022-04-15_07-45-36.jpg)
+
+
+
+![Xnip2022-04-15_07-45-41](MySQL Note.assets/Xnip2022-04-15_07-45-41.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-15_07-49-30](MySQL Note.assets/Xnip2022-04-15_07-49-30.jpg)
+
+
+
+![Xnip2022-04-15_07-49-34](MySQL Note.assets/Xnip2022-04-15_07-49-34.jpg)
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-15_07-54-27](MySQL Note.assets/Xnip2022-04-15_07-54-27.jpg)
+
+
+
+![Xnip2022-04-15_07-54-32](MySQL Note.assets/Xnip2022-04-15_07-54-32.jpg)
+
+题意:
+
+给你一张用户日志表，请你查询出其中在同一时刻通过不同ip地址登陆的用户
+
+
+
+思路:
+
+- 其实所谓的某一时刻，就是其他的登陆记录时间在其他登陆记录的区间内
+- 所以我们通过BETWEEN AND就能进行限制，SQL如下
+
+```mysql
+SELECT
+    t1.account_id
+FROM
+    LogInfo AS t1
+INNER JOIN LogInfo AS t2 ON t2.login BETWEEN t1.login AND t1.logout
+AND t1.account_id = t2.account_id
+AND t1.ip_address != t2.ip_address
+GROUP BY t1.account_id
+```
+
+
+
+
+
 
 
 
