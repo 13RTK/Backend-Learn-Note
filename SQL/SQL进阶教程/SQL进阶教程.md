@@ -6829,12 +6829,228 @@ HAVING SUM(CASE WHEN subject = '数学' AND score >= 80 THEN 1
 
 
 
+## 11. 优化/起飞！
+
+
+
+### 1) 更高效的查询
+
+
+
+- **对于子查询参数，使用EXISTS代替IN**
+
+IN使用方便且易于理解，但是其有可能成为性能的瓶颈，如果SQL中有大量的IN，一半对它们进行优化就能大幅度提升整体性能
+
+大多数情况下，`(NOT) IN`和`(NOT) EXISTS`返回的结果是一样的(除非参数里有NULL)，但是，如果参数为子查询，EXIST就要快一些
+
+
+
+Eg Table:
+
+![Xnip2022-04-15_10-33-09](../SQL.assets/Xnip2022-04-15_10-33-09.jpg)
+
+
+
+查询出Class_A中与Class_B重复的员工id，下面两种写法都行，但是EXISTS要更快一些
+
+```postgresql
+SELECT
+	*
+FROM
+	"Class_A"
+WHERE id IN (
+	SELECT
+		id
+	FROM
+		"Class_B"
+)
+
+SELECT
+	*
+FROM
+	"Class_A" A
+WHERE EXISTS (
+	SELECT
+		*
+	FROM
+		"Class_B" B
+	WHERE A.id = B.id
+)
+```
+
+
+
+解析:
+
+> - 如果连接列(id)上有索引，那么在查询Class_B的时候则不会查询实际的表，而是直接查索引
+> - 如果使用EXISTS，那么**只要有一条数据满足条件就会终止查询**，**而IN会扫描全表**；NOT EXISTS也是如此
+
+- 当IN参数是子查询的时候，数据库会优先执行子查询，然后将结果存储在临时表中(也叫内联视图)，然后扫描这个视图/临时表；然而EXISTS不会生成临时表
+- 从可读性上看，IN要比EXISTS好。所以如果两者性能差距不大，就没有必要非得使用EXISTS
+
+<hr>
 
 
 
 
 
 
+
+
+
+
+
+
+
+- 参数是子查询时，使用连接代替IN
+
+之前的问题该用连接写法:
+
+```postgresql
+SELECT
+	A.id,
+	A.name
+FROM
+	"Class_A" A
+INNER JOIN "Class_B" B ON A.id = B.id
+```
+
+这样写的话，因为没有子查询，所以不会生成中间表/内联视图
+
+但如果没有索引的话，可能EXISTS要好一些，因此最好为连接列建立索引
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 避免排序
+
+SQL中不能显示的命令数据库进行排序；但一些隐藏操作会进行暗中的排序
+
+
+
+会进行排序的代表运算:
+
+- GROUP BY
+- ORDER BY
+- 聚合函数(SUM, COUNT, AVG, MAX, MIN..)
+- DISTINCT
+- 集合运算(UNION, INTERSECT, EXCEPT)
+- 窗口函数(RANK, ROW_NUMBER...)
+
+
+
+一般来说，排序会在内存中进行，但如果内存不足，就需要在磁盘上排序，然而磁盘的速度很慢，所以会使得SQL查询变慢
+
+
+
+
+
+- **灵活使用集合运算法的ALL选项**
+
+默认使用时会为了排除重复项而排序
+
+```postgresql
+SELECT
+	*
+FROM
+	"Class_A"
+UNION
+SELECT
+	*
+FROM
+	"Class_B"
+```
+
+(PostgreSQL中的UNION并不会排序)
+
+
+
+如果不需要去重，那么使用ALL就不会进行排序了，然而不同的数据库对ALL的实现不同:
+
+![Xnip2022-04-15_11-07-44](../SQL.assets/Xnip2022-04-15_11-07-44.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+- **使用EXISTS代替DISTINCT**
+
+如果要对两表的连接结果进行去重，可以考虑使用EXISTS代替DISTINCT，以避免排序
+
+
+
+Eg Table:
+
+![Xnip2022-04-15_11-14-53](../SQL.assets/Xnip2022-04-15_11-14-53.jpg)
+
+需求: 查询出Items中存在于SalesHistory的商品
+
+
+
+按照之前的方法，我们使用连接:
+
+```postgresql
+SELECT
+	I.item_no
+FROM
+	"Items" I
+INNER JOIN "SalesHistory" SH ON I.item_no = SH.item_no
+```
+
+
+
+Eg:
+
+![Xnip2022-04-15_11-17-07](../SQL.assets/Xnip2022-04-15_11-17-07.jpg)
+
+但因为是多对一的连接，所以"item_no"列出现了重复数据，一般来说我们会使用DISTINCT
+
+但其实EXISTS要更好一些:
+
+```postgresql
+SELECT
+	I.item_no
+FROM
+	"Items" I
+WHERE EXISTS(
+	SELECT
+		*
+	FROM
+		"SalesHistory" SH
+	WHERE I.item_no = SH.item_no
+)
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+- 极值函数中使用索引(MAX/MIN)
 
 
 

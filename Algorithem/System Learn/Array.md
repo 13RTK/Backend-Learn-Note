@@ -70,6 +70,108 @@ class Solution {
 }
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 三、合并有序数组
+
+![Xnip2022-04-15_13-56-32](Array/Xnip2022-04-15_13-56-32.jpg)
+
+
+
+
+
+Code:
+
+```java
+public void merge(int[] nums1, int m, int[] nums2, int n) {
+  int idx1 = m - 1;
+  int idx2 = n - 1;
+  int resIdx = m + n - 1;
+
+  while (idx1 >= 0 || idx2 >= 0) {
+    if (idx1 == -1) {
+      nums1[resIdx--] = nums2[idx2--];
+    } else if (idx2 == -1) {
+      nums1[resIdx--] = nums1[idx1--];
+    } else if (nums1[idx1] > nums2[idx2]) {
+      nums1[resIdx--] = nums1[idx1--];
+    } else {
+      nums1[resIdx--] = nums2[idx2--];
+    }
+  }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 四、数组交集2
+
+![Xnip2022-04-16_09-37-48](Array/Xnip2022-04-16_09-37-48.jpg)
+
+
+
+Code:
+
+```java
+class Solution {
+    public int[] intersect(int[] nums1, int[] nums2) {
+        Arrays.sort(nums1);
+        Arrays.sort(nums2);
+
+        int[] res = new int[Math.min(nums1.length, nums2.length)];
+        int num1Idx = 0;
+        int num2Idx = 0;
+        int resIdx = 0;
+
+        while (num1Idx < nums1.length && num2Idx < nums2.length) {
+            if (nums1[num1Idx] == nums2[num2Idx]) {
+                res[resIdx++] = nums1[num1Idx++];
+                num2Idx++;
+
+            } else {
+                if (nums1[num1Idx] < nums2[num2Idx]) {
+                    num1Idx++;
+                } else {
+                    num2Idx++;
+                }
+            }
+        }
+
+        return Arrays.copyOf(res, resIdx);
+    }
+}
+```
+
+
+
+
+
+
+
+
+
 
 
 

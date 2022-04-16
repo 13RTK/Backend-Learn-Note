@@ -453,6 +453,83 @@ AND t1.ip_address != t2.ip_address
 GROUP BY t1.account_id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day266
+
+## Tag: INNER JOIN
+
+![Xnip2022-04-16_08-50-41](MySQL Note.assets/Xnip2022-04-16_08-50-41.jpg)
+
+
+
+![Xnip2022-04-16_08-50-51](MySQL Note.assets/Xnip2022-04-16_08-50-51.jpg)
+
+ 题意:
+
+给你一张点的坐标表，请你查询出其中任意两点可以形成的矩形的面积(需要大于0)
+
+
+
+
+
+思路:
+
+- 题目说是任意两点，但其实有一些限制在其中:
+- 首先不能和自身组合，其次不能向两边延伸，否则会出现重复计算，所以我们只能使用不等式连接
+- 其次，面积不得为0，面积其实就是两点横纵坐标之差的绝对值的乘积
+- 最简单的方法是使用`HAVING`子句，因为面积是查询之后得到的字段信息，通过`HAVING`才能对其进行限制，所以我们使用`HAVING > 0`就能解决
+- 但为什么我用了`WHERE`子句呢？这样需要写两行，明显没有`HAVING`来得优雅
+- 其实`WHERE`的写法性能会更好一些，因为`HAVING`是针对所有计算出来的结果进行限制，而`WHERE`则是在计算之前进行限制，所以节省了部分开销，所以我选择使用看起来更麻烦的`WHERE` 
+- SQL如下
+
+```mysql
+SELECT
+    t1.id AS 'p1',
+    t2.id AS 'p2',
+    ABS(t2.x_value - t1.x_value) * ABS(t2.y_value - t1.y_value) AS 'area'
+FROM
+    Points AS t1
+INNER JOIN Points AS t2 ON t1.id < t2.id
+WHERE (t2.x_value - t1.x_value) != 0
+AND (t2.y_value - t1.y_value) != 0
+ORDER BY area DESC, t1.id, t2.id
+```
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-16_09-13-13](MySQL Note.assets/Xnip2022-04-16_09-13-13.jpg)
+
+
+
+![Xnip2022-04-16_09-13-20](MySQL Note.assets/Xnip2022-04-16_09-13-20.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-16_09-22-19](MySQL Note.assets/Xnip2022-04-16_09-22-19.jpg)
+
+
+
+![Xnip2022-04-16_09-22-24](MySQL Note.assets/Xnip2022-04-16_09-22-24.jpg)
+
+
+
+
+
 
 
 
