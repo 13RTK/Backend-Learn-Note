@@ -164,9 +164,87 @@ class Solution {
 }
 ```
 
+<hr>
 
 
 
+
+
+
+
+# 五、重塑矩阵
+
+![Xnip2022-04-17_09-30-26](Array/Xnip2022-04-17_09-30-26.jpg)
+
+
+
+Code:
+
+```java
+class Solution {
+    public int[][] matrixReshape(int[][] mat, int r, int c) {
+        if (mat.length * mat[0].length != r * c) {
+            return mat;
+        }
+
+        int[][] resShapeArr = new int[r][c];
+        int resRow = 0;
+        int resCol = 0;
+
+        for (int row = 0; row < mat.length; row++) {
+            for (int col = 0; col < mat[0].length; col++) {
+                resShapeArr[resRow][resCol++] = mat[row][col];
+
+                if (resCol == c) {
+                    resCol = 0;
+                    resRow++;
+                }
+            }
+        }
+
+        return resShapeArr;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+# 六、杨辉三角
+
+![Xnip2022-04-17_09-31-47](Array/Xnip2022-04-17_09-31-47.jpg)
+
+
+
+Code:
+
+```java
+class Solution {
+    public List<List<Integer>> generate(int numRows) {
+        List<List<Integer>> res = new ArrayList<>();
+
+        for (int i = 0; i < numRows; ++i) {
+            List<Integer> row = new ArrayList<Integer>();
+            for (int idx = 0; idx <= i; idx++) {
+                if (idx == 0 || idx == i) {
+                    row.add(1);
+                } else {
+                    row.add(res.get(i - 1).get(idx - 1) + res.get(i - 1).get(idx));
+                }
+            }
+            res.add(row);
+        }
+        return res;
+    }
+}
+```
 
 
 

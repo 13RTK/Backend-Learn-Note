@@ -3878,11 +3878,579 @@ public class MyHeap <Key extends Comparable<Key>>{
 - 无法应用在缓存中(因为引用的索引值比较分散)
 - 不稳定(有长距离的交换)
 
+<hr>
 
 
 
 
-# 排序总结:
+
+
+
+
+
+
+
+## 作业
+
+### 1) 棋盘类
+
+创建一个Board，实现下面的方法:
+
+![Xnip2022-04-16_20-56-36](Algorithm Fourth.assets/Xnip2022-04-16_20-56-36.jpg)
+
+
+
+![Xnip2022-04-16_20-57-36](Algorithm Fourth.assets/Xnip2022-04-16_20-57-36.jpg)
+
+- 构造方法:
+
+> 接收一个n * n的二维数组，其中的元素从0到n^2^ - 1，0代表一个空白方块
+
+这里注意不能直接引用，且在复制其中的元素之前，我们还需要对接收的参数进行判空
+
+在遍历参数数组时，如果遍历到了空方块，则记录下它的行/列索引值
+
+
+
+- toString:
+
+> 返回n + 1行字符，其中第一行为数组的边长；其余行则为数组内的元素
+
+使用StringBuilder就行，注意处理好每行之间的换行
+
+
+
+
+
+- hamming(汉明距离):
+
+>汉明距离是指格子中没有处于正确位置的元素个数
+
+遍历所有元素，将当前元素的值与当前位置应该对于的值进行比较即可，但注意对空白方块进行特殊处理
+
+
+
+- manhattan(曼哈顿距离):
+
+> 每个不在对应位置的元素与其对应位置之间横纵坐标之差的和
+
+与汉明距离类似，不过需要计算横纵坐标的绝对值之差
+
+
+
+- equals:
+
+> 判断参数是否与当前对象相等
+
+首先使用`==`进行地址值的判断，然后进行判空
+
+判断两者对应的Class对象，如果是同一个类，则进行强转后判断每一个元素即可
+
+
+
+
+
+- neighbor:
+
+> 返回含有所有临近数组的集合
+
+临近数组是指在当前数组的基础上，让空白方格向四周移动后的数组
+
+我们只需要确保移动不越界的情况下交换对应的元素位置后，将新的数组添加到集合中，最后返回即可
+
+
+
+
+
+- twin:
+
+> 交换了任意一对方格后的数组
+
+虽然是任意交换，但我们在交换中不能有空方格出现，这时在构造方法中记录下的空方格索引就派上用场了！
+
+
+
+Full Code:
+
+```java
+package part1.four.priorityqueue.work;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
+public class Board {
+    private final int[][] grid;
+    private final int gridSize;
+
+    private int blankRow;
+    private int blankCol;
+
+
+    public Board(int[][] tiles) {
+        if (tiles == null) {
+            throw new NullPointerException();
+        }
+
+        for (int[] tile : tiles) {
+            if (tile.length != tiles.length) {
+                throw new NullPointerException();
+            }
+        }
+
+        this.grid = copyArray(tiles);
+        this.gridSize = tiles.length;
+
+        for (int row = 0; row < grid.length; row++) {
+            for (int col = 0; col < grid[0].length; col++) {
+                int curEle = grid[row][col];
+
+                if (curEle == 0) {
+                    blankRow = row;
+                    blankCol = col;
+                    break;
+                }
+            }
+        }
+    }
+
+    // string representation of this board
+    public String toString() {
+        StringBuilder curGrid = new StringBuilder();
+        curGrid.append(this.gridSize).append("\n");
+
+        for (int[] curRow : this.grid) {
+            for (int curEle : curRow) {
+                curGrid.append(curEle).append(" ");
+            }
+            curGrid.append("\n");
+        }
+
+        return curGrid.toString();
+    }
+
+    // board dimension n
+    public int dimension() {
+        return this.gridSize;
+    }
+
+    // number of tiles out of place
+    public int hamming() {
+        int hammingDistance = 0;
+
+        for (int row = 0; row < grid.length; row++) {
+            for (int col = 0; col < grid.length; col++) {
+                if (row == this.blankRow && col == this.blankCol) {
+                    continue;
+                }
+
+                int curEle = this.grid[row][col];
+
+                if (curEle != row * grid.length + col + 1) {
+                    hammingDistance++;
+                }
+            }
+        }
+
+        return hammingDistance;
+    }
+
+    // sum of Manhattan distances between tiles and goal
+    public int manhattan() {
+        int manhattanDistance = 0;
+
+        for (int row = 0; row < grid.length; row++) {
+            for (int col = 0; col < grid[0].length; col++) {
+                if (grid[row][col] == 0) {
+                    continue;
+                }
+
+                manhattanDistance += manhattan(row, col);
+            }
+        }
+
+        return manhattanDistance;
+    }
+
+    // is this board the goal board?
+    public boolean isGoal() {
+        return this.hamming() == 0;
+    }
+
+    // does this board equal y?
+    public boolean equals(Object y) {
+        if (y == this.grid) {
+            return true;
+        }
+
+        if (y == null) {
+            return false;
+        }
+
+        if (this.getClass() != y.getClass()) {
+            return false;
+        }
+
+        Board other = (Board) y;
+        if (this.blankRow != other.blankRow || this.blankCol != other.blankCol || this.gridSize != other.gridSize) {
+            return false;
+        }
+
+
+        for (int row = 0; row < grid.length; row++) {
+            for (int col = 0; col < grid[0].length; col++) {
+                if (other.grid[row][col] != this.grid[row][col]) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // all neighboring boards
+    public Iterable<Board> neighbors() {
+        List<Board> neighbors = new LinkedList<>();
+
+        if (blankRow > 0) {
+            int[][] north = copyArray(grid);
+            swap(north, blankRow, blankCol, blankRow - 1, blankCol);
+            neighbors.add(new Board(north));
+        }
+
+        if (blankRow < this.dimension() - 1) {
+            int[][] south = copyArray(grid);
+            swap(south, blankRow, blankCol, blankRow + 1, blankCol);
+            neighbors.add(new Board(south));
+        }
+
+        if (blankCol > 0) {
+            int[][] west = copyArray(grid);
+            swap(west, blankRow, blankCol, blankRow, blankCol - 1);
+            neighbors.add(new Board(west));
+        }
+
+        if (blankCol < this.dimension() - 1) {
+            int[][] east = copyArray(grid);
+            swap(east, blankRow, blankCol, blankRow, blankCol + 1);
+            neighbors.add(new Board(east));
+        }
+
+        return neighbors;
+    }
+
+    // a board that is obtained by exchanging any pair of tiles
+    public Board twin() {
+        int[][] newGird = new int[grid.length][grid.length];
+
+        if (blankRow != 0) {
+            swap(newGird, 0, 0, 0, 1);
+        } else {
+            swap(newGird, 1, 0, 1, 1);
+        }
+
+        return new Board(newGird);
+    }
+
+
+    private void swap(int[][] array, int row1, int col1, int row2, int col2) {
+        int temp = array[row1][col1];
+        array[row1][col1] = array[row2][col2];
+        array[row2][col2] = temp;
+    }
+
+    private int[][] copyArray(int[][] origin) {
+        int[][] newArray = new int[origin.length][origin[0].length];
+
+        for (int row = 0; row < this.dimension(); row++) {
+            newArray[row] = Arrays.copyOf(origin[row], origin.length);
+        }
+
+        return newArray;
+    }
+
+    private int manhattan(int row, int col) {
+        int value = grid[row][col] - 1;
+        int valueRow = value / grid.length;
+        int valueCol = value % grid.length;
+        return Math.abs(valueRow - row) + Math.abs(valueCol - col);
+    }
+
+
+    /**
+     * For test method
+     * @param args the arguments
+     */
+    public static void main(String[] args) {
+
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+### 2) A搜索算法
+
+![Xnip2022-04-16_21-34-15](Algorithm Fourth.assets/Xnip2022-04-16_21-34-15.jpg)
+
+
+
+在该问题中，我们需要使用已有的类:`MinPQ`，来尝试获取一个数组的`Solver`，通过它，我们可以获取数组从乱序到所有元素符合条件需要的步数，如果不存在则返回-1，如果有，还需要在`solution`方法中返回从初始状态到目标数组过程中所有`Board`实例的集合
+
+需要注意的是，如果需要的步数超过了其对应的优先级，则视作无解(优先级来自汉明距离或者曼哈顿距离)
+
+
+
+其中汉明优先函数的计算:
+
+> 棋盘的汉明距离加上到目前为止为到达搜索节点所做的移动次数
+
+
+
+曼哈顿优先函数:
+
+> 棋盘的曼哈顿距离加上到目前为止为到达搜索节点所走的步数
+
+
+
+需要实现的类及方法如下:
+
+![Xnip2022-04-16_21-53-01](Algorithm Fourth.assets/Xnip2022-04-16_21-53-01.jpg)
+
+
+
+其中搜索的方法如下:
+
+> 1. 将Solver构造方法中的Board实例对应的元素放入一个最小优先队列中
+> 2. 每次删除队列中的最小值，然后将该实例对应的neighbor都添加到队列中
+> 3. 重复步骤2，直到当前Board实例对应的数组元素都到了正确的位置上
+
+
+
+前导:
+
+为了让初始状态的`Board`实例到最终状态的实例都建立联系，我们需要使用一个辅助类来起连接作用:
+
+- 该类有三个字段: `prev`, `board`, `move`
+- 分别表示其上一个`Board`实例对应的节点，当前`Board`，移动到当前节点所需的移动次数
+- 同时为了判断当前步数是否超过了优先级，我们还需要加入一个优先级函数以获取当前位置的优先级
+
+Code:
+
+```java
+private static class SearchNode implements Comparable<SearchNode> {
+  private final Board board;
+  private final SearchNode prev;
+  private final int moves;
+
+  SearchNode(Board board, int moves, SearchNode prev) {
+    this.board = board;
+    this.moves = moves;
+    this.prev = prev;
+  }
+
+  @Override
+  public int compareTo(SearchNode other) {
+    return this.priority() - other.priority();
+  }
+
+  public int priority() {
+    return board.manhattan() + moves;
+  }
+
+  public Board getBoard() {
+    return board;
+  }
+
+  public int getMoves() {
+    return moves;
+  }
+
+  public SearchNode prev() {
+    return prev;
+  }
+}
+```
+
+
+
+
+
+构造方法:
+
+> 通过参数进行初始化，并搜索其对应的Solver
+
+首先进行判空，将其对应的`SearchNode`实例插入到我们创建的最小优先队列实例中，之后进入循环
+
+按照题意，删除最小值，并获取最小值对应的Board实例
+
+判断当前示例是否符合条件，步数是否符合优先级限制，如果不符合，且步数在优先级范围内，则将其对应的`neighbor`节点全部添加到队列中去
+
+重复上述过程直到有节点符合，或者超过优先级
+
+
+
+isSolvable:
+
+> 判断当前Board是否能够在规则步数内重排为目标数组
+
+根据构造函数的情况，返回`isSolvable`字段即可
+
+
+
+moves:
+
+> 返回到达目标数组所需的最小步数，不能则返回-1
+
+根据`isSolvable`字段返回对应的值即可
+
+
+
+solution:
+
+> 返回从初始位置到目标数组过程中所有的Board实例
+
+根据最终结果节点的`prev`向后推导，将所有实例添加到一个链表集合中即可，如果`isSolvable`为false，则返回null
+
+
+
+Full Code:
+
+```java
+import edu.princeton.cs.algs4.MinPQ;
+
+import java.util.LinkedList;
+
+
+public class Solver {
+    private final boolean isSolvable;
+    private SearchNode solutionNode;
+
+    public Solver(Board initial) {
+        if (initial == null) {
+            throw new NullPointerException();
+        }
+
+        solutionNode = null;
+
+        MinPQ<SearchNode> minPQ = new MinPQ<>();
+        minPQ.insert(new SearchNode(initial, 0, null));
+
+        while (true) {
+            // Del the root node and return from the minPQ
+            SearchNode currNode = minPQ.delMin();
+            Board currBoard = currNode.getBoard();
+
+            // Determine if goal is achieved or unsolvable in every loop.
+            if (currBoard.isGoal()) {
+                isSolvable = true;
+                solutionNode = currNode;
+                break;
+            }
+
+            // The number of step exceed the priority of manhattan
+            if (currBoard.manhattan() == 2 && currBoard.twin().isGoal()) {
+                isSolvable = false;
+                break;
+            }
+
+            // Insert each neighbor except the board of the previous search node
+            int moves = currNode.getMoves();
+            Board prevBoard = moves > 0 ? currNode.prev().getBoard() : null;
+
+            for (Board nextBoard : currBoard.neighbors()) {
+                if (nextBoard.equals(prevBoard)) {
+                    continue;
+                }
+                minPQ.insert(new SearchNode(nextBoard, moves + 1, currNode));
+            }
+        }
+    }
+
+    /**
+     * The initial board solvable?
+     */
+    public boolean isSolvable() {
+        return this.isSolvable;
+    }
+
+    public int moves() {
+        return isSolvable() ? this.solutionNode.getMoves() : -1;
+    }
+
+    public Iterable<Board> solution() {
+        if (!isSolvable) {
+            return null;
+        }
+
+        LinkedList<Board> solution = new LinkedList<>();
+        SearchNode node = this.solutionNode;
+        while (node != null) {
+            solution.addFirst(node.getBoard());
+            node = node.prev();
+        }
+
+        return solution;
+    }
+
+    private static class SearchNode implements Comparable<SearchNode> {
+        private final Board board;
+        private final SearchNode prev;
+        private final int moves;
+
+        SearchNode(Board board, int moves, SearchNode prev) {
+            this.board = board;
+            this.moves = moves;
+            this.prev = prev;
+        }
+
+        @Override
+        public int compareTo(SearchNode other) {
+            return this.priority() - other.priority();
+        }
+
+        public int priority() {
+            return board.manhattan() + moves;
+        }
+
+        public Board getBoard() {
+            return board;
+        }
+
+        public int getMoves() {
+            return moves;
+        }
+
+        public SearchNode prev() {
+            return prev;
+        }
+    }
+
+    /**
+     * For test
+     */
+    public static void main(String[] arg) {
+
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+# 排序总结
 
 ![Xnip2022-04-13_15-11-14](Algorithm Fourth.assets/Xnip2022-04-13_15-11-14.jpg)
 

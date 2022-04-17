@@ -526,6 +526,7 @@ ORDER BY area DESC, t1.id, t2.id
 
 ![Xnip2022-04-16_09-22-24](MySQL Note.assets/Xnip2022-04-16_09-22-24.jpg)
 
+<hr>
 
 
 
@@ -535,6 +536,93 @@ ORDER BY area DESC, t1.id, t2.id
 
 
 
+
+
+# Day267
+
+## Tag: EXISTS, HAVING
+
+![Xnip2022-04-17_08-18-06](MySQL Note.assets/Xnip2022-04-17_08-18-06.jpg)
+
+
+
+![Xnip2022-04-17_08-18-18](MySQL Note.assets/Xnip2022-04-17_08-18-18.jpg)
+
+题意:
+
+给你一张商品信息表，一张订单信息表，请你查询出其中每类商品最近一天的订单信息
+
+
+
+思路:
+
+- 最近一天即日期值最大，所以我们需要先分组获取每种商品的最大日期值才行
+- 获取后，我们可以直接使用IN来匹配product_id和order_date字段，但对于子查询参数使用IN显然不太好，所以我选择改写为EXISTS，最终SQL如下
+
+```mysql
+SELECT
+    t1.product_name,
+    t1.product_id,
+    t2.order_id,
+    t2.order_date
+FROM
+    Products AS t1
+INNER JOIN Orders AS t2 ON t1.product_id = t2.product_id
+WHERE EXISTS (
+    SELECT
+        t3.product_id,
+        MAX(t3.order_date) AS 'order_date'
+    FROM
+        Orders AS t3
+    WHERE t1.product_id = t3.product_id
+    GROUP BY product_id
+    HAVING order_date = t2.order_date
+)
+ORDER BY t1.product_name, t1.product_id, t2.order_id
+```
+
+<hr>
+
+
+
+![Xnip2022-04-17_09-04-21](MySQL Note.assets/Xnip2022-04-17_09-04-21.jpg)
+
+
+
+![Xnip2022-04-17_09-05-30](MySQL Note.assets/Xnip2022-04-17_09-05-30.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-17_09-12-35](MySQL Note.assets/Xnip2022-04-17_09-12-35.jpg)
+
+
+
+![Xnip2022-04-17_09-12-40](MySQL Note.assets/Xnip2022-04-17_09-12-40.jpg)
+
+题意:
+
+给你一张用户信息表，一张产品信息表，请你查询出其中购买了所有产品的用户id
+
+
+
+思路:
+
+- 如果将所有的用户进行分组，可以发现我们需要的用户与其他用户的不同点: 其购买产品的种类 = 产品表中的产品种类
+- 所以我们只需要利用目标集合的特点即可，针对集合进行筛选需要使用HAVING，所以SQL如下
+
+```mysql
+SELECT
+    t1.customer_id
+FROM
+    Customer AS t1
+INNER JOIN Product AS t2 ON t1.product_key = t2.product_key
+GROUP BY t1.customer_id
+HAVING COUNT(DISTINCT t2.product_key) = (SELECT COUNT(*) FROM Product)
+```
+
+<hr>
 
 
 

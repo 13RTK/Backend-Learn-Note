@@ -7054,6 +7054,422 @@ WHERE EXISTS(
 
 
 
+使用MAX/MIN都会进行排序。如果建立了索引，则会直接扫描索引，不会扫描表
+
+对于联合索引/组合索引，只要查询条件是联合查询索引的第一个字段/顺序匹配，索引就是有效的
+
+极值函数使用索引并不是去除了排序的过程，而是优化了排序前的查找速度，从而使得之后排序的数据量减少
+
+<hr>
+
+
+
+
+
+- 能写在WHERE子句里的条件不要写在HAVING子句里
+
+以下两种写法的结果一样:
+
+```postgresql
+SELECT
+	sale_date,
+	SUM(quantity)
+FROM
+	"SalesHistory"
+GROUP BY sale_date
+HAVING sale_date = '2007-10-01'
+
+
+SELECT
+	sale_date,
+	SUM(quantity)
+FROM
+	"SalesHistory"
+WHERE sale_date = '2007-10-01'
+GROUP BY sale_date
+```
+
+
+
+但第二种写法的效率更高：
+
+- 因为GROUP BY会进行排序，所以事先通过WHERE筛选一次的话能减少排序的负担
+- WHERE子句条件里能够使用索引，HAVING是针对聚合之后生成的视图进行筛选，**然而聚合后的视图通常没有继承原表的索引结构/聚合生成的表没有索引**
+
+<hr>
+
+
+
+
+
+
+
+### 3) 索引有效/失效
+
+
+
+#### 1. 索引字段上进行计算
+
+```sql
+SELECT *
+FROM SomeTable
+WHERE col_1 * 1.1 > 100
+```
+
+这样写的话不会用到col_1上建立的索引，而是会进行全表扫描
+
+我们只需要将表达式全部放到右边即可
+
+```sql
+WHERE col_1 > 100 / 1.1
+```
+
+
+
+同样的，如果在字段上使用函数的话，也无法用到索引:
+
+```sql
+SELECT *
+FROM SomeTable
+WHERE SUBSTR(col_1, 1, 1) = 'a'
+```
+
+- 如果无法避免在字段上进行运算，那么可以建立函数索引，但不要轻易这样做
+
+
+
+**所以在使用索引时，表达式左边应该是原始的字段**，这是优化索引时首要关注的地方
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 2. 使用IS NULL谓词
+
+因为索引字段中没有NULL，所以使用IS NULL和IS NOT NULL的话则无法使用索引，导致查询性能下降
+
+(DB2和Oracle在使用IS NULL时也能利用到索引，但不是每个数据库都有该特性)
+
+```sql
+SELECT *
+FROM SomeTable
+WHERE col_1 IS NULL
+```
+
+
+
+然而如果非要使用IS NOT NULL这样的功能还要使用索引的话，则可以利用不等式:
+
+```sql
+SELECT *
+FROM SomeTable
+WHERE col_1 > 0
+```
+
+- 该种方法并不规范，只能用来应急
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 3. 使用否定形式
+
+以下形式不会用到索引
+
+- !=
+- <>
+- NOT IN
+
+
+
+所以下面这个SQL会用到全表扫描
+
+```sql
+SELECT *
+FROM SomeTable
+WHERE col_1 <> 100
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### 4. OR
+
+例子: col_1和col_2上建立了不同的索引，或者建立(col_1, col_2)这样的联合索引
+
+
+
+如果使用OR连接，要么用不到索引，要么用到了但效率低下
+
+```sql
+SELECT *
+FROM SomeTable
+WHERE col_1 > 100
+OR col_2 = 'abc'
+```
+
+如果一定要使用OR，则需要建立位图索引
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 5. 使用联合索引，列的顺序错误
+
+对于联合索引: "col_1, col_2, col_3"
+
+必须保证索引中列的顺序与WHERE子句中出现的顺序一致才行
+
+
+
+- 如果无法保证查询条件列的顺序和索引一致，则可以考虑将联合索引拆分为多个索引
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 6. 使用LIkE谓词进行后方/中间一致的匹配
+
+使用LIkE谓词时，只有前方一致的匹配才能用到索引:
+
+```sql
+'%a' false
+'%a%' false
+'a%'	true
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 7. 进行默认的类型转换
+
+
+
+char类型col_1列指定条件的示例:
+
+```sql
+WHERE col_1 = 10	// 索引失效
+WHERE col_1 = '10'
+WHERE col_1 = CASE(10 AS CHAR(2))
+```
+
+
+
+默认类型转换会增加额外的开销，且会导致索引不可用
+
+所以需要类型转换时显式地进行类型转换
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 减少中间表
+
+SQL子查询的结果会被看作一张新表，这张表也可以通过SQL进行操作，使得SQL更加灵活
+
+但如果不加限制地使用中间表的话，会导致性能下降
+
+
+
+经常使用中间表的话一是会耗费内存，二是原始表中的索引不容易使用到(聚合的时候)
+
+因此尽量减少中间表的使用也是优化的一个方法
+
+
+
+
+
+
+
+#### 1. 灵活使用HAVING子句
+
+对聚合后的结果进行筛选时，使用HAVING是基本原则。但有些人可能喜欢用子查询:
+
+```sql
+SELECT *
+FROM (SELECT sale_date, MAX(quantity)) AS max_qty
+				FROM SalesHistory
+			GROUP BY sale_date) TMP
+WHERE max_qty >= 10
+```
+
+
+
+然而使用HAVING的话则不会生成中间表，HAVING和聚合操作是同时执行的，这样代码也简洁
+
+```sql 
+SELECT sale_date, MAX(quantity)) AS max_qty
+FROM SalesHistory
+GROUP BY sale_date
+HAVING MAX(quantity) >= 10
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 2. 需要对多个字段使用IN时，将它们汇总到一处
+
+SQL:
+
+```sql
+SELECT id, state, city
+FROM Addresses1 A1
+WHERE state IN (SELECT state
+               	FROM Addresses2 A2
+               WHERE A1.id = A2.id)
+AND city IN (SELECT city
+            		FROM Addresses2 A2
+            	 WHERE A1.id = A2.id)
+```
+
+
+
+其实可以将字段连接起来写
+
+```sql
+SELECT *
+FROM Addresses A1
+WHERE id || state || city
+IN (SELECT id || state || city
+   		FROM Addresses2 A2)
+```
+
+
+
+如果数据库实现了行与行的比较，那么我们也能像下面这样在IN中写字段的组合
+
+```sql
+SELECT *
+FROM Addresses A1
+WHERE (id, state, city)
+IN (SELECT id, state, city
+   		FROM Addresses2 A2)
+```
+
+- 这样写的话一是不用担心连接时字段的类型转换问题；二是不会对字段进行加工，因此可以使用索引
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### 3) 先进行连接再聚合
+
+连接和聚合同时使用时，先进行连接可以避免产生中间表
+
+原因: 连接做的是"乘法运算"，当连接关系为"一对多/一对一"时，连接运算后数据的行数不会增加
+
+
+
+- **很多多对多的关系都可以分解成两个一对多的关系**
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 4) 合理运用视图
+
+如果视图中包含以下运算的时候，SQL会非常低效，执行速度会非常慢
+
+- 聚合函数(AVG, COUNT, SUM, MIN, MAX)
+- 集合运算符(UNION, INTERSECT, EXCEPT)
+
+
+
+一般来说，要注意**避免在视图中进行聚合操作**
+
+为了解决视图的这个缺点，部分数据库实现了物化视图(material view)，可在视图复杂时使用
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 小结
+
+
+
+
+
+
+
+
+
+
+
 
 
 
