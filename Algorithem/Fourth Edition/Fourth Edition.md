@@ -4454,6 +4454,7 @@ public class Solver {
 
 ![Xnip2022-04-13_15-11-14](Algorithm Fourth.assets/Xnip2022-04-13_15-11-14.jpg)
 
+<hr>
 
 
 
@@ -4465,6 +4466,247 @@ public class Solver {
 
 
 
+# 七、基础符号表
+
+
+
+## 1. API
+
+键值对的概念:
+
+- 通过对应的键插入一个值
+- 通过一个键，搜索相应的值
+
+
+
+例子:
+
+DNS查找
+
+- 通过一个域名插入对应ip地址
+- 通过域名搜索对应的ip地址
+
+![Xnip2022-04-17_20-42-41](Algorithm Fourth.assets/Xnip2022-04-17_20-42-41.jpg)
+
+<hr>
+
+
+
+
+
+- 符号表的应用:
+
+![Xnip2022-04-17_20-43-43](Algorithm Fourth.assets/Xnip2022-04-17_20-43-43.jpg)
+
+<hr>
+
+
+
+
+
+
+
+符号表API基础
+
+- 通过数组来实现
+
+将一个值和一个键联系起来
+
+![Xnip2022-04-17_20-45-58](Algorithm Fourth.assets/Xnip2022-04-17_20-45-58.jpg)
+
+<hr>
+
+
+
+
+
+
+
+原则
+
+- 值不能为null
+- 当key指定的value不存在时，`get`方法将返回null
+- `put`方法会覆盖掉对应key上原来的值
+
+
+
+- `contains`方法的实现:
+
+```java
+public boolean contains(Key key) {
+  return get(key) != null;
+}
+```
+
+
+
+- 实现简易版的`delete`方法:
+
+```java
+public void delete(Key key) {
+  put(key, null);
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+键/值
+
+- 值的类型: 任意类型(泛型)
+
+
+
+- 键的类型: 
+    - 如果为Comparable的实现类，则使用compareTo进行比较
+    - 如果为泛型类，则使用equals测试相等性，并辅助使用hashCode
+
+
+
+- 最好的方式: 键使用不变量(Integer, Double, String...)
+
+![Xnip2022-04-17_20-54-19](Algorithm Fourth.assets/Xnip2022-04-17_20-54-19.jpg)
+
+
+
+
+
+
+
+相等性测试:
+
+
+
+Java需求：对于任意的引用x, y, z:
+
+- 自反性: x.equals(x)为真
+- 对称性: x.euqals(y)的结果与y.equals(x)一致
+- 传递性: 如果x.equals(y)为true并且y.equals(z)为true，则x.equals(z)为true
+- 非空: x.equals(null)应该返回false
+
+![Xnip2022-04-17_20-57-42](Algorithm Fourth.assets/Xnip2022-04-17_20-57-42.jpg)
+
+<hr>
+
+
+
+
+
+
+
+自定义类型的equals方法:
+
+![Xnip2022-04-17_20-58-48](Algorithm Fourth.assets/Xnip2022-04-17_20-58-48.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+设计equals方法:
+
+准则:
+
+- 优化引用类型
+- 检查null
+- 检查两个对象是否为同一类型，并转换
+- 检查每个字段:
+    - 如果为基础/原始类型则使用`==`
+    - 如果为一个对象则调用它的`equals()`方法
+    - 如果为一个数组，则可以使用`Arrays.equals()/Arrays.deepEquals()`方法
+
+![Xnip2022-04-17_21-01-14](Algorithm Fourth.assets/Xnip2022-04-17_21-01-14.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+测试客户端:
+
+![Xnip2022-04-17_21-04-55](Algorithm Fourth.assets/Xnip2022-04-17_21-04-55.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2. 基本实现
+
+
+
+- 在链表中依次搜索:
+    - 数据结构: 维护一个无序的链表，其中每个节点都有一对键-值
+    - 搜索: 遍历链表所有节点
+    - 插入: 同样进行遍历，如果没有匹配的，则插入新的键值到开头位置
+
+![Xnip2022-04-18_09-08-37](Algorithm Fourth.assets/Xnip2022-04-18_09-08-37.jpg)
+
+
+
+开销:
+
+![Xnip2022-04-18_09-09-03](Algorithm Fourth.assets/Xnip2022-04-18_09-09-03.jpg)
+
+
+
+
+
+
+
+- 更高效的方法:
+    - 数据结构: 维护一个有序的键值对数组(以键为基础进行排序)
+    - 搜索和插入都通过二分搜索实现
+
+![Xnip2022-04-18_09-10-51](Algorithm Fourth.assets/Xnip2022-04-18_09-10-51.jpg)
+
+
+
+二分搜索的具体实现:
+
+![Xnip2022-04-18_09-11-57](Algorithm Fourth.assets/Xnip2022-04-18_09-11-57.jpg)
+
+
+
+
+
+在插入时，需要移动后面所有的元素:
+
+![Xnip2022-04-18_09-12-37](Algorithm Fourth.assets/Xnip2022-04-18_09-12-37.jpg)
+
+
+
+
+
+有序和无序的对比:
+
+![Xnip2022-04-18_09-13-14](Algorithm Fourth.assets/Xnip2022-04-18_09-13-14.jpg)
 
 
 
