@@ -667,6 +667,202 @@ HAVING COUNT(DISTINCT t2.product_key) = (SELECT COUNT(*) FROM Product)
 
 ![Xnip2022-04-18_08-37-14](MySQL Note.assets/Xnip2022-04-18_08-37-14.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day269
+
+## Tag: Sub Query
+
+![Xnip2022-04-19_07-06-03](MySQL Note.assets/Xnip2022-04-19_07-06-03.jpg)
+
+
+
+![Xnip2022-04-19_07-06-11](MySQL Note.assets/Xnip2022-04-19_07-06-11.jpg)
+
+题意:
+
+给你一张用户活跃记录表，请你查询出首次登陆后第二天再次登陆的玩家比率
+
+
+
+
+
+思路:
+
+- 从题目上看，我们需要统计首次登陆后第二天的人数，以及总人数
+- 但在统计首次登陆后第二天的人数之前，我们需要知道每个用户第一次登陆的时间才行，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	player_id,
+	MIN(event_date) AS 'first_day'
+FROM
+	Activity
+GROUP BY player_id
+```
+
+
+
+- 有了首次登陆的记录后，我们只需要根据日期和id进行外连接即可
+- 这样一来，根据这张临时表可以获取总人数，而与其连接的表中不为NULL的字段数量就是第二天的登陆人数了，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+    ROUND(COUNT(t2.player_id) / COUNT(*), 2) AS 'fraction'
+FROM (
+    SQL1
+) AS t1
+LEFT JOIN Activity AS t2 ON DATEDIFF(t2.event_date, t1.first_day) = 1
+AND t1.player_id = t2.player_id
+```
+
+<hr>
+
+
+
+
+
+
+
+![Xnip2022-04-19_07-32-55](MySQL Note.assets/Xnip2022-04-19_07-32-55.jpg)
+
+
+
+![Xnip2022-04-19_07-33-01](MySQL Note.assets/Xnip2022-04-19_07-33-01.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day270
+
+## Tag: COUNT() OVER
+
+![Xnip2022-04-20_07-58-39](MySQL Note.assets/Xnip2022-04-20_07-58-39.jpg)
+
+
+
+SQL:
+
+```mysql
+SELECT
+    employee_id,
+    COUNT(*) OVER(
+        PARTITION BY team_id
+    ) AS 'team_size'
+FROM
+    Employee
+```
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-20_08-08-00](MySQL Note.assets/Xnip2022-04-20_08-08-00.jpg)
+
+
+
+![Xnip2022-04-20_08-21-10](MySQL Note.assets/Xnip2022-04-20_08-21-10.jpg)
+
+题意:
+
+给你一张分数记录表，请你查询出其中每种性别在每一天的累积分数
+
+
+
+思路:
+
+- 题目本身其实很简单，因为是求不同性别的分数，所以需要根据性别分组，之后需要根据日期值来累加
+- 如果熟悉窗口函数的话，其实很容易就会想到使用SUM(col) OVER()，此时SQL如下
+
+```mysql
+SELECT
+    gender,
+    day,
+    SUM(score_points) OVER(
+        PARTITION BY gender
+        ORDER BY day
+    ) AS 'total'
+FROM
+    Scores
+```
+
+
+
+
+
+- 那么问题来了，MySQL目前只有8.0才实现了窗口函数，如果是之前那些不支持的版本呢？
+- 此时我们就要考虑标准SQL的解法了，其实累加计算就是在根据性别分组的前提下，生成每个日期对应的递归子集，每个子集的和值就是对应日期范围内的累计值
+- 而获取递归子集的方法就是非等值自连接，用连接的方式写如下:
+
+```mysql
+SELECT
+    t1.gender,
+    t1.day,
+    SUM(t2.score_points) AS 'total'
+FROM
+    Scores AS t1
+INNER JOIN Scores AS t2 ON t1.day >= t2.day
+AND t1.gender = t2.gender
+GROUP BY t1.gender, t1.day
+ORDER BY t1.gender, t1.day
+```
+
+
+
+- 其实这个连接的部分也可以放在SELECT列表里，此时SQL如下
+
+```mysql
+SELECT
+    t1.gender,
+    t1.day,
+    (
+        SELECT
+            SUM(t2.score_points)
+        FROM
+            Scores AS t2
+        WHERE t1.day >= t2.day
+        AND t1.gender = t2.gender
+    ) AS 'total'
+FROM
+    Scores AS t1
+ORDER BY gender, day
+```
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-20_08-31-17](MySQL Note.assets/Xnip2022-04-20_08-31-17.jpg)
+
+
+
+![Xnip2022-04-20_08-31-01](MySQL Note.assets/Xnip2022-04-20_08-31-01.jpg)
+
 
 
 
