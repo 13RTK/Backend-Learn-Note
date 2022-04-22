@@ -863,6 +863,172 @@ ORDER BY gender, day
 
 ![Xnip2022-04-20_08-31-01](MySQL Note.assets/Xnip2022-04-20_08-31-01.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day271
+
+## Tag: DENSE_RANK
+
+![Xnip2022-04-21_07-38-37](MySQL Note.assets/Xnip2022-04-21_07-38-37.jpg)
+
+
+
+![Xnip2022-04-21_07-43-54](MySQL Note.assets/Xnip2022-04-21_07-43-54.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-21_07-53-59](MySQL Note.assets/Xnip2022-04-21_07-53-59.jpg)
+
+
+
+![Xnip2022-04-21_07-54-10](MySQL Note.assets/Xnip2022-04-21_07-54-10.jpg)
+
+题意:
+
+给你一张产品信息表，一张订单信息表，请你查询出其中每个商品对应的最近一次订单
+
+
+
+
+
+思路:
+
+- 首先，最近一次其实就是指日期值最大，所以我们首先要求的是每件商品对应的最近的日期值，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	product_id,
+	MAX(order_date) AS 'last_date'
+FROM
+	Orders
+GROUP BY product_id
+```
+
+
+
+- 有了这张临时表/内联视图后，我们只需要查询出每件商品中日期值与其对应的即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.product_name,
+    t1.product_id,
+    t2.order_id,
+    t2.order_date
+FROM
+    Products AS t1
+INNER JOIN Orders AS t2 ON t1.product_id = t2.product_id
+INNER JOIN (
+    SQL1
+) AS t3 ON t2.product_id = t3.product_id AND t2.order_date = t3.last_date
+ORDER BY t1.product_name, t1.product_id, t2.order_id
+```
+
+<hr>
+
+
+
+![Xnip2022-04-21_08-16-36](MySQL Note.assets/Xnip2022-04-21_08-16-36.jpg)
+
+
+
+![Xnip2022-04-21_08-16-58](MySQL Note.assets/Xnip2022-04-21_08-16-58.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-21_08-28-25](MySQL Note.assets/Xnip2022-04-21_08-28-25.jpg)
+
+
+
+![Xnip2022-04-21_08-28-33](MySQL Note.assets/Xnip2022-04-21_08-28-33.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+# Day272
+
+## Tag: CTE, 
+
+![Xnip2022-04-22_07-57-09](MySQL Note.assets/Xnip2022-04-22_07-57-09.jpg)
+
+
+
+![Xnip2022-04-22_07-57-16](MySQL Note.assets/Xnip2022-04-22_07-57-16.jpg)
+
+题意:
+
+给你一张用户关系表，请查询出其中所有共同关注数量最多的用户对
+
+
+
+
+
+思路:
+
+- 首先我们自然需要求出最大的共同关注数，这里用自连接即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		t1.user_id AS 'user1_id',
+		t2.user_id AS 'user2_id',
+		COUNT(*) AS 'cnt'
+FROM
+		Relations AS t1
+INNER JOIN Relations AS t2 ON t1.follower_id = t2.follower_id
+WHERE t1.user_id < t2.user_id
+GROUP BY user1_id, user2_id
+ORDER BY cnt DESC
+```
+
+
+
+- 有了该表后，我们通过取其第一条记录的cnt列值即可获取对应的最大关注数
+- 此时再查询出所有匹配该数的记录即可，最终SQL如下
+
+```mysql
+WITH summary AS (
+    SQL1
+)
+SELECT
+    user1_id,
+    user2_id
+FROM
+    summary
+WHERE cnt = (SELECT cnt FROM summary LIMIT 1)
+```
+
+<hr>
+
+
+
+![Xnip2022-04-22_08-12-08](MySQL Note.assets/Xnip2022-04-22_08-12-08.jpg)
+
+
+
+![Xnip2022-04-22_08-11-55](MySQL Note.assets/Xnip2022-04-22_08-11-55.jpg)
+
 
 
 
