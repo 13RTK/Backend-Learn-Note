@@ -967,7 +967,7 @@ ORDER BY t1.product_name, t1.product_id, t2.order_id
 
 # Day272
 
-## Tag: CTE, 
+## Tag: CTE, LEAD
 
 ![Xnip2022-04-22_07-57-09](MySQL Note.assets/Xnip2022-04-22_07-57-09.jpg)
 
@@ -1028,6 +1028,135 @@ WHERE cnt = (SELECT cnt FROM summary LIMIT 1)
 
 
 ![Xnip2022-04-22_08-11-55](MySQL Note.assets/Xnip2022-04-22_08-11-55.jpg)
+
+
+
+![Xnip2022-04-22_08-33-19](MySQL Note.assets/Xnip2022-04-22_08-33-19.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day273
+
+## Tag: CTE
+
+![Xnip2022-04-23_10-18-26](MySQL Note.assets/Xnip2022-04-23_10-18-26.jpg)
+
+
+
+![Xnip2022-04-23_10-18-57](MySQL Note.assets/Xnip2022-04-23_10-18-57.jpg)
+
+题意:
+
+给你一张友谊情况表，请你查询出其中所有的共同好友大于3个的用户id
+
+
+
+思路:
+
+- 因为原题中只给出了好友关系，所以我们不能直接查询，而是要将数据从行转换为列才行，这样才能获取每个用户的信息
+- 所以我们首先进行转换，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		user1_id,
+		user2_id
+FROM
+		Friendship
+UNION ALL
+SELECT
+		user2_id,
+		user1_id
+FROM
+		Friendship
+```
+
+
+
+- 之后，使用原表的两个列与该临时表的第一列进行连接(连接两次)
+- 分别连接其两个列后，就能够获取所有的用户将情况了
+- 再限制两个临时表的第二列对应的id相同(即共同好友)，最后分组并使用HAVING进行筛选即可，最终SQL如下
+
+```mysql
+WITH all_friendship AS (
+    SQL1
+)
+
+SELECT
+    t1.user1_id,
+    t1.user2_id,
+    COUNT(*) AS 'common_friend'
+FROM
+    Friendship AS t1
+INNER JOIN all_friendship AS t2 ON t1.user1_id = t2.user1_id
+INNER JOIN all_friendship AS t3 ON t1.user2_id = t3.user1_id
+WHERE t2.user2_id = t3.user2_id
+GROUP BY t1.user1_id, t1.user2_id
+HAVING COUNT(*) >= 3
+```
+
+<hr>
+
+
+
+![Xnip2022-04-23_10-38-43](MySQL Note.assets/Xnip2022-04-23_10-38-43.jpg)
+
+
+
+![Xnip2022-04-23_10-38-55](MySQL Note.assets/Xnip2022-04-23_10-38-55.jpg)
+
+<hr>
+
+
+
+
+
+
+
+![Xnip2022-04-23_10-37-48](MySQL Note.assets/Xnip2022-04-23_10-37-48.jpg)
+
+
+
+![Xnip2022-04-23_10-37-37](MySQL Note.assets/Xnip2022-04-23_10-37-37.jpg)
+
+<hr>
+
+
+
+
+
+![Xnip2022-04-23_10-42-15](MySQL Note.assets/Xnip2022-04-23_10-42-15.jpg)
+
+
+
+
+
+![Xnip2022-04-23_10-42-04](MySQL Note.assets/Xnip2022-04-23_10-42-04.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
