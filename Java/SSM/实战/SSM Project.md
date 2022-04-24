@@ -308,6 +308,17 @@ admin对应两个页面
 
 
 
+## 1. 后端
+
+- 在SpringSecurity的配置类中，根据Session的到的AuthUser对象获取对应的role字段，通过该字段跳转到对应的页面中去
+
+![Xnip2022-04-23_20-22-39](SSM Project.assets/Xnip2022-04-23_20-22-39.jpg)
+
+
+
+- 给不同类型的用户编写对应的Controller
+
+![Xnip2022-04-23_20-28-23](SSM Project.assets/Xnip2022-04-23_20-28-23.jpg)
 
 
 
@@ -315,11 +326,60 @@ admin对应两个页面
 
 
 
+- 在SpringSecurity的配置类中为不同的Controller设置对应用户的访问权限(注意路径)
+
+![Xnip2022-04-23_20-30-22](SSM Project.assets/Xnip2022-04-23_20-30-22.jpg)
 
 
 
 
 
+- 在服务接口中添加一个查找用户的方法，将其在实现类的实现(通过Session获取)
+
+![Xnip2022-04-23_20-33-36](SSM Project.assets/Xnip2022-04-23_20-33-36.jpg)
 
 
 
+在前面两个用户的Controller中通过自动注入的方式获取用户对象，并添加到Model对象中，方便前端页面调用
+
+![Xnip2022-04-23_20-35-52](SSM Project.assets/Xnip2022-04-23_20-35-52.jpg)
+
+<hr>
+
+
+
+
+
+## 2. 前端
+
+- 通过Thymeleaf将页面的头部和侧边栏封装为模版
+
+![Xnip2022-04-23_20-37-40](SSM Project.assets/Xnip2022-04-23_20-37-40.jpg)
+
+
+
+
+
+- 为user和admin编写不同的index，两者都引用之前的Thymeleaf模版
+
+![Xnip2022-04-23_20-39-11](SSM Project.assets/Xnip2022-04-23_20-39-11.jpg)
+
+
+
+- 最后使用Thymeleaf处理路径问题(css, js, 图片, form表单的发送, 登出等等)
+
+![Xnip2022-04-23_20-40-32](SSM Project.assets/Xnip2022-04-23_20-40-32.jpg)
+
+
+
+![Xnip2022-04-23_20-40-49](SSM Project.assets/Xnip2022-04-23_20-40-49.jpg)
+
+
+
+![Xnip2022-04-23_20-41-07](SSM Project.assets/Xnip2022-04-23_20-41-07.jpg)
+
+
+
+![Xnip2022-04-23_20-42-54](SSM Project.assets/Xnip2022-04-23_20-42-54.jpg)
+
+<hr>

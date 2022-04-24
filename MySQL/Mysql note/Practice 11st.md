@@ -1146,6 +1146,80 @@ HAVING COUNT(*) >= 3
 
 ![Xnip2022-04-23_10-42-04](MySQL Note.assets/Xnip2022-04-23_10-42-04.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day274
+
+## Tag: CTE, EXISTS
+
+![Xnip2022-04-24_08-31-33](MySQL Note.assets/Xnip2022-04-24_08-31-33.jpg)
+
+
+
+![Xnip2022-04-24_08-31-42](MySQL Note.assets/Xnip2022-04-24_08-31-42.jpg)
+
+题意:
+
+给你一张顾客信息表，请你查询出其中遗失的用户id
+
+
+
+思路:
+
+- 所谓的遗失其实就是处在1到MAX的序号之间，但不在表中罢了
+- 如果我们有一个具有全部连续编号的表，将其与现有表中的id进行差集运算，得到的不就是答案了吗？
+- 所以我们首先需要构建所有的连续编号，这里我们使用递归的CTE(仅限MySQL，标准SQL需要用0-9的数字进行自连接组合)，SQL如下
+
+SQL1:
+
+```mysql
+WITH recursive seq AS (
+    SELECT
+        1 AS 'sequence'
+    UNION ALL
+    SELECT
+        sequence + 1
+    FROM
+        seq
+    WHERE sequence < (SELECT MAX(customer_id) FROM Customers)
+)
+```
+
+
+
+- 有了它之后就简单多了，我们只需要进行差集运算即可，但MySQL并未实现EXCEPT，所以我们可以用NOT EXISTS/NOT IN，连接来代替它，鉴于性能，这里我选择NOT EXISTS，最终SQL如下
+
+```mysql
+SQL1
+
+SELECT
+    t1.sequence AS 'ids'
+FROM
+    seq AS t1
+WHERE NOT EXISTS (
+    SELECT
+        customer_id
+    FROM
+        Customers AS t2
+    WHERE t1.sequence = t2.customer_id
+)
+ORDER BY ids
+```
+
+<hr>
+
 
 
 
