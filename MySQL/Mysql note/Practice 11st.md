@@ -1221,8 +1221,85 @@ ORDER BY ids
 <hr>
 
 
+![Xnip2022-04-24_14-20-02](MySQL Note.assets/Xnip2022-04-24_14-20-02.jpg)
 
 
+
+![Xnip2022-04-24_14-20-11](MySQL Note.assets/Xnip2022-04-24_14-20-11.jpg)
+
+<hr>
+
+
+
+![Xnip2022-04-24_14-21-32](MySQL Note.assets/Xnip2022-04-24_14-21-32.jpg)
+
+
+
+![Xnip2022-04-24_14-21-37](MySQL Note.assets/Xnip2022-04-24_14-21-37.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# Day275
+
+## Tag: EXISTS, GROUP BY
+
+![Xnip2022-04-25_08-12-17](MySQL Note.assets/Xnip2022-04-25_08-12-17.jpg)
+
+
+
+![Xnip2022-04-25_08-12-46](MySQL Note.assets/Xnip2022-04-25_08-12-46.jpg)
+
+题意:
+
+给你一张学生信息表，一张考试信息表，请你查询出其中成绩位于中游的学生
+
+
+
+思路:
+
+- 基础的思路就是查询出每次考试中的最值分数对应的学生id
+- 最值分数其实就是同一场考试中，没人比他高或者没人比他低，所以我们可以通过自连接获取对应的id，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		e1.student_id 
+FROM
+		exam AS e1
+INNER JOIN exam AS t2 ON e1.exam_id = t2.exam_id 
+GROUP BY e1.exam_id, e1.student_id
+HAVING (SUM(e1.score < t2.score) = 0 OR SUM(e1.score > t2.score) = 0)
+```
+
+
+
+- 有了该临时表后，我们使用NOT IN, NOT EXISTS或者自连接都是可以的，最终SQL如下
+
+```mysql
+SELECT
+    t1.student_id,
+    t2.student_name
+FROM
+    Exam AS t1    
+INNER JOIN Student AS t2 ON t1.student_id = t2.student_id
+WHERE NOT EXISTS (
+		SQL1
+		AND t1.student_id = e1.student_id
+)
+GROUP BY t1.student_id, t2.student_name
+ORDER BY t1.student_id
+```
 
 
 
