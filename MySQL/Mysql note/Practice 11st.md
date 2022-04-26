@@ -1301,6 +1301,86 @@ GROUP BY t1.student_id, t2.student_name
 ORDER BY t1.student_id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Day276
+
+## Tag: 前三工资
+
+![Xnip2022-04-26_07-27-37](MySQL Note.assets/Xnip2022-04-26_07-27-37.jpg)
+
+
+
+![Xnip2022-04-26_07-27-00](MySQL Note.assets/Xnip2022-04-26_07-27-00.jpg)
+
+题意:
+
+给你一张员工信息表，一张部门信息表，请你查询出其中每个部门工资前三位的员工信息
+
+
+
+
+
+思路:
+
+- 
+
+- 最简单的思路就是求出每个部门中，每个员工对应的工资排行，然后筛选出前3位即可
+- 这里我们用最简单的窗口函数写法，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		t2.name AS 'Department',
+		t1.name AS 'Employee',
+		t1.salary AS 'Salary',
+		DENSE_RANK() OVER(
+				PARTITION BY t1.departmentId
+				ORDER BY t1.salary DESC
+		) AS 'rn'
+FROM
+		Employee AS t1
+INNER JOIN Department AS t2 ON t1.departmentId = t2.id
+```
+
+
+
+- 最后限制排名，并查询出相应的字段即可，最终SQL如下
+
+```mysql
+SELECT
+    Department,
+    Employee,
+    Salary
+FROM (
+    SQL1
+) AS temp
+WHERE rn <= 3
+```
+
+<hr>
+
+
+
+![Xnip2022-04-26_07-48-25](MySQL Note.assets/Xnip2022-04-26_07-48-25.jpg)
+
+
+
+![Xnip2022-04-26_07-48-37](MySQL Note.assets/Xnip2022-04-26_07-48-37.jpg)
+
 
 
 
