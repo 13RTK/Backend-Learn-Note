@@ -1381,6 +1381,84 @@ WHERE rn <= 3
 
 ![Xnip2022-04-26_07-48-37](MySQL Note.assets/Xnip2022-04-26_07-48-37.jpg)
 
+<hr>
+
+
+
+
+
+
+
+# Day277
+
+## Tag: 按年列出销售额
+
+![Xnip2022-04-27_09-13-25](MySQL Note.assets/Xnip2022-04-27_09-13-25.jpg)
+
+
+
+![Xnip2022-04-27_09-21-02](MySQL Note.assets/Xnip2022-04-27_09-21-02.jpg)
+
+题意:
+
+给你一张产品信息表，一张销售记录表，请你查询出其中2018年到2020年中每件产品每年的销售总额
+
+
+
+
+
+思路:
+
+- 该题目的难点在于，我们只知道销售的起止日期，而我们需要的是具体的天数
+- 首先，我们先获取所有的销售天数差，这里需要从0开始直到最大值，所以使用CTE递归是最简单的写法:
+
+SQL1:
+
+```mysql
+WITH RECURSIVE day_diff(day_period) AS (
+    SELECT 
+        0 AS 'day_period'
+    UNION ALL
+    SELECT
+        day_period + 1
+    FROM 
+        day_diff
+    WHERE day_period < (SELECT MAX(DATEDIFF(period_end, period_start)) FROM Sales)
+)
+```
+
+
+
+- 之后我们的思路是这样的：在原表上加入我们得到的天数差，这样一来得到的就是每天的日期，再取这些日期的年份不就可以按照年分组了吗？这里对应SQL: 
+
+```mysql
+DATE_FORMAT(DATE_ADD(t1.period_start, INTERVAL t2.day_period DAY), '%Y')
+...
+INNER JOIN day_diff AS t2 ON DATEDIFF(t1.period_end, t1.period_start) >= t2.day_period
+```
+
+
+
+- 又因为我们连接了日期差这张表，所以连接后的表对应的行数其实就是天数，所以我们此时直接统计每件商品对应的所有的平均日金额就能得到总金额了
+- 最后只需要限制一下日期，写一下分组即可，最终SQL如下
+
+```mysql
+SQL1
+
+SELECT
+    t1.product_id,
+    t3.product_name,
+    DATE_FORMAT(DATE_ADD(t1.period_start, INTERVAL t2.day_period DAY), '%Y') AS 'report_year',
+    SUM(t1.average_daily_sales) AS 'total_amount'
+FROM
+    Sales AS t1
+INNER JOIN day_diff AS t2 ON DATEDIFF(t1.period_end, t1.period_start) >= t2.day_period
+INNER JOIN Product AS t3 ON t1.product_id = t3.product_id
+GROUP BY t1.product_id, t3.product_name, report_year
+HAVING report_year BETWEEN 2018 AND 2020
+ORDER BY t1.product_id, report_year
+```
+
 
 
 
