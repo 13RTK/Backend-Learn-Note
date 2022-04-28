@@ -380,6 +380,8 @@
 
 ![Xnip2021-11-14_14-43-04](../Algorithem/Xnip2021-11-14_14-43-04.jpg)
 
+
+
 ![Xnip2021-11-14_15-17-23](../Algorithem/Xnip2021-11-14_15-17-23.jpg)
 
 题意:
@@ -1362,6 +1364,7 @@
 
 ![Xnip2022-04-25_09-10-23](Binary Tree/Xnip2022-04-25_09-10-23.jpg)
 
+<hr>
 
 
 
@@ -1369,6 +1372,72 @@
 
 
 
+
+
+# 33、两数之和4
+
+![Xnip2022-04-27_11-12-36](Binary Tree/Xnip2022-04-27_11-12-36.jpg)
+
+
+
+Code:
+
+```java
+class Solution {
+    Set<Integer> set = new HashSet<>();
+    public boolean findTarget(TreeNode root, int k) {
+        if (root == null) {
+            return false;
+        }
+
+        if (!set.isEmpty()) {
+            if (set.contains(k - root.val)) {
+                return true;
+            }
+        }
+
+        set.add(root.val);
+
+        return findTarget(root.left, k) || findTarget(root.right, k);
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+# 34、BST的最近公共祖先
+
+![Xnip2022-04-27_11-19-40](Binary Tree/Xnip2022-04-27_11-19-40.jpg)
+
+
+
+Code:
+
+```java
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        TreeNode curNode = root;
+
+        while (true) {
+            if (curNode.val < p.val && curNode.val < q.val) {
+                curNode = curNode.right;
+            } else if (curNode.val > p.val && curNode.val > q.val) {
+                curNode = curNode.left;
+            } else {
+                break;
+            }
+        }
+
+        return curNode;
+    }
+}
+```
 
 
 

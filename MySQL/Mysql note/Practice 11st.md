@@ -1459,6 +1459,38 @@ HAVING report_year BETWEEN 2018 AND 2020
 ORDER BY t1.product_id, report_year
 ```
 
+<hr>
+
+
+
+![Xnip2022-04-27_14-15-08](MySQL Note.assets/Xnip2022-04-27_14-15-08.jpg)
+
+
+
+SQL:
+
+```mysql
+SELECT
+    Employee.id,
+    company,
+    salary
+FROM
+    Employee
+INNER JOIN (
+    SELECT
+        t1.id
+    FROM
+        Employee AS t1
+    INNER JOIN Employee AS t2 ON t1.company = t2.company
+    GROUP BY t1.id
+    HAVING SUM(CASE WHEN t1.salary <= t2.salary THEN 1 ELSE 0 END) >= COUNT(*) / 2
+    AND SUM(CASE WHEN t1.salary >= t2.salary THEN 1 ELSE 0 END) >= COUNT(*) / 2
+) AS temp
+WHERE Employee.id = temp.id
+GROUP BY company, salary
+```
+
+<hr>
 
 
 
@@ -1466,6 +1498,58 @@ ORDER BY t1.product_id, report_year
 
 
 
+# Day278
+
+## Tag: SUM() OVER()
+
+![Xnip2022-04-28_08-08-31](MySQL Note.assets/Xnip2022-04-28_08-08-31.jpg)
+
+
+
+![Xnip2022-04-28_08-08-18](MySQL Note.assets/Xnip2022-04-28_08-08-18.jpg)
+
+题意:
+
+给你一张数字频率表，请你查询出其中出现次数中位数对应的数字
+
+
+
+
+
+思路:
+
+- 因为中位数是根据频率来的，根据中位数的定义，不管是从开头还是结尾位置算，中位数的位次都应该是一样的
+- 根据这个特性，我们可以构造两个集合：一个从头开始累积，一个从尾部开始，且规定两个集合的累计值都要大于总的频率和值的一半
+- 这样一来，满足两种情况的值就必然是中位数了
+- 所以我们现在需要先获取两种顺序下的频率和值，累加值是SUM() OVER的专长，所以SQL如下
+
+```mysql
+SELECT
+		num,
+		SUM(frequency) OVER(
+				ORDER BY num
+		) AS 'asc_sum',
+		SUM(frequency) OVER(
+				ORDER BY num DESC
+		) AS 'desc_sum',
+		total_sum
+FROM
+		Numbers,
+(SELECT SUM(frequency) AS 'total_sum' FROM Numbers) AS sum_temp
+```
+
+
+
+- 最后只需要加上我们之前规定的限制即可(因为中位数可能有两个，所以要用AVG取均值)
+
+```mysql
+SELECT
+    ROUND(AVG(num), 1) AS 'median'
+FROM (
+    SQL1
+    ) AS temp
+WHERE asc_sum >= total_sum / 2 AND desc_sum >= total_sum / 2 
+```
 
 
 
