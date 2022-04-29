@@ -1551,6 +1551,54 @@ FROM (
 WHERE asc_sum >= total_sum / 2 AND desc_sum >= total_sum / 2 
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# Day279
+
+## Tag: 活跃用户
+
+![Xnip2022-04-29_08-05-53](MySQL Note.assets/Xnip2022-04-29_08-05-53.jpg)
+
+
+
+![Xnip2022-04-29_08-06-38](MySQL Note.assets/Xnip2022-04-29_08-06-38.jpg)
+
+题意:
+
+给你一张账户信息表，一张登陆信息表，请你查询出至少连续登陆5天的用户
+
+
+
+
+
+思路:
+
+- 从题目来看，我们需要的其实只是用户的id，所以要在Logins表上筛选
+- 因为需要判断同一个用户连续登陆的天数是否大于等于5，因为日期都在一列中，所以我们需要使用自连接，通过限制两张表中日期值的差值为0到4
+- 如果有符合条件的用户，那么其在该区间内对应的日期数一定为5，所以我们只需要连接后用HAVING判断一下分组后的集合属性即可
+- 在分组的时候也要注意，不能简单的按照用户id和姓名分组，还要按照起始日期分组，因为连续日期区间可能会有多个，我们要把不同起始日期的连续区间视作不同的集合，最终SQL如下
+
+```mysql
+SELECT
+    DISTINCT t1.id,
+    t1.name
+FROM
+    Accounts AS t1
+INNER JOIN Logins AS t2 ON t1.id = t2.id
+INNER JOIN Logins AS t3 ON t2.id = t3.id
+WHERE DATEDIFF(t3.login_date, t2.login_date) BETWEEN 0 AND 4
+GROUP BY t1.id, t1.name, t2.login_date
+HAVING COUNT(DISTINCT t3.login_date) = 5
+```
+
 
 
 

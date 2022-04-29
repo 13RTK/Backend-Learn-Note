@@ -1,13 +1,12 @@
+
 public class Demo {
     public static void main(String[] args) {
-        String res = String.join("*", "Joy", "Irene", "Yeri", "Seulgi", "Wendy");
-        System.out.println(res);
-    } 
+        String strWithSpace = " deoi  ";
+        String name = "alex";
 
-    enum Size {
-        SMALL,
-        MEDIUM,
-        LARGE,
-        EXTR_LARGE
-    };
+        System.out.println(strWithSpace.trim());
+        System.out.println(name.startsWith("al"));
+        System.out.println(name.endsWith("ex"));
+        System.out.println(name.replace("le", "yy"));
+    } 
 }

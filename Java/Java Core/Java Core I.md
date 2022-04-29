@@ -240,6 +240,8 @@ Eg:
 - UTF-16编码中，采用不同长度的编码表示所有的Unicode码点；在基本的多语言级别中，每个字符用16位表示，称为代码单元(code unit)；辅助字符则采用一对连续的代码单元进行encode(即两个16位的代码单元)
 
 > Java中，char类型描述了UTF-16编码中的一个代码单元(16bit)
+>
+> 一个码点对应一个字符，但一个码点不一定对应一个代码单元
 
 <hr>
 
@@ -557,9 +559,127 @@ Java可以使用+来连接字符串
 
 ### 5) 空串/NULL
 
+检查一个字符串既不是空串也不是null:
+
+```java
+if (str != null && str.length() > 0)
+```
 
 
 
+![Xnip2022-04-28_15-17-30](JavaCore I.assets/Xnip2022-04-28_15-17-30.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 6) 码点/代码单元
+
+- char类型是一个采用UTF-16编码表示Unicode码点的代码单元
+- 大多数常用的Unicode字符可以使用一个代码单元，辅助字符则需要两个代码单元
+
+
+
+String实例的length方法：
+
+- 返回字符串需要的**代码单元数量**，即Unicode code unit(而不是字符数量)
+- 可以使用codePointCount方法获取对应范围内的码点数量(一个字符对应一个码点)
+
+![Xnip2022-04-28_15-38-24](JavaCore I.assets/Xnip2022-04-28_15-38-24.jpg)
+
+<hr>
+
+
+
+
+
+
+
+### 7) String API
+
+
+
+- char charAt(int index)
+
+返回给定索引位置处的**代码单元**
+
+- int codePointAt(int index)
+
+返回给定位置处的码点
+
+- int offsetByCodePoints(int startIndex, int cpCount)
+
+返回从startIndex处开始，移动cpCount后的**码点索引**
+
+- int compareTo(String other)
+
+按照字典序比较字符串，如果当前字符串对象在参数对象前面，则返回一个负数，反之返回正数，相等则为0
+
+- IntStream codePoints()
+
+将字符串的码点作为一个流返回
+
+- new String(int[] codePoints, int offset, int count)
+
+将码点构造为一个字符串
+
+
+
+
+
+
+
+- boolean startsWith(String prefix)
+
+判断字符串是否以prefix字符串开头
+
+- boolean endsWith(String suffix)
+
+判断字符串是否以suffix字符串结尾
+
+- int codePointCount(int startIndex, int endIndex)
+
+返回参数区间内的码点数量
+
+- String replace(CharSequence oldString, CharSequence newString)
+
+用newString代替原始字符串中所有的oldString，参数可以是String/StringBuilder实例
+
+- String trim()
+
+删除原字符串头/尾的空格，然后返回一个新的字符串
+
+- String join(CharSequence delimiter, CharSequence... elements)
+
+返回一个新的字符串，并用给定的定界符连接所有的元素
+
+
+
+Eg:
+
+![Xnip2022-04-28_15-54-03](JavaCore I.assets/Xnip2022-04-28_15-54-03.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 8) 构建字符串
+
+- 对于较短的字符构建字符串，或者
 
 
 
