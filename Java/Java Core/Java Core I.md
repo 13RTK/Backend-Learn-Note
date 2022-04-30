@@ -679,7 +679,165 @@ Eg:
 
 ### 8) 构建字符串
 
-- 对于较短的字符构建字符串，或者
+- 对于较短的字符构建字符串，或者来自按键/文件中的单词，使用字符串连接的话效率会很低的
+- 使用StringBuilder就能解决这个问题
+
+
+
+> StringBuilder自JDK5.0被引入，其前身为StringBuffer
+>
+> StringBuffer的效率较低，但其是线程安全的，适用于多线程的情况
+>
+> 如果所有字符串都在一个单线程中处理，则使用StringBuilder即可
+
+
+
+相关方法:
+
+![IMG_D113AD51C3BA-1](JavaCore I.assets/IMG_D113AD51C3BA-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+## 7. 输入输出
+
+
+
+### 1) 输入
+
+读取"标准输入流"的过程:
+
+- 构造一个Scanner对象，并与"标准输入流"System.in关联
+
+```java
+Scanner in = new Scanner(System.in);
+```
+
+
+
+读取一行输入:
+
+```java
+String name = in.nextLine();
+```
+
+
+
+读取下一个整数:
+
+```java
+int age = in.nextInt();
+```
+
+
+
+读取下一个浮点数:
+
+```java
+double weight = in.nextDouble();
+```
+
+
+
+Code:
+
+![Xnip2022-04-29_21-15-04](JavaCore I.assets/Xnip2022-04-29_21-15-04.jpg)
+
+
+
+
+
+Scanner对应的实例方法:
+
+![IMG_EF3BD20FE6C4-1](JavaCore I.assets/IMG_EF3BD20FE6C4-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+### 2) 格式化输出
+
+- Java SE 5.0中沿用了C库函数中的printf方法
+
+
+
+Eg:
+
+```java
+System.out.printf("%8.2f", x);
+```
+
+
+
+用于printf的转换符:
+
+![IMG_CBB8ADF052D2-1](JavaCore I.assets/IMG_CBB8ADF052D2-1.jpeg)
+
+
+
+用于printf的标志:
+
+![IMG_685D2F7E2DF7-1](JavaCore I.assets/IMG_685D2F7E2DF7-1.jpeg)
+
+<hr>
+
+
+
+
+
+### 3) 读写文件
+
+- 想要对文件进行读取，则需要用一个File对象构造一个Scanner对象
+
+Eg:
+
+```java
+Scanner in = new Scanner(Paths.get("myfile.txt"), "UTF-8");
+```
+
+
+
+- 想要写文件则需要构造一个PrintWriter对象，在其构造器中提供文件名即可
+
+Eg:
+
+```java
+PrintWriter out = new PrintWriter("myfile.txt", "UTF-8");
+```
+
+
+
+因为如果用一个不存在的文件构造Scanner会抛出异常，所以我们需要在main方法中加上throw标记
+
+```java
+public static void main(String[] args) throw IOException {
+  Scanner in = new Scanner(Paths.get("file.txt"), "UTF-8");
+  ...
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+### 4) 控制流程
+
+
+
+
 
 
 
