@@ -839,9 +839,157 @@ public static void main(String[] args) throw IOException {
 
 
 
+#### 1. 块作用域
+
+- 块(block)决定了变量的作用域(scope)
+- 不能在嵌套的两个块中声明同名的变量
+
+<hr>
 
 
 
+
+
+
+
+#### 2. 条件语句
+
+- else子句与最邻近的if组成一组
+
+<hr>
+
+
+
+
+
+
+
+#### 3. 循环
+
+while循环:
+
+```java
+while (condition) statement;
+```
+
+
+
+Eg Code:
+
+```java
+import java.util.Scanner;
+
+public class Retirement {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("How much money do you need to retire? ");
+        double goal = in.nextDouble();
+
+        System.out.println("How much money will you contribute every year? ");
+        double payment = in.nextDouble();
+
+        System.out.println("Interest rate in %: ");
+        double interestRate = in.nextDouble();
+
+        double balance = 0;
+        int year = 0;
+
+        while (balance < goal) {
+            balance += payment;
+            double interest = balance * interestRate / 100;
+            balance += interest;
+            year++;
+        }
+
+        System.out.println("You can retire in " + year + " years.");
+    }
+}
+```
+
+
+
+如果想要循环体至少执行一次，那么可以使用do/while循环语句:
+
+```java
+do statement while (condition);
+```
+
+
+
+
+
+Eg Code:
+
+```java
+import java.util.*;
+
+public class Retirement2 {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("How much money do you need to retire? ");
+        double goal = in.nextDouble();
+
+        System.out.println("How much money will you contribute every year? ");
+        double payment = in.nextDouble();
+
+        System.out.println("Interest rate in %: ");
+        double interestRate = in.nextDouble();
+
+        double balance = 0;
+        int year = 0;
+
+        String input;
+
+        do {
+            balance += payment;
+            double interest = balance * interestRate / 100;
+            balance += interest;
+
+            year++;
+
+            System.out.printf("After year %d, your balance is %,.2f%n", year, balance);
+
+            System.out.print("Ready to retire? (Y/N) ");
+            input = in.next();
+        } while (input.equals("N"));
+
+        System.out.println("You can retire in " + year + " years.");
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+#### 4. 确定循环(for)
+
+- for循环的第一部分用于对计数器进行初始化
+- 第二部分则是每轮循环执行前要检测的循环条件
+- 第三部分则指明如何更新计数器
+
+> for循环的3个部分最好对同一个计数器变量进行初始化、检测和更新
+
+
+
+
+
+- 当一个变量在`for`语句的第1部分中声明后，这个变量的作用域就为整个`for`循环体
+- 且该变量不能在`for`循环之外使用
+- 可以在不同的`for`循环中使用同名的变量
+- for和while可以相互替换
+
+
+
+Eg Code:
 
 
 
