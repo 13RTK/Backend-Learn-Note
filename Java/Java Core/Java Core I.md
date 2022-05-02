@@ -991,6 +991,493 @@ public class Retirement2 {
 
 Eg Code:
 
+```java
+import java.util.Scanner;
+
+public class LotteryOdds {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("How many numbers do you need to draw? ");
+        int k = in.nextInt();
+
+        System.out.println("What is the highest number you can draw? ");
+        int n = in.nextInt();
+
+        int lotteryOdds = 1;
+
+        for (int i = 1; i <= k; i++) {
+            lotteryOdds = lotteryOdds * (n - i + 1) / i;
+        }
+
+        System.out.println("Your odds are 1 in " + lotteryOdds + ". Good luck!");
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+#### 5. 多重选择switch
+
+- 用法和C/C++完全一致
+
+
+
+case标签中允许的类型:
+
+- char, byte, short, int等常量表达式
+- 枚举常量
+- 从Java SE7开始，case标签还可以是字符串字面量
+
+<hr>
+
+
+
+
+
+#### 6. 中断流程
+
+break有带标签和不带标签之分，不带标签的用法和C/C++一致
+
+
+
+带标签的break语句:
+
+- 用与跳出多重嵌套循环语句
+- 标签必须放在希望跳出的最外层循环之前，且标签后要紧跟一个冒号
+
+Syntax:
+
+```java
+lable_name:
+
+while () {
+  break lable_name;
+}
+```
+
+
+
+同时也可以用在if/块语句中:
+
+```java
+lable:
+{
+  if (condition) break label;
+}
+```
+
+
+
+- continue和break一样，不过continue不会跳出循环，而是直接跳到for循环的更新部分/while的判断部分
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 8. 大数值
+
+如果基础数据类型不能满足精度要求，则需要使用java.math包下的BigInteger和BigDecimal类
+
+- 这个两个类可以处理任意长度数字序列的数值
+- BigInteger: 任意精度的整数运算
+- BigDecimal: 任意精度的浮点数运算
+
+使用静态的valueOf方法可以将普通的数值转换为大数值:
+
+```java
+BigInteger a = BigInteger.valueOf(100);
+```
+
+
+
+- 需要使用add和multipy方法处理数值:
+
+```java
+BigInteger c = a.add(b);
+BigIntger d = c.multipy(b.add(BigInteger.valueOf(2)));
+```
+
+
+
+Eg Code:
+
+```java
+import java.math.BigInteger;
+import java.util.Scanner;
+import java.util.function.BinaryOperator;
+
+public class BigIntegerTest {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("How many numbers do you need to draw? ");
+        int k = in.nextInt();
+
+        System.out.println("What is the highest number you can draw? ");
+        int n = in.nextInt();
+
+        BigInteger lotteryOdds = BigInteger.valueOf(1L);
+
+        for (int i = 1; i <= k; i++) {
+            lotteryOdds = lotteryOdds.multiply(BigInteger.valueOf(n - i + 1)).divide(BigInteger.valueOf(i));
+        }
+
+        System.out.println("Your odds are 1 in " + lotteryOdds + " . Good luck!");
+    } 
+}
+
+```
+
+
+
+API:
+
+- BigInteger add(BigInteger other)
+- BigInteger substract(BigInteger other)
+- BigInteger multipy(BigInteger other)
+- BigInteger divide(BigInteger other)
+- BigInteger mod(BigInteger other)
+- static BigInteger valueOf(BigInteger other)
+
+
+
+![IMG_59AE252A71FF-1](JavaCore I.assets/IMG_59AE252A71FF-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+## 9. 数组
+
+- 数组: 用来存储同一类型值的集合，通过一个int下标可以访问数组中的每个值
+
+
+
+初始化:
+
+- 对于数字数组，每个元素都会初始化0
+- boolean元素初始化为false
+- 对象数组中的元素初始化为特殊值null
+
+
+
+获取数组的长度:
+
+数组名.length
+
+
+
+- 一旦创建数组，其长度就固定了
+
+<hr>
+
+
+
+
+
+
+
+### 1. for each
+
+Java中有一种增强的循环结构:
+
+```java
+for (variable : collection) statement
+```
+
+- 可以用来处理数组中的每个元素
+- collection必须是一个数组获取实现了Iterable接口的类实例
+
+
+
+如果想要打印数组所有值，使用Arrays类中的toString方法即可
+
+<hr>
+
+
+
+
+
+
+
+### 2. 数组初始化/匿名数组
+
+创建数组的简写形式:
+
+```java
+int[] smallPrimes = {2, 3, 5, 7, 11, 13};
+```
+
+
+
+初始化匿名数组:
+
+```java
+new int[]{17, 19, 23, 29, 31, 37};
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3. 数组拷贝
+
+- 将一个数组标量拷贝给另一个的话，两个数组变量就将引用同一个数组(浅拷贝)
+
+
+
+如果希望将一个数组中的所有值拷贝到一个新的数组中去，那么就需要使用Arrays中的copyOf方法
+
+```java
+int[] copiedLuckyNumber = Arrays.copyOf(luckyNumbers, luckyNumbers.length);
+```
+
+
+
+- Arrays.copyOf通常用来进行数组扩容
+
+<hr>
+
+
+
+
+
+### 4. 数组排序
+
+- 直接调用Arrays.sort方法即可对参数数组进行排序
+
+> 对于原始类型，sort方法采用了优化的快速排序，如果是引用类型，则会采用归并排序
+
+
+
+
+
+Eg Code:
+
+```java
+import java.util.Arrays;
+import java.util.Scanner;
+
+public class LotteryDrawing {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("How many numbers do you need to draw? ");
+        int k = in.nextInt();
+
+        System.out.println("What is the highest number you can draw? ");
+        int n = in.nextInt();
+
+        int[] numbers = new int[n];
+        for (int i = 0; i < numbers.length; i++) {
+            numbers[i] = i + 1;
+        }
+
+        int[] result = new int[k];
+        for (int i = 0; i < result.length; i++) {
+            int r = (int) Math.random() * n;
+
+            result[i] = numbers[r];
+
+            numbers[r] = numbers[n - 1];
+            n--;
+        }
+
+        Arrays.sort(result);
+        System.out.println("Bet the following combination. It'll make you rich!");
+        for (int r : result) {
+            System.out.println(r); 
+        }
+    }
+}
+
+```
+
+
+
+Arrays API:
+
+- static String toString(type[] a)
+
+将数组中的所有元素以字符串的形式返回
+
+- static type copyOf(type[] a, int length)
+
+复制对应长度的数组元素
+
+- static type copyOfRange(type[] a, int start, int end)
+
+拷贝对应范围内的数组元素
+
+- static void sort(type[] a)
+
+对数组进行排序
+
+- static int binarySearch(type[] a, type v)
+
+在有序数组中使用二分查找法搜索对应的元素并返回索引
+
+- static void fill(type[] a, type v)
+
+将对应数组中的所有元素设置为指定的值
+
+- static boolean equals(type[] a, type[] b)
+
+判断两个数组是否相等
+
+<hr>
+
+
+
+
+
+
+
+### 5. 多维数组
+
+声明一个多维数组:
+
+```java
+double[][] balances;
+
+初始化:
+double[][] balances = new double[NYEARS][NRATES];
+```
+
+
+
+简写的方式初始化多维数组:
+
+```java
+int[][] magicSquare = {
+  {16, 3, 2, 13},
+  {5, 10, 11, 8}
+};
+```
+
+
+
+快速打印一个二维数组:
+
+```java
+Arrays.deepToString(a);
+```
+
+
+
+Eg Code:
+
+```java
+public class CompoundInterest {
+    public static void main(String[] args) {
+        final double STARTRATE = 10;
+        final int NRATES = 6;
+        final int NYEARS = 10;
+
+        double[] interestRate = new double[NRATES];
+        for (int i = 0; i < interestRate.length; i++) {
+            interestRate[i] = (STARTRATE + i) / 100.0;
+        }
+
+        double[][] balances = new double[NYEARS][NRATES];
+
+        for (int col = 0; col < balances[0].length; col++) {
+            balances[0][col] = 10000;
+        }
+
+        for (int row = 1; row < balances.length; row++) {
+            for (int col = 0; col < balances[i].length; col++) {
+                double oldBalance = balances[row - 1][col];
+
+                double interest = oldBalance * interestRate[col];
+
+                balances[row][col] = oldBalance + interest;
+            }
+        }
+
+        for (int i = 0; i < interestRate.length; i++) {
+            System.out.printf("%9.0f%%", 100 * interestRate[i]); 
+        }
+
+        System.out.println();
+
+        for (double[] row : balances) {
+            for (double b : row) {
+                System.out.println("%10.2f", b); 
+            } 
+
+            System.out.println();
+        }
+    }    
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 6. 不规则数组
+
+创建不规则数组:
+
+- 首先需要创建一个具有所含行数的数组:
+
+```java
+int[][] odds = new int[NMAX + 1][];
+```
+
+- 然后分配行:
+
+```java
+for (int n = 0; n < odds.length; n++) {
+  odds[n] = new int[n + 1];
+}
+```
+
+
+
+Eg Code:
+
+
+
+
+
+
+
+
+
 
 
 
