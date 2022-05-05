@@ -466,7 +466,7 @@ Map<String, Map<String, T>> map = new HashMap<>();
 
 
 
-- 通过`HSET`命令可以插入一个hash类型的键值对
+- 通过`HSET`命令可以插入一个hash类型的键值对，该命令也可以为已经存在的Hash键值对增加字段，也可以修改字段
 - 如果对应key的字段已经存在，则会用这次输入的值覆盖掉之前的值
 - 可以一次性插入多个字段和值，返回的值即为插入/修改的字段值
 
@@ -481,6 +481,12 @@ HSET key field field_val...
 Eg:
 
 ![Xnip2022-05-04_17-58-09](Redis basic.assets/Xnip2022-05-04_17-58-09.jpg)
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-32-00](Redis basic.assets/Xnip2022-05-05_12-32-00.jpg)
 
 <hr>
 
@@ -546,6 +552,44 @@ Eg:
 
 ![Xnip2022-05-04_18-09-15](Redis basic.assets/Xnip2022-05-04_18-09-15.jpg)
 
+
+
+
+
+- 通过`HLEN`命令可以获取hash类型键值对的字段数量
+
+Syntax:
+
+```
+HLEN key
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-33-53](Redis basic.assets/Xnip2022-05-05_12-33-53.jpg)
+
+
+
+
+
+
+
+- 通过`HVALS`命令获取Hash类型键值对中所有的值
+
+Syntax:
+
+```
+HVALS hash_key
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-34-55](Redis basic.assets/Xnip2022-05-05_12-34-55.jpg)
+
 <hr>
 
 
@@ -573,6 +617,218 @@ HDEL key field
 Eg:
 
 ![Xnip2022-05-04_18-10-42](Redis basic.assets/Xnip2022-05-04_18-10-42.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 4. List类型
+
+
+
+
+
+
+
+### 1) 插入/创建
+
+
+
+- 通过`LPUSH`命令向列表头中插入元素(LEFT PUSH)
+
+Syntax:
+
+```
+LPUSH key val...
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-43-48](Redis basic.assets/Xnip2022-05-05_12-43-48.jpg)
+
+
+
+
+
+- 通过`RPUSH`在列表尾部插入元素
+
+Syntax:
+
+```
+RPUSH key val...
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-45-54](Redis basic.assets/Xnip2022-05-05_12-45-54.jpg)
+
+
+
+
+
+- 通过`LINSERT`命令选择在指定的元素前/后插入元素(只能插入一个元素)
+
+Syntax:
+
+```
+LINSERT key BEFORE/AFTER pos_key insert_key
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-48-38](Redis basic.assets/Xnip2022-05-05_12-48-38.jpg)
+
+<hr>
+
+
+
+
+
+
+
+### 2) 查询
+
+
+
+- 通过`LRANGE`命令查询对应索引范围内的元素
+
+Syntax:
+
+```
+LRANGE key start_idx stop_idx
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-50-36](Redis basic.assets/Xnip2022-05-05_12-50-36.jpg)
+
+
+
+
+
+- `LINDEX`命令以左边为准获取对于索引位置的元素(注意从0开始)，负数可以代表倒叙的索引
+
+Syntax:
+
+```
+LINDEX key index
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-52-19](Redis basic.assets/Xnip2022-05-05_12-52-19.jpg)
+
+
+
+
+
+
+
+- `RPOPLPUSH`将原列表中的最右侧元素弹出，并放入另一个列表的头部位置
+
+Syntax:
+
+```
+RPOPLPUSH source_list destination_list
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-59-49](Redis basic.assets/Xnip2022-05-05_12-59-49.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 删除
+
+- `LPOP`弹出最左边指定数量的元素，`RPOP`弹出最右边指定数量的元素
+
+Syntax:
+
+```
+LPOP key count
+RPOP key count
+```
+
+
+
+Eg:
+
+![Xnip2022-05-05_12-54-34](Redis basic.assets/Xnip2022-05-05_12-54-34.jpg)
+
+
+
+- `BLPOP`和`BRPOP`可以通过阻塞队列的方式从列表中弹出元素
+
+Syntax:
+
+```
+BLPOP list timeout
+BRPOP list timeout
+```
+
+
+
+![Xnip2022-05-05_13-10-10](Redis basic.assets/Xnip2022-05-05_13-10-10.jpg)
+
+
+
+可以同时对多个列表进行阻塞弹出操作:
+
+Eg:
+
+![Xnip2022-05-05_13-13-51](Redis basic.assets/Xnip2022-05-05_13-13-51.jpg)
+
+
+
+- 一旦多个列表中一个列表有了插入操作，则会立马弹出刚刚插入的元素
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 5. Set/SortedSet
+
+
+
+
+
+
 
 
 
