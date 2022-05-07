@@ -821,18 +821,278 @@ Eg:
 
 
 
-
 ## 5. Set/SortedSet
 
 
 
 
 
+### 1) Set类型
+
+- Set类型原理和HashSet一样，都是利用了HashMap，从而达到去重的作用，因为用到了Hash来获取索引，所以Set中的元素并不是按照自然顺序进行排序的
+
+
+
+- `SADD`命令可以为一个SET集合添加元素
+
+Syntax:
+
+```
+SADD key value...
+```
+
+
+
+- `SMEMBERS`命令可以查看集合中的所有元素
+
+Syntax:
+
+```
+SMEMBERS key
+```
+
+
+
+Eg:
+
+![Xnip2022-05-06_14-10-31](Redis basic.assets/Xnip2022-05-06_14-10-31.jpg)
 
 
 
 
 
+- `SISMEMBER`判断对应集合中是否包含指定的值
+
+Syntax:
+
+```
+SISMEMBER key
+```
+
+
+
+Eg:
+
+![Xnip2022-05-06_14-13-48](Redis basic.assets/Xnip2022-05-06_14-13-48.jpg)
+
+
+
+
+
+
+
+- 对Set集合进行集合运算:
+
+
+
+```java
+-- 差集,求出key1减去key2的结果
+SDIFF key1 key2
+  
+-- 交集，求出两个集合中的共同元素
+SINTER key1 key2
+
+-- 并集，两个集合中的元素合在一起，并去重
+SUNION key1 key2
+```
+
+Eg:
+
+![Xnip2022-05-06_14-30-13](Redis basic.assets/Xnip2022-05-06_14-30-13.jpg)
+
+
+
+
+
+
+
+- 将集合运算的结果存放在对应的set中:
+
+```
+-- 存放key1与key2对应set做差集运算的结果
+SDIFFSTORE destination key1 key2
+
+-- 存放key1与key2对应set做交集运算的结果
+SINTERSTORE destination key1 key2
+
+-- 存放key1与key2对应set做并集运算的结果
+SUNIONSTORE destination key1 key2
+```
+
+
+
+Eg:
+
+![Xnip2022-05-06_18-26-55](Redis basic.assets/Xnip2022-05-06_18-26-55.jpg)
+
+
+
+
+
+
+
+- `SMOVE`命令可以将一个set中的指定元素移动到另一个set中去
+
+Syntax:
+
+```
+SMOVE source destination member
+```
+
+
+
+Eg:
+
+![Xnip2022-05-06_18-30-31](Redis basic.assets/Xnip2022-05-06_18-30-31.jpg)
+
+
+
+
+
+
+
+- `SPOP`随机删除集合中指定数量的元素
+
+Syntax:
+
+```
+SPOP key count
+```
+
+
+
+- `SREM`删除SET中的指定元素(可以是多个)
+
+Syntax:
+
+```
+SREM key member ...
+```
+
+Eg:
+
+![Xnip2022-05-06_18-35-39](Redis basic.assets/Xnip2022-05-06_18-35-39.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) SortedSet
+
+- 其在Set的基础上，支持为每个元素添加一个分数，这样其中的元素就会根据插入时给定的分数进行排列
+
+
+
+- `ZADD`命令向SortedSet列表中插入一个元素
+
+Syntax:
+
+```
+ZADD key score value
+```
+
+
+
+- `ZCARD`命令查询SortedSet列表中元素的个数
+
+Syntax:
+
+```
+ZCARD key
+```
+
+
+
+- `ZRANGE`命令可以查询出对应范围内的元素
+
+Syntax:
+
+```
+ZRANGE key min max [WITHSCORES]
+```
+
+Eg:
+
+![Xnip2022-05-06_20-57-02](Redis basic.assets/Xnip2022-05-06_20-57-02.jpg)
+
+
+
+
+
+
+
+- `ZRANGEBYSCORE`和`ZRANGE`加上SCORE选项后，都能根据分数来查找对应的元素
+- 最后的`LIMIT offset count`类似SQL中的分页，即指定查询出的元素个数
+
+Syntax:
+
+```
+ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]
+```
+
+
+
+Eg:
+
+![Xnip2022-05-06_21-07-32](Redis basic.assets/Xnip2022-05-06_21-07-32.jpg)
+
+
+
+
+
+
+
+- `ZCOUNT`命令统计对应分数段内的元素数量
+
+Syntax:
+
+```
+ZCOUNT key min max
+```
+
+
+
+- `ZRANK`命令统计对应元素对应的排名
+
+Syntax:
+
+```
+ZRANK key member
+```
+
+
+
+Eg:
+
+![Xnip2022-05-06_21-11-21](Redis basic.assets/Xnip2022-05-06_21-11-21.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6. 持久化
+
+![Xnip2022-05-07_21-00-49](Redis basic.assets/Xnip2022-05-07_21-00-49.jpg)
 
 
 
