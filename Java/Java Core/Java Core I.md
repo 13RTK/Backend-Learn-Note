@@ -1602,6 +1602,368 @@ Output:
 
 
 
+### 1) 对象/对象变量
+
+- 使用对象前需要使用构造器(constructor)构造新的实例
+
+
+
+对象变量:
+
+- 一个对象变量没有包含一个实际的对象，仅仅只是引用了一个对象实例
+- new操作符的返回值也是一个引用/对象变量
+
+
+
+局部变量不会自动初始化为null，需要进行初始化(方法内的)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) Java类库中的LocalDate类
+
+Java类库中，将保存时间和时间点命名分开来了
+
+
+
+- 表示时间点: Date
+- 保存时间: LocalDate
+
+
+
+`LocalDate`类对象使用静态工厂方法来构造:
+
+```java
+LocalDate.now();
+```
+
+
+
+提供对应的日期，构造一个特定的日期对象:
+
+```java
+LocalDate.of(1999, 12, 31)
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 更改器方法与访问器方法
+
+
+
+更改器方法:
+
+- 会改变对象的状态
+
+
+
+访问器方法:
+
+- 只访问对象而不修改对象本身的状态的方法
+
+
+
+Code:
+
+```java
+import java.time.*;
+
+public class CalendarTest {
+    public static void main(String[] args) {
+        LocalDate date = LocalDate.now();
+        int month = date.getMonthValue();
+        int today = date.getDayOfMonth();
+
+        date = date.minusDays(today - 1);
+        DayOfWeek weekday = date.getDayOfWeek();
+        int value = weekday.getValue();
+
+        System.out.println("Mon Tue Wed Thu Fri Sat Sun");
+        for (int i = 1; i < value; i++) {
+            System.out.print("    ");
+        }
+
+        while (date.getMonthValue() == month) {
+            System.out.printf("%3d", date.getDayOfMonth());
+            if (date.getDayOfMonth() == today) {
+                System.out.print("*");
+            } else {
+                System.out.print(" ");
+            }
+            date = date.plusDays(1);
+
+            if (date.getDayOfWeek().getValue() == 1) {
+                System.out.println();
+            }
+        }
+
+        if (date.getDayOfWeek().getValue() != 1) {
+            System.out.println();
+        }
+    }
+}
+```
+
+
+
+Eg:
+
+![Xnip2022-05-09_14-21-59](JavaCore I.assets/Xnip2022-05-09_14-21-59.jpg)
+
+
+
+
+
+java.time.LocalDate
+
+- static LocalTime new()
+
+构造一个表示当前日期的对象
+
+
+
+- static LocalTime of(int year, int month, int day)
+
+构造一个给定日期的对象
+
+
+
+- int getYear()
+- int getMonthValue()
+- int getDayOfMonth()
+- DayOfWeek getDayOfWeek()
+- LocalDate plusDays(int n)
+- LocalDate minusDay(int n)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 3. 用户自定义类
+
+
+
+
+
+
+
+### 1) Employee类
+
+Code:
+
+```java
+import java.time.LocalDate;
+
+public class EmployeeTest {
+    public static void main(String[] args) {
+        Employee[] staff = new Employee[3];
+
+        staff[0] = new Employee("Carl Cracker", 75000, 1987, 12, 15);
+        staff[1] = new Employee("Harry Hacker", 50000, 1989, 10, 1);
+        staff[2] = new Employee("Tony Tester", 40000, 1990, 3, 15);
+
+        for (Employee e : staff) {
+            e.raiseSalary(5);
+        }
+
+        for (Employee e : staff) {
+            System.out.println("name=" + e.getName() + ",salary=" + e.getSalary() + ",hireDay="
+                    + e.getHireDay());
+        }
+    }
+}
+
+class Employee {
+    private String name;
+    private double salary;
+    private LocalDate hireDay;
+
+    public Employee(String n, double s, int year, int month, int day) {
+        name = n;
+        salary = s;
+        hireDay = LocalDate.of(year, month, day);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    public LocalDate getHireDay() {
+        return hireDay;
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = salary * byPercent / 100;
+        salary += raise;
+    }
+
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 多个源文件
+
+如果有多个源文件需要编译，可以直接对其中一个具有Main的，获取引用最多类的文件进行编译，编译器会自动寻找其他类文件，并进行编译
+
+> 如果源文件的版本比之前编译得到的class文件要新，则编译器会自动编译该文件
+
+<hr>
+
+
+
+
+
+
+
+### 3) 隐式参数/显示参数
+
+在Employee类中，`raiseSalary`方法:
+
+```java
+number007.raiseSalary(5);
+
+double raise = number007.salary * 5 / 100;
+number007.salary += raise;
+```
+
+
+
+该方法有两个参数
+
+
+
+- 第一参数为隐式参数:
+    - 方法名前的Employee类对象
+- 第二参数为显示参数:
+    - 位于方法名后括号中的数值
+
+> 显示参数是列在方法声明中的
+>
+> 隐式参数没有出现在方法声明中
+
+<hr>
+
+
+
+
+
+
+
+### 4) 封装的优点
+
+`getName`、`getSalary`，`getHireDay`方法都是访问器方法
+
+
+
+实例域的值应该具有的内容:
+
+- 私有的数据域
+- 公有的域访问器
+- 公有的域更改器
+
+
+
+这样写的好处:
+
+1. 可以改变内容实现，但不会影响其他引用的部分
+2. 更改器方法可以在赋值之前进行检查
+
+
+
+注意：不要编写返回引用可变对象的访问器方法
+
+> 如果需要返回一个可变对象的引用，应该首先对其进行克隆，再返回这个对象的副本
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 5) 私有方法
+
+- 在设计类的时候，有时会将一个方法拆分为多个独立的辅助方法
+- 这些辅助方法不应该成为公有方法的一部分
+- 如果私有方法不再使用，则对应的私有方法直接删除即可
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 6) final实例域
+
+- 定义为final的实例域在构建对象时必须初始化，且在之后的操作中，不能再对其进行修改
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 7) 静态域/静态方法
+
+
+
+#### (1) 静态域
+
+- 被定义为static的域，则为静态域
+
+
+
+
+
 
 
 
