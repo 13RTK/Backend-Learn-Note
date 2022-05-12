@@ -6823,6 +6823,7 @@ Implement:
 
 ![Xnip2022-05-11_20-56-37](Algorithm Fourth.assets/Xnip2022-05-11_20-56-37.jpg)
 
+<hr>
 
 
 
@@ -6830,6 +6831,121 @@ Implement:
 
 
 
+## 3. Dijkstra算法
+
+- 从起点开始，按照边的权重遍历与其连接的所有边(类似Prim算法)
+- 将对应的边添加到最小生成树中，并松弛所有的边
+
+![Xnip2022-05-12_11-19-01](Algorithm Fourth.assets/Xnip2022-05-12_11-19-01.jpg)
+
+
+
+![Xnip2022-05-12_11-20-32](Algorithm Fourth.assets/Xnip2022-05-12_11-20-32.jpg)
+
+
+
+
+
+- 实现:
+
+![Xnip2022-05-12_18-23-54](Algorithm Fourth.assets/Xnip2022-05-12_18-23-54.jpg)
+
+
+
+![Xnip2022-05-12_18-24-01](Algorithm Fourth.assets/Xnip2022-05-12_18-24-01.jpg)
+
+
+
+
+
+- Dijkstra和Prim算法相比:
+    - 两者本质上是同一个算法
+    - 两者都是在图中计算最小生成树
+- 不同之处:
+    - Prim: 选取最接近MST的边
+    - Dijkstra: 选取最接近开头顶点的边
+
+
+
+消耗:
+
+- 同样取决于优先队列的实现
+
+![Xnip2022-05-12_18-33-56](Algorithm Fourth.assets/Xnip2022-05-12_18-33-56.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 4. 加权无环有向图
+
+- 如果得知加权有向图无环(DAG)，则使用拓扑排序
+- 再松弛边以获取最小距离
+
+![Xnip2022-05-12_21-16-55](Algorithm Fourth.assets/Xnip2022-05-12_21-16-55.jpg)
+
+
+
+
+
+- 拓扑排序算法在获取最短路径时的特点:
+    - 可以从任意边开始计算(甚至是负数权重边)
+    - 用时: E(edges) + V(vertices)
+
+
+
+Eg:
+
+![Xnip2022-05-12_21-20-05](Algorithm Fourth.assets/Xnip2022-05-12_21-20-05.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+- 寻找加权无环有向图的最长路径
+
+将relax操作反转一下即可
+
+![Xnip2022-05-12_21-22-33](Algorithm Fourth.assets/Xnip2022-05-12_21-22-33.jpg)
+
+
+
+- 寻找最长路径的应用:
+
+
+
+并行工作计划表
+
+- 给你一些区间代表工作安排，其中每个区间都有优先级约束(先后顺序)，试求最短用时
+
+![Xnip2022-05-12_21-25-48](Algorithm Fourth.assets/Xnip2022-05-12_21-25-48.jpg)
+
+
+
+问题抽象:
+
+- 用两个顶点代表一个工作安排的起止时间
+- 将起止位置看作两个权重为0的边
+
+![Xnip2022-05-12_21-29-54](Algorithm Fourth.assets/Xnip2022-05-12_21-29-54.jpg)
+
+
+
+![Xnip2022-05-12_21-30-34](Algorithm Fourth.assets/Xnip2022-05-12_21-30-34.jpg)
 
 
 

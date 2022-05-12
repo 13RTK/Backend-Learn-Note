@@ -2597,6 +2597,205 @@ public class Employee {
 
 
 
+# 三、继承
+
+
+
+## 1. 类、超类和子类
+
+
+
+### 1) 定义子类
+
+> extends关键字表示构造的新类派生于一个已经存在的类
+>
+> 已经存在的类称为超类(superclass)，基类(base class)或者父类(parent class)
+>
+> 新的类称为子类(subclass)、派生类(derived class)或者孩子类
+
+
+
+- 通用的方法应该放在超类里，具有特殊用途的方法应该放在子类里
+
+<hr>
+
+
+
+
+
+
+
+### 2) 覆盖方法
+
+- 如果超类中的方法对子类不适用，那么可以在子类中提供一个新的方法，来"覆盖"超类中的方法
+- 如果子类中重写了超类中的方法，那么想要调用超类中的方法的话，需要使用关键字`super`
+
+> 注意，`this`可以代表实例，但`super`并不代表实例对象
+
+
+
+- 子类可以增加域、增加方法或者重写超类方法，但不能删除继承的任何域和方法
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 子类构造器
+
+- 如果在构造对象时，想要对超类的私有域进行初始化，那么需要调用超类的构造器方法对这部分私有域进行初始化
+
+> 如果子类的构造器没有显式调用超类构造器，则会自动调用超类默认的构造器(不带参数的)，如果超类没有默认构造器，且子类中没有调用其他的超类构造器，则会报错
+
+
+
+- 一个对象变量/引用，可以指示多种实际类型的现象被称为多态(polymorphism)
+- 在运行时能够自动选择调用哪个方法的现象称为动态绑定(Dynamic Dinding)
+
+
+
+Code:
+
+
+
+Employee.java:
+
+```java
+import java.time.*;
+
+public class Employee {
+    private String name;
+    private double salary;
+    private LocalDate hireDay;
+
+    public Employee(String name, double salary, int year, int month, int day) {
+        this.name = name;
+        this.salary = salary;
+        hireDay = LocalDate.of(year, month, day);
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public double getSalary() {
+        return this.salary;
+    }
+
+    public LocalDate getHireDay() {
+        return this.hireDay;
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = salary * byPercent / 100;
+        salary += raise;
+    }
+}
+```
+
+
+
+Manager.java:
+
+```java
+public class Manager extends Employee {
+    private double bonus;
+
+    public Manager(String name, double salary, int year, int month, int day) {
+        super(name, salary, year, month, day);
+        this.bonus = 0;
+    }
+
+    public double getSalary() {
+        double baseSalary = super.getSalary();
+        return baseSalary + this.bonus;
+    }
+
+    public void setBonus(double b) {
+        this.bonus = b;
+    }
+}
+
+```
+
+
+
+ManagerTest.java:
+
+```java
+public class ManagerTest {
+    public static void main(String[] args) {
+        Manager boss = new Manager("Carl Cracker", 80000, 1987, 12, 15);
+        boss.setBonus(5000);
+
+        Employee[] staff = new Employee[3];
+
+        staff[0] = boss;
+        staff[1] = new Employee("Harry Hacker", 50000, 1989, 10, 1);
+        staff[2] = new Employee("Tommy Tester", 40000, 1990, 3, 15);
+
+        for (Employee e : staff) {
+            System.out.println("name=" + e.getName() + ",salary=" + e.getSalary()); 
+        }
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 继承层次
+
+- 由同一个父类衍生出来的所有类的集合称为继承层次(inheritance hierarchy)，
+- 从特定的类到其祖先的路径称为该类的"继承链"(inheritance chain)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 5) 多态
+
+子类的引用可以赋给超类，但超类的引用不能赋给子类(不能随便将一个员工升级为经理)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 6) 理解方法调用
+
+方法调用的过程描述:
 
 
 
