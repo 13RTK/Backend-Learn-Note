@@ -6621,8 +6621,207 @@ Java实现:
 
 
 
+## 5. Prim's Algorithm
+
+- 从第一个顶点开始(顶点0)
+- 依次添加与当前边相连的其他边中权重最小的
 
 
+
+与Kruskal的不同:
+
+- Prim算法是在当前选取的边作为基础进行延伸，而Kruskal则根据权重依次添加每条边
+
+![Xnip2022-05-10_18-03-09](Algorithm Fourth.assets/Xnip2022-05-10_18-03-09.jpg)
+
+
+
+- Prim算法也是一种特殊的贪心最小生成树算法
+
+
+
+
+
+
+
+
+
+
+- 简易实现:
+
+维护一个最小优先队列，其中存储所有的边，依次获取与当前边相连的其他未标记的边
+
+
+
+Code:
+
+![Xnip2022-05-10_20-30-29](Algorithm Fourth.assets/Xnip2022-05-10_20-30-29.jpg)
+
+
+
+![Xnip2022-05-10_20-30-37](Algorithm Fourth.assets/Xnip2022-05-10_20-30-37.jpg)
+
+
+
+
+
+
+
+- 消耗:
+
+![Xnip2022-05-10_20-32-21](Algorithm Fourth.assets/Xnip2022-05-10_20-32-21.jpg)
+
+
+
+
+
+
+
+- 另一种实现:
+
+维护一个最小优先队列，其中存储的是顶点
+
+![Xnip2022-05-10_20-38-28](Algorithm Fourth.assets/Xnip2022-05-10_20-38-28.jpg)
+
+
+
+
+
+- 使用索引优先队列，让索引与队列中的元素进行对应，需要一个中间数组进行位置转换(数组qp)
+
+![Xnip2022-05-10_20-45-10](Algorithm Fourth.assets/Xnip2022-05-10_20-45-10.jpg)
+
+
+
+- 因为Prim算法需要依赖优先队列，所以最终操作的用时取决于优先队列的实现:
+
+![Xnip2022-05-10_20-48-14](Algorithm Fourth.assets/Xnip2022-05-10_20-48-14.jpg)
+
+<hr>
+
+
+
+
+
+
+
+# 十四、最短路径
+
+问题: 给你一个加权有向图，找出两点之间的最短路径
+
+![Xnip2022-05-11_17-47-34](Algorithm Fourth.assets/Xnip2022-05-11_17-47-34.jpg)
+
+
+
+应用:
+
+![Xnip2022-05-11_17-49-25](Algorithm Fourth.assets/Xnip2022-05-11_17-49-25.jpg)
+
+
+
+## 1. API
+
+
+
+实现一个有向边类:
+
+![Xnip2022-05-11_17-50-19](Algorithm Fourth.assets/Xnip2022-05-11_17-50-19.jpg)
+
+
+
+![Xnip2022-05-11_17-50-51](Algorithm Fourth.assets/Xnip2022-05-11_17-50-51.jpg)
+
+
+
+实现加权有向边类:
+
+![Xnip2022-05-11_17-51-44](Algorithm Fourth.assets/Xnip2022-05-11_17-51-44.jpg)
+
+
+
+- 加上临近顶点列表:
+
+![Xnip2022-05-11_17-53-05](Algorithm Fourth.assets/Xnip2022-05-11_17-53-05.jpg)
+
+
+
+实现最短路径的框架:
+
+![Xnip2022-05-11_17-53-47](Algorithm Fourth.assets/Xnip2022-05-11_17-53-47.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 2. SPT(Shortest Path Tree)
+
+
+
+### 1) 单源最短路径数据结构
+
+- 其中`distTo[v]`表示从起点s到终点v的最短距离
+- `edgeTo[v]`代表从起点s到终点v最短路径中的最后一条边
+
+![Xnip2022-05-11_20-43-27](Algorithm Fourth.assets/Xnip2022-05-11_20-43-27.jpg)
+
+<hr>
+
+
+
+
+
+
+
+### 2) 边松弛(Edge relaxation)
+
+- 在搜索过程中，一旦出现更短的路径，则更新`distTo`和`edgeTo`数组中对应的元素
+
+![Xnip2022-05-11_20-47-32](Algorithm Fourth.assets/Xnip2022-05-11_20-47-32.jpg)
+
+
+
+Implement:
+
+![Xnip2022-05-11_20-48-15](Algorithm Fourth.assets/Xnip2022-05-11_20-48-15.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 最短路径最佳条件
+
+- 将起点对应的`distTo[s]`设置为0
+- 保证从v -> w中，起点到终点w的距离`distTo[w]` ≤ 起点到另一个端点的距离`distTo[v]` + v到w这条边的权重
+- 如果出现`distTo[w]` > `distTo[v]` + `e.weight()`的情况，更新`distTo[w]`
+
+![Xnip2022-05-11_20-55-15](Algorithm Fourth.assets/Xnip2022-05-11_20-55-15.jpg)
+
+<hr>
+
+
+
+
+
+
+
+### 4) 通用最短路径算法
+
+- 将起点位置的距离初始化为0，将其他位置的距离初始化为+∞
+- 重复之前的最佳条件，直到松弛所有的边
+
+![Xnip2022-05-11_20-56-37](Algorithm Fourth.assets/Xnip2022-05-11_20-56-37.jpg)
 
 
 

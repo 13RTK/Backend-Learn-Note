@@ -1088,7 +1088,7 @@ result:
 
 ### 1. Basic
 
-属于java.long下，用于创建线程类
+属于java.lang下，用于创建线程类
 
 
 

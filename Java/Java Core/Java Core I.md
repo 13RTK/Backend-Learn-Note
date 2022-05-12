@@ -1958,7 +1958,653 @@ number007.salary += raise;
 
 #### (1) 静态域
 
-- 被定义为static的域，则为静态域
+- 被定义为static的域，则为静态域，其属于类，不属于任何独立的对象/实例
+
+<hr>
+
+
+
+
+
+#### (2) 静态方法
+
+- 静态方法不能向对象使用，也就是没有隐式参数
+
+> 可以认为静态方法就是没有this参数的方法
+
+
+
+静态方法不能访问实例域，因为它不能操作对象；但静态方法可以访问类中的静态域
+
+使用静态方法的两种情况:
+
+- 不需要访问对象状态(字段/域)，所有参数都是显式参数
+- 方法只需要反问类的静态域
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### (3) 工厂方法
+
+静态方法的一种常见用途:
+
+> 使用静态方法构造对象
+
+
+
+- 部分场景下，希望得到的对象实例和类名不同，所以需要使用静态工厂方法构造对象
+- 构造器无法改变构造的对象类型，工厂方法可以返回对应的子类
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+#### (4) main方法
+
+- main方法本身不对任何对象进行操作，其执行并创建对象
+
+
+
+
+
+
+
+Code:
+
+```java
+public class StaticTest {
+    public static void main(String[] args) {
+        Employee[] staff = new Employee[3];
+
+        staff[0] = new Employee("Tom", 40000);
+        staff[1] = new Employee("Dick", 60000);
+        staff[2] = new Employee("Harry", 65000);
+
+        for (Employee e : staff) {
+            e.setId();
+            System.out.println("name=" + e.getName() + ",id=" + e.getId() + ",salary=" + e.getSalary());
+        }
+
+        int n = Employee.getNextId();
+        System.out.println("Next available id=" + n);
+    }
+}
+
+class Employee {
+    private static int nextId = 1;
+    private String name;
+    private double salary;
+    private int id;
+
+    public Employee(String n, double s) {
+        name = n;
+        salary = s;
+        id = 0;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId() {
+        id = nextId;
+        nextId++;
+    }
+
+    public static int getNextId() {
+        return nextId;
+    }
+
+    public static void main(String[] args) {
+        Employee e = new Employee("Harry", 50000);
+        System.out.println(e.getName() + " " + e.getSalary());
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+## 4. 方法参数
+
+- 按值调用(call by value): 方法接收的是调用者提供的值
+- 按引用调用(call by reference): 方法接收的是提供的变量地址
+
+> Java总是按值传递的
+
+
+
+
+
+Java中方法参数总结:
+
+- 方法不能修改基本数据类型的参数
+- 方法可以改变一个对象参数的状态(域)
+- 方法不能让对象参数引用出一个新的对象
+
+Code:
+
+```java
+import java.util.logging.Handler;
+
+public class ParamTest {
+    public static void main(String[] args) {
+        System.out.println("Testing tripleValue:");
+        double percent = 10;
+        System.out.println("Before: percent=" + percent);
+        tripleValue(percent);
+        System.out.println("After percent=" + percent);
+
+
+        System.out.println("\nTesting tripleSalary:");
+        Employee harry = new Employee("Harry", 50000);
+        System.out.println("Before: salary=" + harry.getSalary());
+        tripleSalary(harry);
+        System.out.println("After salary=" + harry.getSalary());
+
+
+        System.out.println("\nTest swap:");
+        Employee a = new Employee("Alice", 70000);
+        Employee b = new Employee("Bob", 60000);
+        System.out.println("Before: a=" + a.getName());
+        System.out.println("Before: b=" + b.getName());
+        swap(a, b);
+        System.out.println("After: a=" + a.getName());
+        System.out.println("After: b=" + b.getName());
+    }
+
+    public static void tripleValue(double x) {
+        x = 3 * x;
+        System.out.println("End of method: x=" + x);
+    }
+
+    public static void tripleSalary(Employee x) {
+        x.raiseSalary(200);;
+        System.out.println("End of method: salary=" + x.getSalary());
+    }
+
+    public static void swap(Employee x, Employee y) {
+        Employee temp = x;
+        x = y;
+        y = temp;
+        System.out.println("End of method: x=" + x.getName());
+        System.out.println("End of method: y=" + y.getName());
+    }
+}
+
+class Employee {
+    private String name;
+    private double salary;
+
+    public Employee(String n, double s) {
+        name = n;
+        salary = s;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = salary * byPercent / 100;
+        salary += raise;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 5. 对象构造
+
+
+
+### 1) 重载
+
+> 如果多个方法有相同的名字、不同的参数，便产生了重载
+
+- 编译器通过不同方法的参数类型，以及方法调用使用的值类型来挑选出对应的方法
+
+
+
+> 要完整描述一个方法，需要指出方法名和参数类型，其称为方法签名(signature)
+
+- 方法名相同，则参数类型或者数量不同才能进行重载
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 默认域初始化
+
+- 类的域会被赋予初始值
+- 而局部变量则不会
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 无参数构造器
+
+- 如果一个类中没有构造器，则系统会提供一个无参数的构造器，其将所有的域都设置为默认值
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 初始化块
+
+初始化数据域的方法:
+
+- 在构造器中设置值
+- 域的声明中设置值
+- 初始化块(initialization block)
+
+只要构造类的对象，初始化块就会执行；一般都用构造器而不是初始化块
+
+
+
+- 对于静态域进行初始化，需要使用静态初始化块
+- 静态域在类第一次加载的时候就会进行初始化
+
+
+
+Code:
+
+```java
+import java.util.Random;
+
+public class Contstructor {
+    public static void main(String[] args) {
+        Employee[] staff = new Employee[3];
+
+        staff[0] = new Employee("Harry", 40000);
+        staff[1] = new Employee(60000);
+        staff[2] = new Employee();
+
+        for (Employee e : staff) {
+            System.out.println("name=" + e.getName() + ",id=" + e.getId() + ",salary=" + e.getSalary()); 
+        }
+    } 
+}
+
+class Employee {
+    private static int nextId;
+    private int id;
+    private String name = "";
+    private double salary;
+
+    static {
+        Random generator = new Random();
+        nextId = generator.nextInt(10000);
+    }
+
+    {
+        id = nextId;
+        nextId++;
+    }
+
+    public Employee(String n, double s) {
+        name = n;
+        salary = s;
+    }
+
+    public Employee(double s) {
+        this("Employee #" + nextId, s);
+    }
+
+    public Employee() {
+
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    public int getId() {
+        return id;
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 6. 包
+
+- 使用包的主要原因: 确保类名的唯一性
+
+
+
+
+
+### 1) 类的导入
+
+访问其他包中的公有类的方法:
+
+1. 在类中中添加完整的包名
+2. 使用`import`
+
+可以使用`*`表示导入包内的所有类(明确指出导入的类可读性较好)
+
+
+
+
+
+如果导入的两个包中有同名的类，则需要指明导入的类:
+
+```java
+import java.util.*;
+import java.sql.*;
+import java.util.Date;
+```
+
+
+
+如果两个类都需要使用，那么需要在类名前添加完整的包名:
+
+```java
+java.util.Date deadline = new java.util.Date();
+java.sql.Date today = new java.sql.Date();
+```
+
+编译器通过完整的包名类定位类
+
+<hr>
+
+
+
+
+
+
+
+### 2) 静态导入
+
+`import`语句还可以导入静态方法和静态域
+
+
+
+```java
+import static java.lang.System.*;
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 将类放入包中
+
+- 将包的名字放在源文件的开头，就可以将类放在包中
+
+
+
+> 如果在源文件中放置package语句，则会放在一个默认的包中(一个没有名字的包)
+
+
+
+编译器对文件进行操作(带有文件分割符和.java文件)
+
+解释器加载类(带有.)
+
+![IMG_EE16EC9AB8C6-1](JavaCore I.assets/IMG_EE16EC9AB8C6-1.jpeg)
+
+
+
+Code:
+
+PackageTest.java:
+
+```java
+
+import static java.lang.System.*;
+import third.PackageTest.com.horstmann.corejava.Employee;
+
+public class PackageTest {
+    public static void main(String[] args) {
+        Employee harry = new Employee("Harry Hacker", 50000, 1989, 10, 1);
+
+        harry.raiseSalary(5);
+
+        out.println("name=" + harry.getName() + ",salary=" + harry.getSalary());
+    }
+}
+
+```
+
+
+
+Employee.java:
+
+```java
+package third.PackageTest.com.horstmann.corejava;
+
+import java.time.LocalDate;
+
+public class Employee {
+    private String name;
+    private double salary;
+    private LocalDate hireDay;
+
+    public Employee(String name, double salary, int year, int month, int day) {
+        this.name = name;
+        this.salary = salary;
+        hireDay = LocalDate.of(year, month, day);
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public double getSalary() {
+        return this.salary;
+    }
+
+    public LocalDate getHireDay() {
+        return this.hireDay;
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = salary * byPercent / 100;
+        salary += raise;
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 包作用域
+
+- 标记为public: 可以被任意类使用
+- 标记为private: 只能被定义它们的类使用
+- 没有标记: 只能被同一个包中的方法访问
+
+
+
+> 从JDK1.2开始，禁止加载用户自定义的、包名以`java.`开始的类
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 5. 文档注释
+
+- 文档注释与源代码位于同一个文件中
+
+
+
+### 1) 方法注释
+
+方法注释的标记:
+
+- @param: 变量
+- @return: 描述
+- @throws: 表示方法可能抛出的异常
+
+<hr>
+
+
+
+
+
+
+
+### 2) 域注释
+
+只对静态常量建立文档
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 通用注释
+
+
+
+类文档注释标记:
+
+@author: 姓名
+
+@version: 当前的版本描述
+
+@since: 文本
+
+@deprecated: 表示当前类不再使用
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 6. 类设计
+
+1. 保证数据私有化(不要破坏封装性)
+2. 要对数据进行初始化
+3. 不要使用过多的基本类型
+4. 为需要的域设置访问器和修改器
+5. 类的职责要明确
+6. 类名和方法名要明确反应出其作用
+7. 优先使用不可变的类
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
