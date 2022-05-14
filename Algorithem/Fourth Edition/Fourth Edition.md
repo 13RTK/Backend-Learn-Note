@@ -6947,6 +6947,120 @@ Eg:
 
 ![Xnip2022-05-12_21-30-34](Algorithm Fourth.assets/Xnip2022-05-12_21-30-34.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+## 5. 负数边
+
+
+
+### 1) 问题
+
+- 如果图中存在权重为负数的边，那么Dijkstra算法就无效了
+
+![Xnip2022-05-13_20-47-09](Algorithm Fourth.assets/Xnip2022-05-13_20-47-09.jpg)
+
+
+
+负数环:
+
+- 一个边的权重和为负数的有向环
+
+![Xnip2022-05-13_20-49-55](Algorithm Fourth.assets/Xnip2022-05-13_20-49-55.jpg)
+
+<hr>
+
+
+
+
+
+
+
+### 2) Solution
+
+- Bellman-Ford算法
+
+
+
+Principle:
+
+- 将起始位置对应的距离初始化为0，将其余点的距离初始化为+∞
+- 对所有的点进行边松弛
+
+![Xnip2022-05-13_20-53-10](Algorithm Fourth.assets/Xnip2022-05-13_20-53-10.jpg)
+
+
+
+Demo:
+
+![Xnip2022-05-13_20-55-11](Algorithm Fourth.assets/Xnip2022-05-13_20-55-11.jpg)
+
+
+
+![Xnip2022-05-13_20-56-03](Algorithm Fourth.assets/Xnip2022-05-13_20-56-03.jpg)
+
+
+
+### 3) 用时
+
+E * V(图中没有负数环)
+
+
+
+求最短路径的用时:
+
+![Xnip2022-05-13_21-06-01](Algorithm Fourth.assets/Xnip2022-05-13_21-06-01.jpg)
+
+有向环、负数边、负数环都会让问题变得困难
+
+<hr>
+
+
+
+
+
+
+
+### 4) 最短路径问题总结
+
+- Dijikstra:
+
+当没有权重为负数的边的时候，接近线性时间
+
+核心思想和推广至DFS, BFS和Prim
+
+
+
+- 无环加权有向图
+
+比Dijkstra要快
+
+可以解决存在权重为负数的边的情况
+
+
+
+- Bellman-Ford
+
+不存在负数环时可以解决
+
+<hr>
+
+
+
+
+
+
+
+
+
+
 
 
 
