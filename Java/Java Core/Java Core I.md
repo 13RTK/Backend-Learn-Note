@@ -2919,6 +2919,104 @@ Code:
 
 
 
+Main/PersonTest:
+
+```java
+
+public class PersonTest {
+    public static void main(String[] args) {
+        Person[] people = new Person[2];
+
+        people[0] = new Employee("Harry Hacker", 50000, 1989, 10, 1);
+        people[1] = new Student("Maria Morris", "computer science");
+
+        for (Person p : people) {
+            System.out.println(p.getName() + ", " + p.getDescription()); 
+        }
+    }    
+}
+
+```
+
+
+
+Person:
+
+```java
+public abstract class Person {
+    public abstract String getDescription();
+    private String name;
+
+    public Person(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+}
+```
+
+
+
+Student:
+
+```java
+public class Student extends Person {
+    private String major;
+    
+    public Student(String name, String major) {
+        super(name);
+        this.major = major;
+    }
+
+    @Override
+    public String getDescription() {
+        return "a student majoring in " + major;
+    }
+}
+
+```
+
+
+
+Employee:
+
+```java
+import java.time.LocalDate;
+
+public class Employee extends Person {
+    private double salary;
+    private LocalDate hireDay;
+
+    public Employee(String name, double salary, int year, int month, int day) {
+        super(name);
+        this.salary = salary;
+        this.hireDay = LocalDate.of(year, month, day);
+    }
+
+    public double getSalary() {
+        return this.salary;
+    }
+
+    public LocalDate getHireday() {
+        return this.hireDay;
+    }
+
+    @Override
+    public String getDescription() {
+        return String.format("an employee with a salary of $%.2f", salary);
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = salary * byPercent / 100;
+        this.salary += raise;
+    }
+}
+
+```
+
+<hr>
 
 
 
@@ -2928,6 +3026,377 @@ Code:
 
 
 
+### 10) 受保护的访问
+
+- 声明为private的内容对任何其他类都是不可见的
+
+
+
+> 有时希望超类中的方法/域能够被子类访问，此时将这些方法/域声明为`protected`
+
+
+
+访问修饰符:
+
+1. private: 只对本类可见
+2. public: 对所有类可见
+3. protected: 对本类和子类可见
+4. 默认(无修饰符): 对本包可见
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 2. 所有类的超类(Object)
+
+- 如果一个类没有明确指定超类，则Object就是它的超类
+- `Object`类型的对象变量可以引用任何类型的对象
+- 所有的数组类型也是`Object`类的子类
+
+<hr>
+
+
+
+
+
+
+
+### 1) equals方法
+
+- `Object`类中的`equals`方法用于检测一个对象是否等于另一个对象，检测方法是判断两个对象是否具有相同的引用
+
+> 但对大多数类来说，判断引用相同意义不大
+>
+> 通常需要检测两个对象的状态是否相等(即对象中的域值集合)
+
+
+
+- 判断的大致步骤:
+    1. 通过`getClass`方法判断两个对象是否属于同一个类
+    2. 调用超类的`equals`方法，再比较子类的域
+    3. 如果字段为引用类型，则需要使用`Objects.equals`方法以防字段为`null`
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 相等测试/继承
+
+
+
+`equals`方法需要具有的特性:
+
+1. 自反性: x.equals(x)应该返回true(x != null)
+2. 对称性: 如果y.equals(x)为true，则x.equals(y)也以应该返回true
+3. 传递性: 如果x.equals(y) == true且y.equals(z) == true，则x.euqals(z) == true
+4. 一致性: 只要x和y的引用对象不变，则反复调用x.equals(y)的结果应该不变
+5. 对于非空引用x，x.euqals(null)返回false
+
+
+
+编写`equals`方法的建议:
+
+1. 显示参数命名为`otherObject`
+2. 检测隐式参数`this`和`otherObeject`是否引用同一个对象
+3. 检测显示显示参数是否为null，如果是则返回false
+4. 检测`this`和`otherObject`是否属于同一个类(使用`getClass`)
+5. 将`otherObject`转换为对应的类型变量(因为方法中定义的是Object)
+6. 对所有需要比较的域进行比较，使用 == 比较基础类型域，使用`equals`方法比较对象域(引用类型)
+7. 在子类中定义`equals`方法时，需要调用超类的`equals`方法
+
+
+
+
+
+其余equals方法:
+
+
+
+java.util.Arrays
+
+- static Boolean equals(type[] a, type[] b): 比较两个数组中对应位置的元素是否相等
+
+
+
+java.util.Objects
+
+- static boolean equals(Object a, Object b): 如果都为null返回true，其中一个为null则返回false
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) hashCode方法
+
+散列码没有规律，两个不同的对象生成的散列码基本不会相等
+
+
+
+- `StringBuilder`类中没有定义`hashCode`方法，所以其计算散列码的方式是调用`Object`类中的`hashCode`方法，导出对象的存储地址
+
+
+
+自定义hashCode方法:
+
+- 首先使用`Objects`类中的`hashCode`方法避免对象为null时进行无谓计算
+- 对于基础类型，使用对应包装类的hashCode方法(在JDK9中被抛弃):
+
+```java
+Double.hashCode(salary)
+```
+
+- 可以使用`Objects`类中的`hashCode`方法并传入多个参数，这样可以对各个参数依次调用`Objects.hashCode`方法，并组合这些散列值
+
+```java
+Objects.hash(col1, col2, col3...);
+```
+
+- 如果域为数组类型，则使用`Arrays.hashCode`方法即可
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) toString方法
+
+- 只要对象和一个字符通过操作符"+"连接起来，编译时就会自动调用toString方法，以获取该对象的字符串描述
+- `Object`类中的`toString`方法会输出对象所属的类名和散列码
+- 数组类型并未重写`toString`方法
+
+
+
+Code:
+
+
+
+Main:
+
+```java
+
+public class EqualsTest {
+    public static void main(String[] args) {
+        Employee alice1 = new Employee("Alice Adams", 75000, 1987, 12, 15);
+        Employee alice2 = alice1;
+        Employee alice3 = new Employee("Alice Adams", 75000, 1987, 12, 15);
+        Employee bob = new Employee("Bob Brandson", 50000, 1989, 10, 1);
+
+        System.out.println("alice1 == alice2: " + (alice1 == alice2));
+
+        System.out.println("alice1 == alice3: " + (alice1 == alice3));
+
+        System.out.println("alice1.equals(alice3): " + alice1.equals(alice3));
+
+        System.out.println("alice1.equals(bob): " + alice1.equals(bob));
+
+        System.out.println("bob.toString()" + bob);
+    
+        Manager carl = new Manager("Carl Cracker", 80000, 1987, 12, 15);
+        Manager boss = new Manager("Carl Cracker", 80000, 1987, 12, 15);
+        boss.setBouns(5000);
+        System.out.println("boss.toString(): " + boss.toString());
+        System.out.println("carl.equals(boss): " + carl.equals(boss));
+        System.out.println("alice1.hashCode(): " + alice1.hashCode());
+        System.out.println("alice3.hashCode(): " + alice3.hashCode());
+        System.out.println("bob.hashCode(): " + bob.hashCode());
+        System.out.println("carl.hashCode()" + carl.hashCode());
+    }    
+}
+
+```
+
+
+
+Employee:
+
+```java
+import java.time.LocalDate;
+import java.util.Objects;
+
+public class Employee {
+    private String name;
+    private double salary;
+    private LocalDate hireDay;
+    
+    public Employee(String name, double salary, int year, int month, int day) {
+        this.name = name;
+        this.salary = salary;
+        this.hireDay = LocalDate.of(year, month, day);
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public double getSalary() {
+        return this.salary;
+    }
+
+    public LocalDate getHireDay() {
+        return this.hireDay;
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = this.salary * byPercent / 100;
+        this.salary += raise;
+    }
+
+    @Override
+    public boolean equals(Object otherObject) {
+        if (this == otherObject) {
+            return true;
+        }
+
+        if (otherObject == null) {
+            return false;
+        }
+
+        if (this.getClass() != otherObject.getClass()) {
+            return false;
+        }
+
+        Employee other = (Employee) otherObject;
+
+        return Objects.equals(name, other.name) && salary == other.salary
+         && Objects.equals(this.hireDay, other.hireDay);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.name, this.salary, this.hireDay);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "[name=" + name + ",salary=" + salary + ",hireDay=" + hireDay+ "]";
+    }
+}
+
+```
+
+
+
+Manager:
+
+```java
+
+public class Manager extends Employee {
+    private double bonus;
+    
+    public Manager(String name, double salary, int year, int month, int day) {
+        super(name, salary, year, month, day);
+        this.bonus = 0;
+    }
+
+    @Override
+    public double getSalary() {
+        double baseSalary = super.getSalary();
+        return baseSalary + this.bonus;
+    }
+
+    public void setBouns(double bonus) {
+        this.bonus = bonus;
+    }
+
+    public boolean equals(Object otherObject) {
+        if (!super.equals(otherObject)) {
+            return false;
+        }
+
+        Manager other = (Manager) otherObject;
+        return bonus == other.bonus;
+    }
+
+    public int hashCode() {
+        return super.hashCode() + 17 * Double.valueOf(this.bonus).hashCode();
+    }
+
+    public String toString() {
+        return super.toString() + "[bonus=" + bonus + "]";
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+## 3. 泛型数组列表
+
+- 如果没有错误，则将所有类型化数组列表转换成原始ArrayList对象(不带泛型)
+- 所以类型转换(ArrayList)和(ArrayList<Employee>)将执行相同的运行检查
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 4. 对象包装器/自动装箱
+
+当需要将基本类型转换为对象，则需要使用包装器(wrapper)，对应的对象包装器类:
+
+Integer, Long, Float, Double, Short, Byte, Character, Void, Boolean(前六个都继承自`Number`超类)
+
+> 对象包装器类都是final修饰的，所以不能定义它们的子类
+>
+> 泛型中的类型参数不能为基本类型，但可以使用对应的包装类
+
+
+
+- 自动拆装箱只是编译器认可的，而不是虚拟机
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 5. 可变参数
 
 
 
