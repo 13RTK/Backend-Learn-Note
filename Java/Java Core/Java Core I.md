@@ -3396,7 +3396,140 @@ Integer, Long, Float, Double, Short, Byte, Character, Void, Boolean(前六个都
 
 
 
-### 5. 可变参数
+## 5. 可变参数
+
+Java SE5.0之前，方法的参数个数都是固定的，现在可以使用可变的参数数量
+
+- 使用`...`可以表示可变参数，其本质上和对应类型的数组参数一样，编译器每次都会将该可变参数绑定到数组上
+
+> 可变参数只允许出现在参数列表中的最后一个位置处
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6. 枚举类
+
+
+
+示例:
+
+```java
+public enum Size {
+  SMALL("S"),
+  MEDIUM("M"),
+  LARGE("L"),
+  EXTRA_LARGE("XL");
+  
+  ...
+}
+```
+
+
+
+- 所有枚举类都是`Enum`类的子类，该类中的`toString`方法可以返回枚举常量
+- 逆方法是`valueOf`
+- 通过静态的`values`方法可以返回包含所有枚举值的数组
+- `ordinal`方法返回枚举常量在声明中的位置(从0开始)
+
+
+
+
+
+
+
+
+
+Code:
+
+```java
+import java.util.Scanner;
+
+public class EnumTest {
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter a size: (SMALL, MEDIUM, LARGE, EXTRA_LARGE) ");
+        String input = in.next().toUpperCase();
+        Size size = Enum.valueOf(Size.class, input);
+
+        System.out.println("size=" + size);
+        System.out.println("abbreviation=" + size.getAbbreviation());
+        if (size == Size.EXTRA_LARGE) {
+            System.out.println("Good job--you paid attion to the _.");
+        }
+    }
+}
+
+enum Size {
+    SMALL("S"),
+    MEDIUM("M"),
+    LARGE("L"),
+    EXTRA_LARGE("XL");
+
+    private String abbreviation;
+
+    private Size(String abbreviation) {
+        this.abbreviation = abbreviation;
+    }
+
+    public String getAbbreviation() {
+        return this.abbreviation;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 7. 反射
+
+分析类即为反射(reflective)
+
+
+
+反射机制的作用:
+
+- 运行时分析类的能力
+- 运行时查看对象
+- 实现通用的数组操作
+- 利用Method对象(类似C中的指针)
+
+<hr>
+
+
+
+
+
+
+
+### 1) Class类
+
+
+
+
+
+
+
+
 
 
 
