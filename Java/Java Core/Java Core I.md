@@ -3523,6 +3523,568 @@ enum Size {
 
 ### 1) Class类
 
+所以的对应都有一个运行时的类型标识，该信息用来跟踪每个对象所属的类
+
+> 可以通过专门的Java类来访问这些信息，这个类就叫`Class`
+
+
+
+对于任意一个类名调用静态的`getClass`方法可以获得一个`Class`类型的实例
+
+- 通过`Class`类型实例调用`getName`方法可以获取该`Class`实例对应的类名(包含包名)
+
+
+
+也可以直接使用`Class`中的静态方法`forName`直接加载对应类的路径字符串(完整包名)来获取对应的`Class`实例(如果字符非法会抛出异常)
+
+
+
+可以直接在类上调用其静态域`class`从而获取对应的`Class`实例
+
+
+
+获取Class实例的3种方法总结:
+
+1. 在类上调用`getClass`方法
+2. 使用`Class`类中静态的`forName`方法
+3. 通过对应的类调用`class`域
+
+
+
+- Class类实际上是一个泛型类
+- 可以通过`Class`使用`newInstance()`方法来动态创建一个对应类的实例对象(调用默认的空参构造方法)，如果类中没有默认的构造器，则会报错
+- 如果想要创建实例时提供参数，则需要使用`Constructor`类中的`newInstance`方法
+
+
+
+> 注意: `Class`类中的`newInstance`方法在JDK9中被遗弃了
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 捕获异常
+
+
+
+异常的种类:
+
+- 未检查/非检查异常: 不会检查处理器
+- 已检查异常: 会检查是和否提供了处理器(try catch)
+
+
+
+处理器/异常捕获:
+
+- 将可能出现**已检查异常的代码**放入`try`块中，然后在`catch`子句中提供处理器代码
+
+```java
+try {
+  statement might throw exception
+} catch (Exception e) {
+  e.printStackTrace();
+}
+```
+
+
+
+- 如果`try`块中没有出现异常，则执行完成后会跳过`catch`块中的内容
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 利用反射分析类
+
+反射最重要的内容: 检查类的结构
+
+
+
+在`java.lang.reflect`包中，有`Field`，`Method`，`Constructor`三个类分别用来描述类的域、方法和构造器
+
+- 其中的`getName`方法可以返回对应的域名称、方法名、构造器名
+- `Field`类中的`getType`方法可以返回描述当前域对应类型的一个`Class`实例
+- 它们都能够通过`getModifiers`方法获取其对应的修饰符情况
+
+
+
+`Class`类中的方法(返回的项目中包含超类的内容):
+
+- getFields: 返回类提供的所有`public`域
+- getMethods: 返回所有的`public`方法
+- getConstructors: 返回所有的`public`构造器
+
+
+
+不包含超类中的内容:
+
+- getDeclareFields: 返回所有的域
+- getDeclareMethods: 返回所有的方法
+- getDeclareConstructors: 返回所有的构造器
+
+
+
+Code:
+
+```java
+import java.util.*;
+import java.lang.reflect.*;
+
+public class ReflectionTest {
+    public static void main(String[] args) {
+        String name;
+        
+        if (args.length > 0) {
+            name = args[0];
+        } else {
+            Scanner in = new Scanner(System.in);
+            System.out.println("Enter class name (e.g. java.util.Date): ");
+            name = in.next();
+        }
+
+        try {
+            Class cl = Class.forName(name);
+            Class supercl = cl.getSuperclass();
+            String modifiers = Modifier.toString(cl.getModifiers());
+
+            if (modifiers.length() > 0) {
+                System.out.print(modifiers + " ");
+            }
+            System.out.print("class " + name);
+
+            if (supercl != null && supercl != Object.class) {
+                System.out.println(" extend " + supercl.getName());
+            }
+
+            System.out.println("\n{\n");
+            printConstructors(cl);
+            System.out.println();
+            printMethod(cl);
+            System.out.println();
+            printFields(cl);;
+            System.out.println("}");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        System.exit(0);
+    }
+
+    public static void printConstructors(Class cl) {
+        Constructor[] constructors =  cl.getDeclaredConstructors();
+
+        for (Constructor c : constructors) {
+            String name = c.getName();
+            System.out.print("   ");
+            String modifiers = Modifier.toString(c.getModifiers());
+
+            if (modifiers.length() > 0) {
+                System.out.println(modifiers + " ");
+            }
+
+            System.out.println(name + "(");
+
+            Class[] paramTypes = c.getParameterTypes();
+            for (int idx = 0; idx < paramTypes.length; idx++) {
+                if (idx > 0) {
+                    System.out.println(", ");;
+                    System.out.println(paramTypes[idx].getName());
+                }
+            }
+
+            System.out.println(");");
+        }
+    }
+
+    public static void printMethod(Class cl) {
+        Method[] methods = cl.getDeclaredMethods();
+
+        for (Method m : methods) {
+            Class retType = m.getReturnType() ;
+            String name = m.getName();
+
+            System.out.println("  ");
+
+            String modifiers = Modifier.toString(m.getModifiers());
+            if (modifiers.length() > 0) {
+                System.out.println(modifiers + " ");
+            }
+
+            System.out.println(retType.getName() + " " + name + "(");
+
+            Class[] paramTypes = m.getParameterTypes();
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (i > 0)  {
+                    System.out.println(", ");
+                }
+
+                System.out.println(paramTypes[i].getName());
+            }
+            System.out.println(");");
+        }
+    }
+
+    public static void printFields(Class cl) {
+        Field[] fields = cl.getDeclaredFields();
+
+        for (Field f : fields) {
+            Class type = f.getType();
+            String name = f.getName();
+            System.out.println("    "); 
+            String modifiers = Modifier.toString(f.getModifiers());
+
+            if (modifiers.length() > 0) {
+                System.out.println(modifiers + "   ");
+            }
+
+            System.out.println(type.getName() + " " + name + ";");
+        }
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 分析实例
+
+通过反射查看对象的域信息的步骤:
+
+- 获取对应类的`Class`实例
+- 通过该实例调用`getDeclaredFields`方法获取所有的域
+- 通过对应的域实例，调用`get`方法并传入需要查看的实例引用即可
+
+
+
+- 如果对应的域是一个私有域，则在调用`get`方法之前需要先调用`setAccessible`方法(对于Field, Method, Constructor都适用)
+
+
+
+Code:
+
+
+
+Main:
+
+```java
+import java.util.ArrayList;
+
+public class ObjectAnalyzerTest {
+    public static void main(String[] args) {
+        ArrayList<Integer> squares = new ArrayList<>();
+        for (int i = 0; i <= 5; i++) {
+            squares.add(i * i);
+        }
+
+        System.out.println(new ObjectAnalyzer().toString(squares));
+    }    
+}
+```
+
+
+
+ObjectAnalyzer:
+
+```java
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+
+import javax.print.attribute.standard.Fidelity;
+
+public class ObjectAnalyzer {
+    private ArrayList<Object> visited = new ArrayList<>();
+
+    public String toString(Object obj) {
+        if (obj == null) {
+            return "null";
+        }
+
+        if (visited.contains(obj)) {
+            return "...";
+        }
+
+        visited.add(obj);
+        Class cl = obj.getClass();
+        if (cl == String.class) {
+            return (String) obj;
+        }
+
+        if (cl.isArray()) {
+            String r = cl.getComponentType() + "[]{";
+            for (int i = 0; i < Array.getLength(obj); i++) {
+                if (i > 0) {
+                    r += ",";
+                }
+                Object val = Array.get(obj, i);
+
+                if (cl.getComponentType().isPrimitive()) {
+                    r += val;
+                } else {
+                    r += toString(val);
+                }
+            }
+
+            return r + "}";
+        }
+
+        String r = cl.getName();
+
+        do {
+            r += "[";
+            Field[] fields = cl.getDeclaredFields();
+            AccessibleObject.setAccessible(fields, true);
+
+            for (Field f : fields) {
+                if (!Modifier.isStatic(f.getModifiers())) {
+                    if (!r.endsWith("[")) {
+                        r += ",";
+                    }
+
+                    r += f.getName() + "=";
+
+                    try {
+                        Class t = f.getType();
+                        Object val = f.get(obj);
+                        if (t.isPrimitive()) {
+                            r += val;
+                        } else {
+                            r += toString(val);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            r += "]";
+            cl = cl.getSuperclass();
+        } while (cl != null);
+
+        return r;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 使用反射编写泛型数组
+
+如果想要编写一个适合任意类型的数组扩容方法，在不使用反射的情况下只能使用`Object`数组引用，但`Object`数组不能转换会之前的类型
+
+- 为了解决这个问题，我们可以使用`Array`类中的静态方法`newInstance`，只需要传入数组元素的类型和数组的长度即可
+
+
+
+步骤:
+
+- 获取该数组的`Class`实例
+- 确定其是一个数组(`isArray`方法)
+- 使用`Class`实例的`getComponentType`方法确定数组中元素的类型
+
+
+
+Code:
+
+```java
+import java.lang.reflect.*;
+import java.rmi.server.ObjID;
+import java.util.*;
+
+public class CopyOfTest {
+    public static void main(String[] args) {
+        int[] a = {1, 2, 3};
+        a = (int[]) goodCopyOf(a, 10);
+        System.out.println(Arrays.toString(a));
+
+        String[] b = {"Tom", "Dick", "Harry"};
+        b = (String[]) goodCopyOf(b, 10);
+        System.out.println(Arrays.toString(b));
+
+        System.out.println("The following call will generate an exception.");
+        b = (String[]) badCopyOf(b, 10);
+    }
+
+    public static Object[] badCopyOf(Object[] a, int newLength) {
+        Object[] newArray = new Object[newLength];
+        System.arraycopy(a, 0, newArray, 0, Math.min(a.length, newLength));
+        return newArray;
+    }
+
+    public static Object goodCopyOf(Object a, int newLength) {
+        Class cl = a.getClass();
+        if (!cl.isArray()) {
+            return null;
+        }
+
+        Class componentType = cl.getComponentType();
+        int length = Array.getLength(a);
+        Object newArray = Array.newInstance(componentType, newLength);
+        System.arraycopy(a, 0, newArray, 0, Math.min(length, newLength));
+    
+        return newArray;
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 6) 调用任意方法
+
+- 利用`Method`类中的`invoke`方法可以调用包装在当前`Method`对象中的方法(即调用该方法)
+
+invoke的方法签名:
+
+```java
+Object invoke(Object obj, Object... args)
+```
+
+
+
+- 第一个参数为调用方法的实例，如果是静态方法，则设置为null即可
+- 后面的可变参数为传入方法的参数
+- 如果方法的返回类型为基本类型，则会返回对应的包装类实例
+
+
+
+获取对应的`Method`实例:
+
+- 通过`Class`实例调用`getDeclareMethods`方法，然后在返回的数组中进行查找，直到发现想要的方法为止
+
+
+
+
+
+
+
+Code:
+
+```java
+import java.lang.reflect.*;;
+
+public class MethodsTableTest {
+    public static void main(String[] args) throws Exception {
+        Method square = MethodsTableTest.class.getMethod("square", double.class);
+        Method sqrt = Math.class.getMethod("sqrt", double.class);
+
+        printTable(1, 10, 10, square);
+        printTable(1, 10, 10, sqrt);
+    }
+
+    public static double square(double x) {
+        return x * x;
+    }
+
+    public static void printTable(double from, double to, int n, Method f) {
+        System.out.println(f);
+        double dx = (to - from) / (n - 1);
+
+        for (double x = from; x <= to; x += dx) {
+            try {
+                double y = (Double) f.invoke(null, x);
+                System.out.printf("%10.4f | %10.4f%n", x, y);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+
+
+- 最好使用Java SE8中的lambda表达式，最好不要使用`Method`实例
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 8. 继承的设计
+
+
+
+设计继承关系的建议:
+
+1. 将公共操作的域放在超类
+2. 不要使用`protected`域
+3. 覆盖重写方法时，不要改变其预期行为
+4. 最好使用多态对象(便于维护和扩展)
+5. 不要过多使用反射
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 四、接口、lambda和内部类
+
+
+
+
+
 
 
 
