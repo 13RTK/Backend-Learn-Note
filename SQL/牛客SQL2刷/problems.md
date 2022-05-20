@@ -37,6 +37,7 @@ ORDER BY hire_date DESC
 LIMIT 1
 ```
 
+<hr>
 
 
 
@@ -46,12 +47,77 @@ LIMIT 1
 
 
 
+# 二、时间上倒数第三入职的员工
+
+![Xnip2022-05-20_07-49-13](problems.assets/Xnip2022-05-20_07-49-13.jpg)
+
+
+
+![Xnip2022-05-20_07-54-49](problems.assets/Xnip2022-05-20_07-54-49.jpg)
+
+题意:
+给你一张员工信息表，请查询出其中入职时间上倒数第三的员工
+
+
+
+思路:
+
+- 因为同一个入职时间可能存在多个员工，所以我们需要先获取倒数第三入职对应的时间，我们同样根据hire_date字段进行排序分页即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+		hire_date 
+FROM employees 
+GROUP BY hire_date
+ORDER BY hire_date DESC
+LIMIT 1 OFFSET 2
+```
+
+- 最后只需要查询出所有匹配该日期的记录即可(注意结果去重)，最终SQL如下
+
+```mysql
+SELECT
+    emp_no,
+    birth_date,
+    first_name,
+    last_name,
+    gender,
+    hire_date
+FROM
+    employees
+WHERE hire_date = (
+    SQL1
+)
+```
 
 
 
 
 
+优化:
 
+- 首先使用EXPLAIN查看执行计划，发现子查询和外部查询都使用全表扫描，没有用到索引
+- 且子查询需要使用临时表和文件排序
+
+![Xnip2022-05-20_08-01-02](problems.assets/Xnip2022-05-20_08-01-02.jpg)
+
+- 再查看JSON格式，发现开销为3.20
+
+![Xnip2022-05-20_08-00-37](problems.assets/Xnip2022-05-20_08-00-37.jpg)
+
+
+
+- 根据执行计划，我们的想办法将文件排序去除，从SQL上看，排序针对的是hire_date字段，所以我们只需要在该字段上建立索引即可
+- 此时再查看执行计划，发现文件排序和临时表都消失了
+
+![Xnip2022-05-20_08-02-33](problems.assets/Xnip2022-05-20_08-02-33.jpg)
+
+- 再查看开销，此时降为了1.20!
+
+
+![Xnip2022-05-20_08-02-16](problems.assets/Xnip2022-05-20_08-02-16.jpg)
 
 
 
