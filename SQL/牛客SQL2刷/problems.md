@@ -119,6 +119,60 @@ WHERE hire_date = (
 
 ![Xnip2022-05-20_08-02-16](problems.assets/Xnip2022-05-20_08-02-16.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 三、各部门领导薪水
+
+![Xnip2022-05-21_10-35-35](problems.assets/Xnip2022-05-21_10-35-35.jpg)
+
+
+
+![Xnip2022-05-21_10-35-45](problems.assets/Xnip2022-05-21_10-35-45.jpg)
+
+题意:
+
+给你一张薪资表，一张部门领导信息表，请你查询出其中所有部门对应的部门领导信息和薪资
+
+
+
+思路:
+
+- 很明显，我们只需要根据emp_no字段，进行一次内连接即可，最后根据emp_no排序就是了
+- 这条SQL的优化空间也很少，只需要在两张表的emp_no字段上建立索引即可(连接字段必须建立索引)，所以SQL如下
+
+```mysql
+SELECT
+    t1.emp_no,
+    t2.salary,
+    t2.from_date,
+    t2.to_date,
+    t1.dept_no
+FROM
+    dept_manager AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
+ORDER BY t1.emp_no
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 

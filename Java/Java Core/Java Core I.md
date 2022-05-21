@@ -4085,6 +4085,448 @@ public class MethodsTableTest {
 
 
 
+## 1. 接口
+
+
+
+### 1) 概念
+
+- 接口是对类的一些需求的描述，实现接口的类要按照接口的描述实现需求功能
+
+例子:
+
+`Arrays`类中的`sort`方法可以对对象数组进行排序，但要求满足条件:
+
+- 对象数组中的元素对应的类必须实现了`Comparable`接口
+
+
+
+Comparable接口:
+
+```java
+public interface Comparable {
+  int compareTo(Object other);
+}
+```
+
+- 任何实现`Comparable`接口的类都需要包含`compareTo`方法
+- Java SE5.0中，`Comparable`接口已经改进为了泛型类型
+
+
+
+- 接口中的所有方法都自动为`public`，所以在接口中声明方法时不需要提供关键字
+- 实例域和方法实现的任务一般由实现该接口的类来完成
+
+
+
+让类实现接口的步骤:
+
+1. 将类声明为实现对应的接口
+2. 实现接口中未定义的方法
+
+
+
+
+
+`Comparable`接口中的`compareTo`方法会出现的问题:
+
+- 如果两个数进行运算后，得出的数据超过了`int`的范围，那么需要调用静态的Integer.compare方法，或者通过大小比较返回-1或者1
+
+
+
+
+
+
+
+问题:
+
+为何不直接在`Employee`类中提供一个`compareTo`方法呢？
+
+
+
+sort方法中会存在的语句:
+
+```java
+if (a[i].compareTo(a[j]) > 0) {
+  ...
+}
+```
+
+- `sort`方法需要使用compareTo方法，所以a[i]必须有`compareTo`方法，保证其有`compareTo`方法的方式**就是保证其实现了Comparable接口**(是一个Comparable对象数组)，因为实现了该接口的话，必然就有`compareTo`方法
+
+
+
+
+
+Code:
+
+
+
+Main:
+
+```java
+import java.util.*;
+
+public class EmployeeSortTest {
+    public static void main(String[] args) {
+        Employee[] staff = new Employee[3];
+
+        staff[0] = new Employee("Harry Hacker", 35000);
+        staff[1] = new Employee("Carl Cracker", 75000);
+        staff[2] = new Employee("Tony Tester", 38000);
+        
+        Arrays.sort(staff);
+
+        for (Employee e : staff) {
+            System.out.println("name=" + e.getName() + ",salary=" + e.getSalary()); 
+        }
+    }
+}
+```
+
+
+
+Employee:
+
+```java
+public class Employee implements Comparable<Employee> {
+    private String name;
+    private double salary;
+    
+    public Employee(String name, double salary) {
+        this.name = name;
+        this.salary = salary;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = salary * byPercent / 100;
+        salary += raise;
+    }
+
+    @Override
+    public int compareTo(Employee other) {
+        return Double.compare(this.salary, other.salary);
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 接口的特性
+
+- 可以使用`instanceof`检查一个对象是否实现了某个特定的接口
+- 接口之间可以进行拓展:
+
+```java
+public interface Moveable {
+  void move(double x, double y);
+}
+
+public interface Powered extends Moveable {
+  double milesPerGallon();
+}
+```
+
+
+
+- 接口中可以包含常量，接口中的域会被自动设置为`public static final`
+
+```java
+public interface Powered extends Moveable {
+  double milesPerGallon;
+  double SPEED_LIMIT = 95;
+}
+```
+
+
+
+- Java中一个类只能继承一个超类，但可以实现多个接口
+- 实现了`Cloneable`接口的类，可以对该类实现克隆的能力
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 静态方法
+
+- Java SE 8开始，接口中可以添加静态方法，但有违接口抽象规范的初衷
+- 通常会将静态方法放在伴随类中: Collection/Collections和Path/Paths
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 默认方法
+
+- 使用`default`修饰符可以标记一个接口方法为默认方法
+- 默认方法可以不被实现类重写，默认方法可以调用任意其他方法
+
+
+
+接口演化(interface evolution):
+
+- 如果需要在一个接口中添加一个方法，但不想要目前实现它的其他类也一起做出修改，则将这个添加的方法设置为默认方法即可
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 5) 默认方法冲突
+
+- 接口中存在一个默认方法，而另一个超类/接口中存在同名方法，此时会产生二义性，解决的规则:
+    1. 超类优先: 超类有则先用超类的
+    2. 接口冲突: 如果多个接口中存在同名方法且参数类型相同，则必须**在实现类中重写这个方法**
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2. 接口示例
+
+
+
+
+
+### 1) Comparator接口
+
+
+
+场景:
+
+`String`类已经实现了`Comparable`接口，但如果我们还想按照字符串长度递增的顺序对字符串对象进行排序呢？我们无法修改`String`类，也无法实现两种`compareTo`方法
+
+
+
+- 此时需要使用`Arrays.sort`方法的第二个版本: 数组，比较器；比较器是`Comparator`接口的实例，Code:
+
+```java
+public interface Comparator<T> {
+  int compare(T first, T second);
+}
+```
+
+
+
+- 按照长度比较字符串，需要定义一个实现`Comparator<String>`接口的类:
+
+```java
+class LengthComparator implements Comparator<String> {
+  public int compare(String first, String second) {
+    return first.length() - second.length();
+  }
+}
+```
+
+- 然后需要创建一个实例，并传到`Arrays.sort`方法中作为比较器
+
+<hr>
+
+
+
+
+
+
+
+### 2) 对象克隆
+
+- 如果希望获取一个初始状态与既存对象相同的新对象，且两者的状态存储在不同位置，则需要使用`clone`方法
+- `clone`是`Object`的一个`protected`方法
+- 如果直接调用`Object`中的`clone`方法，则只能对每个域进行逐个拷贝，如果对象的域中含有对象引用，拷贝域就会得到相同的引用(地址值)，这样一来，原对象和克隆的对象依然会共享一些信息
+- 默认的`Object`类中的`clone`方法只是浅拷贝，并没有克隆对象中引用的其他对象
+
+
+
+- 要实现深拷贝，必须重写`clone`方法，对于每个类:
+    1. 默认的`clone`方法是否满足要求(浅拷贝)
+    2. 是否在可变域上调用`clone`来修补默认的`clone`方法
+    3. 是否应该使用`clone`
+
+如果选择前两者:
+
+1. 必须实现`Cloneable`接口
+2. 必须重写`clone`方法，并设置`public`访问修饰符
+
+
+
+
+
+- `Cloneable`接口只是一个标记，其并未提供`clone`方法
+- 如果选择浅拷贝，依然需要实现`Cloneale`接口，并重写`clone`方法，其中使用`super.clone()`即可
+
+
+
+Code:
+
+
+
+Main:
+
+```java
+
+public class CloneTest {
+    public static void main(String[] args) {
+        try {
+            Employee original = new Employee("John Q. Public", 5000);
+            original.setHireDay(2000, 1, 1);
+            Employee copy = original.clone();
+            copy.raiseSalary(10);
+            copy.setHireDay(2002, 12, 31);
+
+            System.out.println("original=" + original);
+            System.out.println("copy=" + copy);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }    
+}
+
+```
+
+
+
+Employee:
+
+```java
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+public class Employee implements Cloneable {
+    private String name;
+    private double salary;
+    private Date hireDay;
+
+    public Employee(String name, double salary) {
+        this.name = name;
+        this.salary = salary;
+        hireDay = new Date();
+    }
+
+    @Override
+    public Employee clone() throws CloneNotSupportedException {
+        Employee cloned = (Employee) super.clone();
+        cloned.hireDay = (Date) hireDay.clone();
+
+        return cloned;
+    }
+
+    public void setHireDay(int year, int month, int day) {
+        Date newHireDay = new GregorianCalendar(year, month, day).getTime();
+
+        hireDay.setTime(newHireDay.getTime());
+    }
+
+    public void raiseSalary(double byPercent) {
+        double raise = salary * byPercent / 100;
+        salary += raise;
+    }
+
+    @Override
+    public String toString() {
+        return "Employee[name=" + name + ",salary=" + salary + ",hireDay=" + hireDay + "]";
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 3. lambda表达式
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
