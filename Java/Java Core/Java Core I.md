@@ -4499,6 +4499,846 @@ public class Employee implements Cloneable {
 
 
 
+### 1) 引入的原因
+
+- lambda表达式是一个可以传递的代码块(在Java中本质上是一个实例对象)
+
+
+
+例子:
+
+```java
+Arrays.sort(strings, new LengthComparator());
+```
+
+
+
+这里我们传入了一个实现了`Comparator`接口的实例对象，之后`sort`方法会调用其中的`compare`方法，从而实现按照我们指定的规则进行排序
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 语法
+
+syntax:
+
+```
+(参数) -> 表达式
+```
+
+- 就算没有参数也要写上括号
+
+
+
+如果需要执行的操作不能用一个表达式完全表达，则可以将这些步骤放在`{}`中:
+
+```java
+(String first, String second) {
+  if (first.length() < second.length()) {
+    return -1;
+  } else if (first.length() > second.length()) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+```
+
+
+
+- 如果可以推导出参数的类型，则可以在lambda表达式中省略参数的类型:
+
+```java
+Comparator<String> comp = (first, seconde) -> first.length() - second.length();
+```
+
+- 返回类型不需要指定
+
+
+
+Code:
+
+```java
+import java.util.*;
+
+import javax.swing.*;
+import javax.swing.Timer;
+
+public class LambdaTest {
+    public static void main(String[] args) {
+        String[] planets = new String[]{"Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"};
+        System.out.println(Arrays.toString(planets));
+        System.out.println("Sorted in dictionary order:");
+        Arrays.sort(planets);
+
+        System.out.println(Arrays.toString(planets));
+        System.out.println("Sorted by length:");
+        Arrays.sort(planets, (first, second) -> first.length() - second.length());
+        System.out.println(Arrays.toString(planets));
+
+        Timer t = new Timer(1000, event ->
+         System.out.println("The time is " + new Date()));
+        t.start();
+
+        JOptionPane.showMessageDialog(null, "Quit program?");
+        System.exit(0);
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 函数式接口
+
+- 对于**只有一个抽象方法的接口**，需要这种接口的对象时，可以提供一个lambda表达式，这种接口就是函数式接口(functional interface)
+
+
+
+想要用lambda表达式做处理，必须要记住表达式最开始的用途
+
+函数式接口示例:
+
+```java
+BiFunction<T, U, R>
+
+BiFunction<String, String, Integer> comp = (first, second) -> first.length() - second.length();
+```
+
+`BiFunction`表述两个类型为T和U的参数，返回类型为R，不过该接口对排序没有作用(我们并不想返回/记录字符串长度的差值)
+
+
+
+```java
+public interface Predicate<T> {
+  boolean test(T t);
+}
+```
+
+该接口可用于`ArrayList`类中的`removeIf`方法，其参数就是一个`Predicate`接口:
+
+```java
+list.removeIf(e -> e == null);
+```
+
+- 删除列表中所有的null值
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 方法引用
+
+```java
+Timer t = new Timer(1000, event -> System.out.println(event));
+// 等价于
+
+Timer t = new Timer(1000, System.out::println);
+```
+
+
+
+- 其中`System.out::println`是一个方法引用，其等价于lambda表达式:
+
+`x -> System.out.println(x)`
+
+
+
+用`::`操作符分隔方法名和对象/类名的3种情况:
+
+- object::instanceMethod
+- Class::staticMethod
+- Class::instanceMethod
+
+
+
+前两种示例:
+
+```java
+System.out::println
+Math::pow
+```
+
+
+
+第三种情况下，第一个参数会称为方法的目标:
+
+```java
+String::compareToIgnoreCase
+// 等价于
+(x, y) -> x.compareToIgnoreCase(y)
+```
+
+- 可使用`super::instanceMethod`传入超类的方法引用
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 构造器引用
+
+例子:
+
+```java
+List<String> names = ...;
+Stream<Person> stream = names.stream().map(Person::new);
+```
+
+
+
+- `map`方法会为每个列表元素调用`Person`类的构造器，具体调用哪个构造器取决于上下文(这里使用了一个字符串，所以会调用`Person(String)`构造器)
+- 建立数组类型构造器引用: `int[]::new`
+
+
+
+使用流和构造器引用可以构造泛型数组:
+
+```java
+People[] people = stream.toArray(Person[]::new);
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 6) 变量作用域
+
+- lambda表达式的3个部分:
+    1. 代码块
+    2. 参数
+    3. 自由变量的值(非参数，且不在代码中定义)
+
+
+
+实例:
+
+```java
+public static void repeatMessage(String text, int delay {
+  ActionListener = event -> {
+    Sysout.out.println(text);
+    Toolkit.getDefaultToolkit().beep();
+  };
+  
+  new Timer(delay, listener).start();
+}
+```
+
+- 在lambda表达式中，有一个自由变量text
+- lambda表达式**可以捕获外围作用域中变量的值**
+- 但lambda表达式引用的变量**不能是会改变的值**
+
+> 如果在lambda表达式中改变变量，并发执行时会出现线程不安全的情况
+
+- 如果lambda表达式引用的变量可能在外部改变，那么也是不合法的:
+
+```java
+public static void repeat(String text, int count) {
+  for (int i = 1; i <= count; i++) {
+    ActionListener listener = event -> {
+      System.out.println(i + ": " + text);
+    };
+    
+    new Timer(1000, listener).start();
+  }
+}
+```
+
+
+
+> lambda表达式中捕获的变量必须是最终变量(effectively final)，即这个变量在初始化之后就不会再修改它的值了
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 7) Comparator
+
+该接口包含许多方便的静态方法来创建比较器
+
+
+
+- `comparing`方法可以传入一个lambda表达式或者方法引用:
+
+```java
+Arrays.sort(people, Comparator(Person::getName));
+```
+
+
+
+- 还可以和`thenComparing`方法连起来使用:
+
+```java
+Arrays.sort(people, Comparator.comparing(Person::getLastName))
+  .thenComparing(Person::getFirstName);
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. 内部类
+
+使用内部类的原因:
+
+- 内部类可以访问该类定义所在作用域中的数据，包括私有的数据
+- 内部类可以对同一个包中的其他类进行隐藏
+- 想要定义一个回调函数时，使用匿名内部类比较方便
+
+
+
+
+
+### 1) 使用内部类访问对象状态
+
+- 内部类既可以访问自身的域，还可以访问它的外围类对象的域
+- 内部类存在一个隐式引用，指向创建它的外部类对象
+
+
+
+Code:
+
+```java
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.Timer;
+
+public class InnerClassTest {
+    public static void main(String[] args) {
+        TalkingClock clock = new TalkingClock(1000, true);
+        clock.start();
+
+        JOptionPane.showMessageDialog(null, "Quit program?");
+        System.exit(0);
+    }
+}
+
+class TalkingClock {
+    private int interval;
+    private boolean beep;
+
+    public TalkingClock(int interval, boolean beep) {
+        this.interval = interval;
+        this.beep = beep;
+    }
+
+    public void start() {
+        ActionListener listener = new TimePrinter();
+        Timer t = new Timer(interval, listener);
+        t.start();
+    }
+
+    public class TimePrinter implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            System.out.println("At the tone, the time is " + new Date());
+        
+            if (beep) {
+                Toolkit.getDefaultToolkit().beep();
+            }
+        }
+    }
+}
+
+```
+
+- 类`TimePrinter`引用了外部类`TalkingClock`中的`beep`字段
+
+<hr>
+
+
+
+
+
+### 2) 内部类的语法规则
+
+- 编写内部类对象的构造器:
+
+```java
+outerObject.new InnerClass(construction parameters);
+```
+
+
+
+- 在外围类作用域之外，引用内部类的方法:
+
+```java
+OuterClass.InnerClass;
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 讨论
+
+// TODO
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 局部内部类
+
+- 有时可以在一个方法中定义一个类
+- 这种类称为局部内部类，其可以对外部世界完全隐藏(除了其所处的方法)
+
+![IMG_0095255730B3-1](JavaCore I.assets/IMG_0095255730B3-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 5) 外部方法访问变量
+
+- 局部类的优点:
+
+能够访问局部变量，但必须是`final`修饰的
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 6) 匿名内部类
+
+语法:
+
+```java
+new SuperType(parameters) {
+  inner class methods and data
+}
+```
+
+
+
+Code:
+
+```java
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.Time;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.Timer;
+
+public class AnonymousInnerClassTest {
+    public static void main(String[] args) {
+        TalkingClock clock = new TalkingClock();
+        clock.start(1000, true);
+
+        JOptionPane.showMessageDialog(null, "Quit program?");
+        System.exit(0);
+    }
+}
+
+class TalkingClock {
+    public void start(int interval, boolean beep)  {
+        ActionListener listener = new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                System.out.println("At the tone, the time is " + new Date());
+                if (beep) {
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        };
+
+        Timer t = new Timer(interval, listener);
+        t.start();
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 7) 静态内部类
+
+- 有时候并不需要内部类引用外围的对象，此时可以将内部类声明为`static`，以取消对外围的引用
+
+
+
+Code:
+
+```java
+public class StaticInnerClassTest {
+    public static void main(String[] args) {
+        double[] d = new double[20];
+        for (int i = 0; i < d.length; i++) {
+            d[i] = 100 * Math.random();
+        }
+
+        ArrayAlg.Pair p = ArrayAlg.minmax(d);
+        System.out.println("min = " + p.getFirst());
+        System.out.println("max = " + p.getSecond());
+    }
+}
+
+class ArrayAlg {
+    public static class Pair {
+        private double first;
+        private double second;
+
+        public Pair(double f, double s) {
+            first = f;
+            second = s; 
+        }
+
+        public double getFirst() {
+            return first;
+        }
+
+        public double getSecond() {
+            return second;
+        }
+    }
+
+    public static Pair minmax(double[] values) {
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+
+        for (double v : values) {
+            min = Math.min(min, v);
+            max = Math.max(max, v);
+        }
+
+        return new Pair(min, max);
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 5. 代理
+
+
+
+
+
+
+
+### 1) 使用代理的原因
+
+- 有一个`Class`实例表示一个接口，但不知道它真正的类型，此时想要根据这个接口构建一个类，需要使用`newInstance`方法或者使用反射后通过`Coustructor`对象来创建实例
+- 但接口不能被实例化，所以需要在运行时定义一个实现该接口的新类
+
+
+
+使用代理类就能在运行时创建全新的类，并做到:
+
+1. 实现接口中所需的全部方法
+2. 实现`Object`类中的全部方法
+
+
+
+> 但不能在运行时定义这些方法，而是要提供一个调用处理器(invocation handler)
+>
+> 调用处理器是实现了InvocationHandler接口的类实例
+
+
+
+`InvocationHandler`接口中的唯一一个方法:
+
+```java
+Object invoke(Object proxy, Method method, Object[] args)
+```
+
+
+
+当使用代理类实例调用方法时，都会调用处理器中的`invoke`方法，并将`Method`对象和参数传给`invoke`方法
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 创建代理实例对象
+
+> 创建代理对象实例，需要使用`Proxy`类中的`newProxyInstance`方法
+
+其中的三个参数:
+
+- 类加载器(class loader)
+- Class对象数组: 每个Class实例都代表需要实现/代理的接口
+- 一个invocationhandler处理器
+
+
+
+Code:
+
+```java
+import java.lang.reflect.*;
+import java.util.*;
+
+public class ProxyTest {
+    public static void main(String[] args) {
+        Object[] elements = new Object[1000];
+
+        for (int i = 0; i < elements.length; i++) {
+            Integer value = i + 1;
+            InvocationHandler handler = new TraceHandler(value);
+            Object proxy = Proxy.newProxyInstance(null, new Class[]{Comparable.class}, handler);
+            elements[i] = proxy;
+        }
+
+        Integer key = new Random().nextInt(elements.length) + 1;
+
+        int result = Arrays.binarySearch(elements, key);
+
+        if (result > 0) {
+            System.out.println(elements[result]);
+        }
+    }
+}
+
+class TraceHandler implements InvocationHandler {
+    private Object target;
+
+    public TraceHandler(Object t) {
+        target = t;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
+        System.out.println(target);
+        System.out.println("." + m.getName() + "(");
+
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                System.out.println(args[i]); 
+
+                if (i < args.length - 1) {
+                    System.out.println(", ");
+                }
+            }
+        }
+        System.out.println(")");
+
+        return m.invoke(target, args);
+    }
+}
+```
+
+在`binarySearch`方法中，每次调用代理对象(elements数组中的元素)中的方法(compareTo)时，都自动调用了处理器中的`invoke`方法后再调用`compareTo`方法，从而将每次调用的信息都打印了出来
+
+<hr>
+
+
+
+
+
+
+
+### 3) 代理类的特性
+
+- 所有代理类都扩展自`Proxy`类
+- 一个代理类只有一个实例域: 调用处理器
+- 代理类一定是`public final`，可以使用`isProxyClass`方法检测一个`Class`实例是否为代理类
+
+![Xnip2022-05-22_14-43-47](JavaCore I.assets/Xnip2022-05-22_14-43-47.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

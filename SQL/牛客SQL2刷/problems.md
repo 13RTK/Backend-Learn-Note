@@ -163,6 +163,48 @@ INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
 ORDER BY t1.emp_no
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# 四、已分配员工信息
+
+![Xnip2022-05-22_10-50-28](problems.assets/Xnip2022-05-22_10-50-28.jpg)
+
+
+
+![Xnip2022-05-22_10-50-40](problems.assets/Xnip2022-05-22_10-50-40.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
