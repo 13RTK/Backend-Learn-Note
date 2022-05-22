@@ -192,12 +192,33 @@ ORDER BY t1.emp_no
 
 
 
+# 五、所有员工信息
+
+![Xnip2022-05-23_07-44-14](problems.assets/Xnip2022-05-23_07-44-14.jpg)
 
 
 
+![Xnip2022-05-22_10-50-40](problems.assets/Xnip2022-05-22_10-50-40.jpg)
+
+题意:
+
+给你一张员工信息表，一张部门信息表，请你查询出其中所有员工的信息
 
 
 
+思路:
+
+- 昨天我们查询的是已经被分配部门的员工，而今天我们需要的是所有的员工信息，所以我们应该以员工表为准进行查询，在SQL上就是将员工表作为驱动表，所以使用外连接即可，SQL如下
+
+```sql
+SELECT
+    t1.last_name,
+    t1.first_name,
+    t2.dept_no
+FROM
+    employees AS t1
+LEFT JOIN dept_emp AS t2 ON t1.emp_no = t2.emp_no
+```
 
 
 
