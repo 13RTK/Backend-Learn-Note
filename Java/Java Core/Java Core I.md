@@ -5280,8 +5280,505 @@ class TraceHandler implements InvocationHandler {
 
 
 
+# 五、异常、断言和日志
 
-# 五、
+
+
+## 1. 处理错误
+
+- 如果方法不能被正常的使用，方法则不会返回任何值，而是会抛出一个封装了错误信息的对象
+- 同时会开始搜索能够处理该异常状态的异常处理器(exception handler)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 1) 异常分类
+
+- 所有异常对象都是派生自`Throwable`类的一个实例
+- 所以我们可以通过继承来创建一个自己的异常类
+
+
+
+Java异常的层次结构:
+
+![IMG_0C43570E5E97-1](JavaCore I.assets/IMG_0C43570E5E97-1.jpeg)
+
+
+
+
+
+- Error: 描述了Java运行时系统的**内部错误和资源耗尽错误**(不应该抛出该种对象)
+- Exception层次:
+    - 派生于RuntimeException
+    - 其他
+
+
+
+程序本身编写等等的问题属于`RuntimeException`
+
+和程序无关，如文件不存在等问题属于其他异常
+
+> 如果出现`RuntimeException`异常，那么一定是你的问题
+
+
+
+- 派生于`Error`类或者`RuntimeException`类的所有异常: 非受查异常(unchecked)，即你自己没检查
+- 其他异常: 受查异常(checked)
+
+
+
+> 编译器会检查是否为所有的受查异常提供了异常处理器
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 声明受查异常
+
+- 如果一个方法出现了错误，那么需要告诉编译器可能出现错误的类型
+- 需要在方法声明的首部声明所有可能抛出的异常
+
+
+
+以下4种情况时，应该使用`throws`子句声明异常，并抛出异常:
+
+1. 调用一个声明了抛出异常的方法(`FileInputStream`构造器)
+2. 运行时出现错误，使用`throw`语句抛出一个受查异常
+3. 出现错误，直接抛出非受查异常
+4. 内部错误，抛出Error实例
+
+
+
+- 如果一个方法出现前两种情况，则必须要在方法首部声明这个方法可能会抛出的异常
+- 只能声明受查异常
+- 和访问修饰符一样，子类方法只能抛出更特定的异常，而不能抛出更通用的异常对象
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 抛出异常
+
+语法:
+
+```java
+throw new ExceptionName();
+```
+
+
+
+抛出一个已经存在的异常类:
+
+1. 找出一个合适的异常类
+2. 创建这个异常类的一个实例对象
+3. 抛出该实例对象
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 创建异常类
+
+- 我们只需要定义一个继承`Exception`的类，或者继承`Exception`子类的类即可
+
+
+
+- 定义的类应该包含两个构造器，一个是默认的空参构造，一个是带有详细描述信息的构造器(超类`Throwable`中的`toString`方法会打印这些详细信息)
+
+Eg:
+
+```java
+class FileFormatException extends IOException {
+  public FileFormatException() {
+    
+  }
+  
+  public FileFormatException(String message) {
+    super(message);
+  }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2. 捕获异常
+
+
+
+### 1) 捕获异常
+
+- 捕获异常需要使用`try/catch`语句块
+
+Syntax:
+
+```java
+try {
+  code
+} catch (ExceptionType e) {
+  handler for this type
+}
+```
+
+
+
+如果在`try`块中抛出了一个在`catch`子句中声明的异常类，则:
+
+1. 跳过`try`块中剩余的部分
+2. 执行`catch`中的代码
+
+
+
+- 如果`try`中没有抛出异常，那么完成`try`语句块中的内容后，会跳过`catch`中的语句
+- 如果抛出的异常没有在`catch`中声明，那么该方法会立即退出
+
+
+
+
+
+- 一般来说，最好的做法是传递异常，即声明这个方法可能抛出的异常，让这个方法的调用者操心
+- 如果调用的方法中抛出了受查异常，那么必须对其进行处理，或者继续抛出以传递该异常
+
+<hr>
+
+
+
+
+
+
+
+### 2) 捕获多个异常
+
+一个`try`语句块可以对应多个`catch`语句块，从而捕获多种异常
+
+- 从Java SE7开始，一个`catch`子句可以捕获多个异常了:
+
+```java
+catch (FileNotFoundException | UnknownHostException e)
+```
+
+- 注意同一个`catch`中的异常彼此之间不存在子类关系时才会需要该特性
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 再抛出异常/异常链
+
+- 将原始异常设置为新异常的"原因'':
+
+```java
+Throwable e = se.getCause();
+```
+
+通过该条语句可以重新获得原始异常，这样可以抛出子系统中的高级异常，而不会丢失原始异常的细节
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) finally子句
+
+> finally子句可以用来恰当地关闭资源
+
+
+
+- 不管是否有异常被捕获，`finally`子句中的代码都会被执行
+- `try`可以之和`finally`子句搭配，而没有`catch`子句
+
+Eg:
+
+```java
+InputStream in = ...;
+try {
+  code
+} finally {
+  in.close();
+}
+```
+
+- 无论`try`是否出现异常，`finally`子句中的资源关闭都会执行
+
+
+
+耦合`try/catch`和`try/finally`语句块
+
+Eg:
+
+```java
+InputStream in = ...;
+
+try {
+  try {
+    
+  } finally {
+    
+  }
+} catch () {
+  
+}
+```
+
+内层的`try`语句确保关闭输入流，外层的`try`确保报告出现的异常
+
+
+
+
+
+- 如果`finally`子句中包含`return`子句，那么`finally`中的`return`子句会覆盖掉原来的返回值
+- 在`finally`子句中调用`close`方法的话，可能会抛出`IOException`异常，此时还需要抛出`close`方法中的异常，代码会变得繁琐
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 5) 带资源的try语句
+
+- 如果资源(Scanner类等等)是一个实现了`AutoCloseable`接口的类，从Java SE 7开始为这些类提供了一个快捷方式
+
+
+
+`AutoCloseable`接口中的方法:
+
+```java
+void close() throws Exception();
+```
+
+- `Closeable`是它的子接口，抛出`IOException`
+
+
+
+带资源的try语句的最简形式(try-with-resources):
+
+```java
+try (Resource res = ...) {
+  
+}
+```
+
+
+
+- `try`退出后，会自动调用`res.close()`
+- 其可以在`try`中指定多个资源:
+
+```java
+try (Scanner in = new Scanner(new ...);
+    PrintWriter out = new PrintWriter()) {
+  ...
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 6) 分析堆栈轨迹元素
+
+- Stack trace是一个方法调用过程的列表，其中包含了程序执行过程中方法调用的各种信息(位置，行号，方法名等等)，如果没有捕获异常，程序正常终止，则会显示该列表
+
+
+
+- 通过调用`Throwable`类中的`printStackTrace()`方法访问堆栈轨迹的文本信息
+- 可以使用`getStackTrace()`方法，这样能够获取`StackTraceElement`对象的一个数组
+
+
+
+- 通过`StackTraceElement`类有可以获取文件名、当前执行的代码行号、类名和方法名的方法
+- 静态的`Thread.getAllStackTrace()`方法可以产生所有线程的堆栈轨迹
+
+
+
+Code:
+
+```java
+import java.util.Scanner;
+
+public class StackTraceTest {
+    public static int factorial(int n) {
+        System.out.println("factorial(" + n + "):");
+        Throwable t = new Throwable();
+        StackTraceElement[] frames = t.getStackTrace();
+
+        for (StackTraceElement f : frames) {
+            System.out.println(f); 
+        }
+
+        int r;
+        if (n <= 1) {
+            r = 1;
+        } else {
+            r = n * factorial(n - 1);
+        }
+
+        System.out.println("return" + r);
+        return r;
+    }
+
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter n: ");
+        int n = in.nextInt();
+        factorial(n);
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. 使用异常机制的技巧
+
+
+
+1. 异常不能用来替代测试
+    - 捕获异常的时间要远远大于测试，只在异常出现的情况下使用异常
+2. 不要过分细化异常
+3. 利用异常层次
+    - 不要只抛出一个笼统的异常，要寻找更适合 的子类或者自己创建对应的异常类
+    - 不要只捕获一个笼统的异常对象
+4. 不要压制异常
+    - 如果异常很重要，那么应该立马处理它们
+5. 抛出异常时，应该抛出一个能确切指出错误的异常
+6. 有时传递异常比捕获后处理要好
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 4. 使用断言
+
+
+
+
+
+### 1) 概念
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
