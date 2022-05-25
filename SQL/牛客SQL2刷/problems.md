@@ -268,6 +268,56 @@ GROUP BY emp_no
 HAVING t > 15
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 七、所有salary情况
+
+![](problems.assets/Xnip2022-05-25_07-38-42.jpg)
+
+题意:
+
+给你一张薪水表，请你查询出所有的薪水数字，相同的数字只显示一次，且结果逆序显示
+
+
+
+
+
+思路:
+
+- 提取一下要求，其实就是去重和排序，去重有两种选择，要么用`DISTINCT`要么用`GROUP BY`，如果有`WHERE`子句，且数据量较大的话，推荐用`GROUP BY`，最后排序只需要记得用`DESC`即可，SQL如下
+
+```mysql
+SELECT
+    DISTINCT salary
+FROM
+    salaries
+ORDER BY salary DESC
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

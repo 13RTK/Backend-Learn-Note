@@ -5742,15 +5742,24 @@ public class StackTraceTest {
 
 ### 1) 概念
 
+- 在测试期间向Code中插入一些检查语句，发布时将会被自动移走
 
 
 
+使用`assert`关键字进行断言检查，形式:
 
+```java
+assert 条件;
+assert 条件 : 表达式;
+```
 
 
 
+如果结果为`false`，则会抛出一个`AssertionError`异常
 
+第二种形式中，表达式会被传入`AssertionError`的构造器，转换为一个消息字符串
 
+<hr>
 
 
 
@@ -5758,16 +5767,28 @@ public class StackTraceTest {
 
 
 
+### 2) 启用/禁用断言
 
+- 默认情况下，断言是禁用的，运行程序时用`-enableassertions`或者`-ea`选项启用
+- 启动/禁用断言时，不会重新编译程序，启动/禁用断言是类加载器的功能
 
 
 
+在某个类或者整个包中使用断言:
 
+```java
+java -ea:MyClass -ea:com.company.mylib...
+```
 
 
 
+使用选项`-disableassertions`或者`-da`禁用某个特定类的包的断言
 
+```java
+java -ea:... -da:MyClass MyApp
+```
 
+<hr>
 
 
 
@@ -5779,15 +5800,24 @@ public class StackTraceTest {
 
 
 
+### 3) 使用断言完成检查
 
 
 
+3种处理系统错误的机制:
 
+- 抛出异常
+- 日志
+- 断言
 
 
 
+使用断言的场景:
 
+- 断言失败是致命的、不可恢复的错误
+- 断言只用于开发和测试阶段
 
+<hr>
 
 
 
@@ -5799,8 +5829,12 @@ public class StackTraceTest {
 
 
 
+### 4) 文档假设使用断言
 
+- 日志记录是一种在程序整个生命周期都可以使用的策略性工具
+- 断言只是一种测试和调试阶段使用的战术性工具
 
+<hr>
 
 
 
@@ -5814,9 +5848,19 @@ public class StackTraceTest {
 
 
 
+## 5. 记录日志
 
+记录日志API可以用来帮助观察程序运算的操作过程，其具有的优点:
 
+- 可以快速取消，或者仅仅取消某个等级的日志
+- 可以简单地禁止日志的输入
+- 日志记录可以输出到不同的处理器中
+- 记录器和处理器都可以对记录进行过滤
+- 日志记录的格式可以任意改变(纯文本/XML)
+- 应用程序可以使用多个日志记录器
+- 日志的配置由配置文件控制
 
+<hr>
 
 
 
@@ -5828,10 +5872,17 @@ public class StackTraceTest {
 
 
 
+### 1) 基本日志
 
+- 要生成日志记录，可以使用全局日志记录器(global logger)，调用`info`方法即可
 
+```java
+Logger.getGlobal().info("XXXx");
+```
 
+- 使用`setLevel()`方法可以设置日志的等级
 
+<hr>
 
 
 
@@ -5841,23 +5892,44 @@ public class StackTraceTest {
 
 
 
+### 2) 高级日志
 
+- 通过`Logger`类中的`getLogger`方法可以创建/或者记录器，传入的字符串为该记录器的名字
 
+```java
+private static final Logger myLogger = Logger.getLogger("package path");
+```
 
 
 
 
 
+日志记录器的级别:
 
+- SEVERE
+- WARNING
+- INFO
+- CONFIG
+- FINE
+- FINER
+- FINESET
 
+> 默认情况下，日志记录器只记录前三个级别的日志
 
 
 
+设置记录器最低记录的级别:
 
+```java
+logger.setLevel(Level.FINE);
+```
 
 
 
+- 设置为`Level.ALL`和`Level.OFF`可以开启和关闭所有级别的日志记录
+- 通过`log`方法指定日志记录器的最低记录级别
 
+<hr>
 
 
 
@@ -5865,6 +5937,271 @@ public class StackTraceTest {
 
 
 
+
+
+
+
+### 3) 修改日志管理器配置
+
+默认情况下，配置文件在:
+
+```
+jre/lib/logging.properties
+```
+
+- 我们可以直接将对应的父类处理器日志等级，编码，格式写在一个properties文件中
+- 再使用LogManager对象读取即可
+
+
+
+- 调用LogManager类的getLogManager方法获取一个LogManager对象
+- 通过该对象调用readConfiguration方法，传入一个properties文件流
+
+Eg:
+
+![Xnip2022-03-06_20-24-25](../Java Web/青空/JUL.assets/Xnip2022-03-06_20-24-25.jpg)
+
+
+
+- 设置其他参数:
+
+```properties
+# 指定默认日志级别
+java.util.logging.ConsoleHandler.level = ALL
+# 指定默认日志消息格式
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+# 指定默认的字符集
+java.util.logging.ConsoleHandler.encoding = UTF-8
+
+# 设置日志的路径
+java.util.logging.FileHandler.pattern=system.log
+
+# 设置日志为追加
+java.util.logging.FileHandler.append=true
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 处理器
+
+默认情况下，日志记录器将记录发送到`ConsoleHandler`中，并将其输出到`System.err`流中
+
+日志记录器还会将记录发送到父处理器中
+
+
+
+处理器的日志记录级别:
+
+```properties
+# 指定默认处理器日志级别
+java.util.logging.ConsoleHandler.level = ALL
+```
+
+
+
+安装自己的处理器
+
+```java
+Logger logger = Logger.getLogger();
+logger.setLevel(Level.FINE);
+
+// 禁用父处理器
+logger.setUseParentHandlers(false);
+
+// 创建新的处理器
+Handler handler = new ConsoleHandler();
+handler.setLevel(Level.FINE);
+
+// 添加处理器
+logger.addHandler(handlere);
+```
+
+
+
+处理器配置参数:
+
+![IMG_DF96EE324C0A-1](JavaCore I.assets/IMG_DF96EE324C0A-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 5) 日志记录说明
+
+1. 将日志记录器命名为与主应用程序包一样的名字
+2. 默认的日志配置级别等于/高于INFO级别的所有信息记录到控制台
+3. 所有`INFO`、`WARNING`、`SEVERE`级别的日志消息都将显示在控制台
+
+Code:
+
+```java
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.logging.*;
+import javax.swing.*;
+
+public class LoggingImageViewer {
+    public static void main(String[] args) {
+        if (System.getProperty("java.util.logging.config.class") == null
+        && System.getProperty("java.util.logging.config.file") == null) {
+            try {
+                Logger.getLogger("com.horstmann.corejava").setLevel(Level.ALL);
+                final int LOG_ROTATION_COUNT = 10;
+                Handler handler = new FileHandler("%h/LoggingImageViewer.log", 0, LOG_ROTATION_COUNT);
+                Logger.getLogger("com.horstmann.corejava").addHandler(handler);
+            } catch (IOException e) {
+                Logger.getLogger("com.horstmann.corejava").log(Level.SEVERE, 
+                "Can't create log file handler", e);
+            }
+        }
+
+        EventQueue.invokeLater(() -> {
+            Handler winHandler = new WindowHandler();
+            winHandler.setLevel(Level.ALL);
+            Logger.getLogger("com.horstmann.corejava").addHandler(winHandler);
+
+            JFrame frame = new ImageViewerFrame();
+            frame.setTitle("LoggingImageViewer");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+            Logger.getLogger("com.horstmann.corejava").fine("Showing frame");
+            frame.setVisible(true);
+        });
+    }
+}
+
+class ImageViewerFrame extends JFrame {
+    private static final int DEFAULT_WIDTH = 300;
+    private static final int DEFAULT_HEIGHT = 400;
+
+    private JLabel label;
+    private static Logger logger = Logger.getLogger("com.horsemann.corejava");
+
+    public ImageViewerFrame() {
+        logger.entering("ImageViewerFrame", "<init>");
+        setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+
+        JMenuBar menuBar = new JMenuBar();
+        setJMenuBar(menuBar);
+
+        JMenu menu = new JMenu("File");
+        menuBar.add(menu);
+    
+        JMenuItem openItem = new JMenuItem("Open");
+        menu.add(openItem);
+        openItem.addActionListener(new FileOpenListener());
+
+        JMenuItem exitItem = new JMenuItem("Exit");
+        menu.add(exitItem);
+        exitItem.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent event) {
+                logger.fine("Exiting.");
+                System.exit(0);
+            }
+        });
+
+        label = new JLabel();
+        add(label);
+        logger.exiting("ImageViewerFrame", "<init>");
+    }
+
+
+    private class FileOpenListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            logger.entering("ImageViewerFrame.FileOpenListener", "actionPerformed", event);
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setCurrentDirectory(new File("."));
+
+            chooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+                public boolean accept(File f) {
+                    return f.getName().toLowerCase().endsWith(".gif") || f.isDirectory();
+                }
+
+                public String getDescription() {
+                    return "GIF Images";
+                }
+            });
+
+            int r = chooser.showOpenDialog(ImageViewerFrame.this);
+
+            if (r == JFileChooser.APPROVE_OPTION) {
+                String name = chooser.getSelectedFile().getPath();
+                logger.log(Level.FINE, "Reading file {0}", name);
+                label.setIcon(new ImageIcon(name));
+            } else {
+                logger.fine("File open dialog canceled");
+            }
+
+            logger.exiting("ImageViewerFrame.FileOpenListener", "actionPerformed");
+        }
+    }
+}
+
+class WindowHandler extends StreamHandler {
+    private JFrame frame;
+
+    public WindowHandler() {
+        frame = new JFrame();
+        final JTextArea output = new JTextArea();
+        output.setEditable(false);
+
+        frame.setSize(200, 200);
+        frame.add(new JScrollPane(output));
+        frame.setFocusableWindowState(false);
+        frame.setVisible(true);
+        setOutputStream((new OutputStream() {
+            public void write(int b) {
+                
+            }
+
+            public void write(byte[] b, int off, int len) {
+                output.append(new String(b, off, len));
+            }
+        }));
+    }
+
+    public void publish(LogRecord record) {
+        if (!frame.isVisible()) {
+            return;
+        }
+
+        super.publish(record);
+        flush();
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 六、泛型设计
 
 
 
