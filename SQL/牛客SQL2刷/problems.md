@@ -317,16 +317,70 @@ ORDER BY salary DESC
 
 
 
+# 八、非manager的员工emp_no
+
+![Xnip2022-05-26_07-46-19](problems.assets/Xnip2022-05-26_07-46-19.jpg)
+
+
+
+![Xnip2022-05-26_07-47-59](problems.assets/Xnip2022-05-26_07-47-59.jpg)
+
+题意:
+
+给你一张员工信息表，一张部门经理信息表，请你查询出其中不是manager的员工emp_no
 
 
 
 
 
+思路:
+
+- 最简单的方法自然是查询出所有的经理，再用所有的员工来做集合间的减法，这里使用NOT IN即可解决，SQL如下
+
+```mysql
+SELECT
+    emp_no
+FROM
+    employees
+WHERE emp_no NOT IN (
+    SELECT
+        emp_no
+    FROM
+        dept_manager
+)
+```
 
 
 
+- 然而，当数据量大起来的话，使用IN/NOT IN会受到其中参数的数量限制(MySQL默认对语句的限制为最大4MB，可以通过修改max_allowed_packet变量来设置)，大致对应1000个参数，所以有可能出问题
+- 因此，我们应该在IN中调用的参数上建立索引，不然的话，最好使用NOT EXISTS来代替这种做法，SQL如下
+
+```mysql
+SELECT
+    t1.emp_no
+FROM
+    employees AS t1
+WHERE NOT EXISTS (
+    SELECT
+        t2.emp_no
+    FROM
+        dept_manager AS t2
+    WHERE t1.emp_no = t2.emp_no
+)
+```
 
 
+
+- 如果觉得这种写法麻烦的话，其实通过两表外连接后，经理表中没有对应emp_no字段数据的记录就是我们需要的结果，SQL如下
+
+```mysql
+SELECT
+    t1.emp_no
+FROM
+    employees AS t1
+LEFT JOIN dept_manager AS t2 ON t1.emp_no = t2.emp_no
+WHERE ISNULL(t2.emp_no)
+```
 
 
 

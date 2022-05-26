@@ -6203,6 +6203,566 @@ class WindowHandler extends StreamHandler {
 
 # 六、泛型设计
 
+- 使用泛型机制编写的程序代码要比使用`Object`变量再进行强制类型转换的代码具有更好的安全性和可读性
+
+
+
+
+
+## 1. 泛型设计
+
+
+
+
+
+### 1) 类型参数的好处
+
+- 在实现泛型之前，泛型程序都是用继承来实现的
+
+以前的`ArrayList`:
+
+```java
+public class ArrayList {
+  private Object[] elementData;
+  
+  ...
+  public Object get(int i) {
+    
+  }
+}
+```
+
+
+
+存在的问题:
+
+1. 获取一个值的时候必须进行强制类型转换
+2. 可以向列表中添加任意类的实例对象，而不会进行错误检查
+
+
+
+未来解决该问题，引入了`类型参数`
+
+- Java SE 7以及之后的版本中，构造函数中可以省略泛型类型参数
+
+<hr>
+
+
+
+
+
+
+
+## 2. 定义简单的泛型类
+
+一个泛型类就是具有一个或者多个类型变量的类
+
+
+
+Eg:
+
+![IMG_E47E80EC1564-1](JavaCore I.assets/IMG_E47E80EC1564-1.jpeg)
+
+
+
+泛型类可以引入多个类型变量:
+
+```java
+public class Pair<T, U> {
+  
+}
+```
+
+
+
+类定义中的类型变量可以用来制定**方法的返回类型、方法的参数类型和域的类型**
+
+```java
+private T first;
+```
+
+Code:
+
+```java
+public class PairTest1 {
+    public static void main(String[] args) {
+        String[] words = {"Mary", "had", "a", "litter", "lamb"};
+        Pair<String> mm = ArrayAlg.minmax(words);
+        System.out.println("min = " + mm.getFirst());
+        System.out.println("max = " + mm.getSecond());
+    }
+}
+
+class ArrayAlg {
+    public static Pair<String> minmax(String[] a) {
+        if (a == null || a.length == 0) {
+            return null;
+        }
+
+        String min = a[0];
+        String max = a[0];
+
+        for (int i = 1; i < a.length; i++) {
+            if (min.compareTo(a[i]) > 0) {
+                min = a[i];
+            }
+
+            if (max.compareTo(a[i]) < 0) {
+                max = a[i];
+            }
+        }
+
+        return new Pair<>(min, max);
+    }
+}
+```
+
+
+
+Pair:
+
+```java
+public class Pair<T> {
+    private T first;
+    private T second;
+
+    public Pair() {
+        this.first = null;
+        this.second = null;
+    }
+
+    public Pair(T first, T second) {
+        this.first = first;
+        this.second = second;
+    }
+
+    public T getFirst() {
+        return this.first;
+    }
+
+    public T getSecond() {
+        return this.second;
+    }
+
+    public void setFirst(T newValue) {
+        this.first = newValue;
+    }
+    public void setSecond(T newValue) {
+        this.second = newValue;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 3. 泛型方法
+
+参数类型还可以应用在方法中:
+
+```java
+class ArrayAlg {
+  public static<T> T getMiddle(T... a) {
+    return a[a.length / 2];
+  }
+}
+```
+
+
+
+- 类型变量`<T>`放在修饰符后面，返回类型的前面
+- 调用泛型方法的时候，参数类型可以省略:
+
+```java
+String middle = ArrayAlg.getMiddle("John", "Q.", "Public");
+```
+
+
+
+
+
+拓展:
+
+以下示例会报错:
+
+```java
+double middle = ArrayAlg.getMiddle(3.14, 1729, 0);
+```
+
+- 编译器会将参数打包为两个`Integer`实例和一个`Double`实例，然后寻找它们的共同超类
+- 但这里会找到两个: `Number`和`Comparable`接口，补救措施是将参数全部写为double类型
+
+![Xnip2022-05-25_13-46-35](JavaCore I.assets/Xnip2022-05-25_13-46-35.jpg)
+
+<hr>
+
+
+
+
+
+
+
+## 4. 类型变量的限定
+
+- 有时候需要对类型变量加以约束
+- 如下，计算数组中的最大元素:
+
+```java
+class ArrayAlg {
+  public static <T> T min(T[] a) {
+    if (a == null || a.length == 0) {
+      return null;
+    }
+    
+    T smallest = a[0];
+    for (int i = 1; i < a.length; i++) {
+      if (smallest.compareTo(a[i] > 0)) {
+        smallest = a[i];
+      }
+    }
+    
+    return smallest;
+  }
+}
+```
+
+
+
+- 该方法中调用了`compareTo`方法，所以需要`smallest`这个变量是一个`Comparable`实例才行
+
+为T设置限定:
+
+Syntax:
+
+```java
+public static <T extends bound> T method(T args);
+```
+
+> 这里的<T extends bound>将T限制为了bound这个类的实现类/子类
+
+
+
+```java
+public static <T extends Comparable> T min(T[] a);
+```
+
+这样一来，传入的参数数组只能是实现了`Comparable`接口的类了
+
+
+
+- T表示`绑定类型`的子类型
+- 绑定类型可以是类，也可以是接口
+- 一个类型变量可以有多个绑定类型:
+
+```java
+T extends Comparable & Serializable
+```
+
+
+
+Code:
+
+```java
+import eighth.pair1.*;
+import java.time.LocalDate;
+
+
+public class PairTest2 {
+    public static void main(String[] args) {
+        LocalDate[] birthDays = {
+            LocalDate.of(1906, 12, 9),
+            LocalDate.of(1815, 12, 10),
+            LocalDate.of(1903, 12, 3),
+            LocalDate.of(1910, 6, 22),
+        };
+
+        Pair<LocalDate> mm = ArrayAlg.minmax(birthDays);
+        System.out.println("min = " + mm.getFirst());
+        System.out.println("max = " + mm.getSecond());
+    }
+}
+
+class ArrayAlg {
+    public static<T extends Comparable> Pair<T> minmax(T[] a) {
+        if (a == null || a.length == 0) {
+            return null;
+        }
+
+        T min = a[0];
+        T max = a[0];
+        for (int i = 1; i < a.length; i++) {
+            if (min.compareTo(a[i]) > 0) {
+                min = a[i];
+            }
+
+            if (max.compareTo(a[i]) < 0) {
+                max = a[i];
+            }
+        }
+
+        return new Pair<>(min, max);
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 5. 泛型Code和虚拟机
+
+
+
+
+
+
+
+### 1) 类型擦除
+
+- 每个泛型类型都有一个相应的原始类型(raw type)
+- 原始类型的名字就是**删除类型参数后的类名**
+
+
+
+- 将类型变量换为其对应的绑定类型/限定类型(类型变量没有绑定类型的话就换为Object)
+
+> 上述过程就是类型擦除(type erase)
+
+Eg:
+
+
+
+擦除前:
+
+```java
+public class Pair<T> {
+    private T first;
+    private T second;
+
+    public Pair() {
+        this.first = null;
+        this.second = null;
+    }
+
+    public Pair(T first, T second) {
+        this.first = first;
+        this.second = second;
+    }
+
+    public T getFirst() {
+        return this.first;
+    }
+
+    public T getSecond() {
+        return this.second;
+    }
+
+    public void setFirst(T newValue) {
+        this.first = newValue;
+    }
+    public void setSecond(T newValue) {
+        this.second = newValue;
+    }
+}
+```
+
+
+
+擦除后:
+
+```java
+public class Pair {
+    private Object first;
+    private Object second;
+
+    public Pair() {
+        this.first = null;
+        this.second = null;
+    }
+
+    public Pair(Object first, Object second) {
+        this.first = first;
+        this.second = second;
+    }
+
+    public Object getFirst() {
+        return this.first;
+    }
+
+    public Object getSecond() {
+        return this.second;
+    }
+
+    public void setFirst(Object newValue) {
+        this.first = newValue;
+    }
+    public void setSecond(Object newValue) {
+        this.second = newValue;
+    }
+}
+```
+
+擦除类型变量后，就变成一个原始的`Pair`类了
+
+
+
+
+
+- 当一个泛型类中有多个绑定类型时:
+
+用第一个绑定类型来替换类中的类型变量
+
+
+
+Eg:
+
+![IMG_2D7DB7C609E1-1](JavaCore I.assets/IMG_2D7DB7C609E1-1.jpeg)
+
+- 最好将标签接口(没有方法的接口)放在绑定类型列表中的末位处
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 翻译泛型表达式
+
+- 调用泛型方法时，如果擦除返回类型，编译器会自动插入强转
+- 即将返回类型为`T`的方法修改为返回`Object`，再将其进行强转(对于泛型域来说也是如此)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 翻译泛型方法
+
+擦除前:
+
+```java
+public static <T extends Comparable> T min(T[] a);
+```
+
+
+
+擦除后:
+
+```java
+public static Comparable min (Comparable[] a)
+```
+
+
+
+1. 虚拟机中只有普通的类和方法，没有泛型
+2. 所有类型参数在擦除时，都要用绑定类型来替换(没有绑定类型则用Object)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 遗留代码
+
+- 可以将一个原始类型的实例赋给一个参数化的类型变量:
+
+```java
+Class<T, U> var = new Class();
+```
+
+使用注解可以让这里的警告消失:
+
+```java
+@SuppressWarnings("unchecked")
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+## 6. 约束与局限性
+
+
+
+
+
+### 1) 类型参数不能为原始类型
+
+> 因为类型擦除后，泛型类中只有`Object`域，而其不能存储原始类型，只能使用它们的包装类代替
+
+<hr>
+
+
+
+
+
+
+
+### 2) 类型查询
+
+- 使用`instanceof`查询一个实例是否属于泛型类型时会报错，只能查看其是否属于对于的原始类型
+- 在原始类型和泛型类型上使用`getClass`方法，返回的都是同一个`Class`实例
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 3) 不能创建参数化类型数组
+
+
+
 
 
 
