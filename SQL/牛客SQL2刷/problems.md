@@ -382,6 +382,66 @@ LEFT JOIN dept_manager AS t2 ON t1.emp_no = t2.emp_no
 WHERE ISNULL(t2.emp_no)
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 九、获取所有员工的manager
+
+![Xnip2022-05-27_08-05-56](problems.assets/Xnip2022-05-27_08-05-56.jpg)
+
+
+
+![Xnip2022-05-27_08-07-58](problems.assets/Xnip2022-05-27_08-07-58.jpg)
+
+题意:
+
+给你一张员工信息表，一张部门经理表，请查询出其中每个员工和对应的部门经理
+
+
+
+
+
+
+
+
+
+思路:
+
+- 将题目抽象一下，其实就是将两表进行连接，再对所有的员工id和经理id这两个集合进行差集运算
+- 这道题目只需要使用内连接即可(如果不是每个员工都有部门经理的话，则需要使用外连接)将两表进行连接
+- 因为最后返回的id中不能存在经理id，所以我们要对查询出的员工id进行限定
+- 最简单的方式莫过于使用NOT IN，即将所有的经理id查询出后，判断每个查询出的员工id是否存在于该经理id集合中
+- 但和昨天一样，使用NOT IN可能会成为性能瓶颈，所以最好改用EXISTS，SQL如下
+
+```mysql
+SELECT
+    t1.emp_no,
+    t2.emp_no AS 'manager'
+FROM
+    dept_emp AS t1
+INNER JOIN dept_manager AS t2 ON t1.dept_no = t2.dept_no
+WHERE NOT EXISTS (
+    SELECT
+        t3.emp_no
+    FROM
+        dept_manager AS t3
+    WHERE t1.emp_no = t3.emp_no
+)
+```
+
+
+
 
 
 

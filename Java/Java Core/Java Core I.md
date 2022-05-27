@@ -6761,6 +6761,500 @@ Class<T, U> var = new Class();
 
 ### 3) 不能创建参数化类型数组
 
+- 可以创建类型为`Pair<String>[]`的变量，但不能使用`new Pair<String>[10]`来初始化这个变量
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 不能实例化类型变量
+
+非法:
+
+```java
+public Pair() {
+  first = new T();
+  second = new T();
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 5) 不能构造泛型数组
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 6) 泛型类的静态上下文中类型变量无效
+
+> 不能在静态域/方法中引用类型变量
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 7) 不能抛出/捕获泛型类实例
+
+非法:
+
+```java
+public static<T extends Throwable> void doWork(Class<T> t) {
+  try {
+    
+    // Can't catch type variable
+  } catch (T e) {
+    
+  }
+}
+```
+
+
+
+
+
+但可以在方法首部中抛出该泛型类实例:
+
+```java
+publc static<T extends Throwable> void doWork(Class<T> t) throw T {
+  
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 7. 泛型类型的继承规则
+
+无论类型参数之间有什么关系，其对应的泛型类都没有联系:
+
+![IMG_568AFE244ED0-1](JavaCore I.assets/IMG_568AFE244ED0-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 8. 通配符类型
+
+
+
+### 1) 概念
+
+- 使用通配符，可以允许类型参数变化:
+
+```java
+Pair<? extends Employee>
+```
+
+- 这样就表示类型参数为`Employee`的子类
+
+
+
+
+
+Eg:
+
+```java
+public static void printBuddies(Pair<Employee> p) {
+  Employee first = p.getFirst();
+  Employee second = p.getSecond();
+  System.out.println(first.getName() + " and " + second.getName() + " are buddies.");
+}
+```
+
+
+
+- 我们不能将`Pair<Managere>`实例传入该方法中
+- 但使用通配符类型就可以:
+
+```java
+public static void printBuddies(Pair<? extends Employee> p) {
+}
+```
+
+
+
+- 类型`Pair<Manager>`是`Pair<? extends Employee>`的子类型
+
+> 泛型类的继承/子类关系体现在<>里
+
+
+
+![IMG_470F98CDC56E-1](JavaCore I.assets/IMG_470F98CDC56E-1.jpeg)
+
+
+
+- 但不能通过通配泛型类型变量来调用`setFirst`方法:
+
+![IMG_BB8C593DDE7A-1](JavaCore I.assets/IMG_BB8C593DDE7A-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 通配符超类型限定
+
+- 通配符可以指定一个超类型限定(supertype bound)
+
+```java
+? super Manager
+```
+
+
+
+> 带有超类型限定的通配符可以向泛型对象写入(? super xxx)
+>
+> 带有子类型限定的通配符可以从对象读取(? extends XXX)
+
+
+
+![IMG_A84D07E9984F-1](JavaCore I.assets/IMG_A84D07E9984F-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 无限定通配符
+
+无限定通配符:
+
+```java
+Pair<?>
+```
+
+
+
+通过无限定通配符，我们可以将一个泛型方法变得更简洁，且其中不需要实际的类型
+
+```java
+public static boolean hasNulls(Pair<?> p) {
+  return p.getFirst() == null || p.getSecond() == null;
+ }
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 通配符捕获
+
+通配符不是类型变量，不能作为一种类型使用
+
+
+
+
+
+
+
+Code:
+
+```java
+public class PairTest3 {
+    public static void main(String[] args) {
+        Manager ceo = new Manager("Gus Greedy", 800000, 2003, 12, 15);
+        Manager cfo = new Manager("Sid Sneaky", 600000, 2003, 12, 15);
+        Pair<Manager> buddies = new Pair<>(ceo, cfo);
+        printBuddies(buddies);
+
+        ceo.setBonus(10000000);
+        cfo.setBonus(500000);
+
+        Manager[] managers = {ceo, cfo};
+
+        Pair<Employee> result = new Pair<>();
+        minmaxBonus(managers, result);
+        System.out.println("first: " + result.getFirst().getName()
+        + ", second: " + result.getSecond().getName());
+        maxminBonus(managers, result);
+        System.out.println("first: " + result.getFirst().getName()
+        + ", second: " + result.getSecond().getName());
+    }
+
+    public static void printBuddies(Pair<? extends Employee> p) {
+        Employee first = p.getFirst();
+        Employee second = p.getSecond();
+        System.out.println(first.getName() + " and " + second.getName() + " are buddies.");
+    }
+
+    public static void minmaxBonus(Manager[] a, Pair<? super Manager> result) {
+        if (a.length == 0) {
+            return;
+        }
+
+        Manager min = a[0];
+        Manager max = a[0];
+
+        for (int i = 0; i < a.length; i++) {
+            if (min.getBonus() > a[i].getBonus()) {
+                min = a[i];
+            }
+
+            if (max.getBonus() < a[i].getBonus()) {
+                max = a[i];
+            }
+        }
+
+        result.setFirst(min);
+        result.setSecond(max);
+    }
+
+    public static void maxminBonus(Manager[] a, Pair<? super Manager> result) {
+        minmaxBonus(a, result);
+        PairAlg.swapHelper(result);
+    }
+
+
+}
+
+class PairAlg {
+    public static boolean hasNulls(Pair<?> p) {
+        return p.getFirst() == null || p.getSecond() == null;
+    }
+
+    public static void swap(Pair<?> p) {
+        swapHelper(p);
+    }
+
+    public static <T> void swapHelper(Pair<T> p) {
+        T t = p.getFirst();
+        p.setFirst(p.getSecond());
+        p.setSecond(t);
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 9. 反射/泛型
+
+- 当使用反射分析泛型类的时候，类型参数会被擦除
+
+
+
+### 1) 泛型Class类
+
+`Class`类其实是一个泛型类，其类型参数就是得到该`Class`实例对应的类
+
+
+
+`Class<T>`类中的`newInstance`方法可以直接返回类型为类型参数的一个实例，这样就避免了类型转换
+
+<hr>
+
+
+
+
+
+
+
+Code:
+
+```java
+import java.lang.reflect.*;;
+import java.util.*;
+
+public class GenericReflectionTest {
+
+    public static void main(String[] args) {
+        String name;
+        if (args.length > 0) {
+            name = args[0];
+        } else {
+            try (Scanner in = new Scanner(System.in)) {
+                System.out.println("Enter class name (e.g. java.util.Collections): ");
+                name = in.next();
+            }
+        }
+
+        try {
+            Class<?> cl = Class.forName(name);
+            printClass(cl);
+            for (Method m : cl.getDeclaredMethods()) {
+                printMethod(m); 
+            }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void printClass(Class<?> cl) {
+        System.out.print(cl);
+        printTypes(cl.getTypeParameters(), "<", ", ", ">", true);
+        Type sc = cl.getGenericSuperclass();
+        if (sc != null) {
+            System.out.println(" extends ");
+            printType(sc, false);
+        }
+
+        printTypes(cl.getGenericInterfaces(), " implements ", ", ", ", ", false);
+        System.out.println();
+    }
+
+    public static void printMethod(Method m) {
+        String name = m.getName();
+        System.out.println(Modifier.toString(m.getModifiers()));
+        System.out.print(" ");
+        printTypes(m.getTypeParameters(), "<", ", ", "> ", true);
+        
+        printType(m.getGenericReturnType(), false);
+        System.out.println(" ");
+        System.out.println(name);
+        System.out.println("(");
+        printTypes(m.getGenericParameterTypes(), "", ", ", "", false);
+        System.out.println(")");
+    }
+
+    public static void printTypes(Type[] types, String pre, String sep, String suf,
+    boolean isDefinition) {
+        if (pre.equals(" extends ") && Arrays.equals(types, new Type[]{Object.class})) {
+            return;
+        }
+        if (types.length > 0) {
+            System.out.println(pre);
+        }
+
+        for (int i = 0; i < types.length; i++) {
+            if (i > 0)  {
+                System.out.println(sep);
+            }
+
+            printType(types[i], isDefinition);;
+        }
+
+        if (types.length > 0) {
+            System.out.println(suf);
+        }
+    }
+
+    public static void printType(Type type, boolean isDefinition) {
+        if (type instanceof Class) {
+            Class<?> t = (Class<?>) type;
+            System.out.println(t.getName());
+
+        } else if (type instanceof TypeVariable) {
+            TypeVariable<?> t = (TypeVariable<?>) type;
+            System.out.println(t.getName());
+            if (isDefinition) {
+                printTypes(t.getBounds(), " extends ", " & ", "", false);
+            }
+
+        } else if (type instanceof WildcardType) {
+            WildcardType t = (WildcardType) type;
+            System.out.println("?");
+            printTypes(t.getUpperBounds(), " extends ", " & ", "", false);
+            printTypes(t.getLowerBounds(), " super ", " & ", "", false);
+
+        } else if (type instanceof ParameterizedType) {
+            ParameterizedType t = (ParameterizedType) type;
+            Type owner = t.getOwnerType();
+            if (owner != null) {
+                printType(owner, false);
+                System.out.println(".");
+            }
+
+        } else if (type instanceof GenericArrayType) {
+            GenericArrayType t = (GenericArrayType) type;
+            System.out.println("");
+            printType(t.getGenericComponentType(), isDefinition);
+            System.out.println("[]");
+        }
+
+
+    }
+}
+
+```
+
+
+
+
+
+
+
+
+
 
 
 
