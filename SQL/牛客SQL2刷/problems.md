@@ -440,6 +440,70 @@ WHERE NOT EXISTS (
 )
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# 十、每个部门的最高薪资员工
+
+![](problems.assets/Xnip2022-05-27_21-01-45.jpg)
+
+
+
+![Xnip2022-05-27_21-02-29](problems.assets/Xnip2022-05-27_21-02-29.jpg)
+
+题意:
+
+给你一张员工信息表，一张薪水表，请你计算出其中每个部门中薪资最高的员工对应的工资
+
+
+
+
+
+思路:
+
+- 因为部门id和薪水是分别放在两张表里的，所以我们需要连接两表来查询出每个部门中的最高薪资，可能有人会想直接加入对应的员工id不久把这道题目解决了吗？
+- 在MySQL中，如果sql_mode不是ONLY_FULL_GROUP_BY的话，确实可以这样做，但一般来说，sql_mode默认都是ONLY_FULL_GROUP_BY，即SELECT列表中的非聚合函数字段必须和分组字段对应，否则不合法，这也符合标准SQL中的规定
+- 所以我们在获取每个部门对于的最值时，不能一并获取对应的员工id，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+		t1.dept_no,
+		MAX(t2.salary) AS 'maxSalary'
+FROM
+		dept_emp AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
+GROUP BY t1.dept_no
+```
+
+
+
+- 有了这张临时表/内联视图后，我们只需要连接原始两表，并限制这两个字段即可，这里可以使用IN，SQL如下
+
+```mysql
+SELECT
+    t1.dept_no,
+    t1.emp_no,
+    t2.salary AS 'maxSalary'
+FROM
+    dept_emp AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
+WHERE (t1.dept_no, t2.salary) IN (
+    SQL1
+    )
+ORDER BY t1.dept_no
+```
+
+
+
 
 
 
