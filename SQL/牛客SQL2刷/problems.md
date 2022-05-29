@@ -548,6 +548,52 @@ AND last_name != 'Mary'
 ORDER BY hire_date DESC
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# 十二、各个title对应的平均薪资
+
+![Xnip2022-05-30_07-08-22](problems.assets/Xnip2022-05-30_07-08-22.jpg)
+
+
+
+![Xnip2022-05-30_07-08-37](problems.assets/Xnip2022-05-30_07-08-37.jpg)
+
+题意:
+
+给你一张员工职称表，一张薪资信息表，请你统计每个title对应的平均薪资
+
+
+
+
+
+思路:
+
+- 因为需要按照title来分组计算平均值，而title和薪水在不同的两张表中
+- 因此我们需要进行表的连接才能进行分组计算，SQL如下
+
+```mysql
+SELECT
+    t1.title AS 'title',
+    AVG(t2.salary) AS 'avg(s.salary)'
+FROM
+    titles AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
+GROUP BY t1.title
+ORDER BY AVG(t2.salary)
+```
+
+
+
+
+
 
 
 
