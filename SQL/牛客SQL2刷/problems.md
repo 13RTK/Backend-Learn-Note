@@ -502,9 +502,51 @@ WHERE (t1.dept_no, t2.salary) IN (
 ORDER BY t1.dept_no
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+# 十一、查找对应信息
+
+![Xnip2022-05-29_09-24-42](problems.assets/Xnip2022-05-29_09-24-42.jpg)
+
+
+
+![Xnip2022-05-29_09-24-50](problems.assets/Xnip2022-05-29_09-24-50.jpg)
+
+题意:
+
+给你一张员工信息表，请你查询出其中所有工号为奇数，且姓不是Mary的员工，最后按照hire_date字段倒序排序
+
+
+
+
+
+思路:
+
+- 查询奇数可以通过与2取余后判断，也可以对1做按位于运算，限制姓直接使用!=即可
+- 最后注意倒序使用`DESC`即可，最终SQL如下
+
+```mysql
+SELECT
+    emp_no,
+    birth_date,
+    first_name,
+    last_name,
+    gender,
+    hire_date
+FROM
+    employees
+WHERE emp_no & 1 = 1
+AND last_name != 'Mary'
+ORDER BY hire_date DESC
+```
 
 
 

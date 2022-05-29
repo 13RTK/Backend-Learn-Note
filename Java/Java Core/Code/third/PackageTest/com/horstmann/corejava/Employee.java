@@ -13,6 +13,10 @@ public class Employee {
         hireDay = LocalDate.of(year, month, day);
     }
 
+    public Employee(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return this.name;
     }

@@ -7260,16 +7260,1397 @@ public class GenericReflectionTest {
 
 
 
-
-# 七、
-
+# 七、集合
 
 
 
+## 1. 集合框架
+
+
+
+在设计集合框架时，开发者既想用上泛型，但又不希望像C++的STL那样复杂
+
+<hr>
 
 
 
 
+
+
+
+
+
+
+
+
+
+### 1) 将集合的接口与实现分离
+
+- Java集合类库将接口和实现分离
+
+
+
+队列接口(Queue): 队列可以在尾部添加元素，在头部删除元素，并查找队列中元素的个数
+
+- 队列的两种实现:
+    - ArrayDeque: 循环数组队列
+    - LinkedList: 链表队列，用于收集的对象没有上限时
+
+- 以集合框架中以`Abstract`开头的类是为类库的实现者设计的:
+
+例如通过`AbstractQueue`类来实现队列类要比通过`Queue`接口要方便得多
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) Collection
+
+> 集合类的基本接口为`Collection`接口
+
+
+
+该接口常用的方法:
+
+```java
+public interface Collection<E> {
+  boolean add(E e);
+  Iterator<E> iterator();
+}
+```
+
+- add: 向集合中添加元素，如果集合被修改了，则返回true(添加成功)
+- iterator: 返回一个实现了`Iterator`接口的对象实例，可以利用该实例依次访问集合中的元素
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 迭代器
+
+Iterator接口中的4个方法:
+
+```java
+public interface Iterator<E> {
+  E next();
+  boolean hasNext();
+  default void remove();
+  default void forEachRemaining(Consumer<? super E> action);
+}
+```
+
+
+
+- 想要查看集合中的所有元素时，只需要获取一个迭代器，并在调用`hasNext`方法返回true之后调用`next`即可
+
+```java
+Collection<String> c = ...;
+Iterator<String> iter = c.iterator();
+while (iter.hasNext()) {
+  String element = iter.next();
+ 	...
+}
+```
+
+
+
+- 使用`for each`和上述方法相同，`for each`循环可以和任何实现了`Iterable`接口的对象一起工作
+
+Iterable接口:
+
+```java
+public interface Iterable<E> {
+  Iterator<E> iterator();
+  ...
+}
+```
+
+
+
+> `Collection`接口拓展了`Iterable`接口，所以所有集合都能使用`for each`循环
+
+
+
+- 在Java SE 8中，可以直接调用`forEachRemaining`方法提供一个`lambda`表达式，从而处理每个元素:
+
+```java
+@Test
+public void demo() {
+  Iterable<Integer> demo = new ArrayList<>(Arrays.asList(29, 230, 231, 213, 25, 23, 54, 312));
+  System.out.println(demo);
+
+  Iterator<Integer> iterator = demo.iterator();
+  iterator.forEachRemaining((element) -> System.out.println(element / 10));
+}
+```
+
+
+
+> 迭代器访问元素的顺序取决于具体的集合类型，对ArrayList迭代则从索引0开始，如果访问`HashSet`中的元素，则是乱序的(hash值)
+
+
+
+- 迭代器应该是位于两个元素之间，调用一次`next`方法后，迭代器就越过下一个元素，并返回越过的那个元素的引用
+- 使用`remove`方法前也需要先使用`next`方法越过对应的元素才行
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 泛型实用方法
+
+- `Collection`接口中声明了许多方法，但没有实现
+- 集合框架中提供了`AbstractCollection`类，其中实现了部分例行方法:
+
+![IMG_66331F4B1E96-1](JavaCore I.assets/IMG_66331F4B1E96-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 集合框架中的接口
+
+![IMG_FDA73A84E5C0-1](JavaCore I.assets/IMG_FDA73A84E5C0-1.jpeg)
+
+
+
+> 集合框架中的两大基本接口: `Collection`和`Map`
+
+
+
+
+
+- List:
+
+`List`是一个有序集合(ordered collection)，采用两种方式访问数组元素:
+
+- 迭代器访问: 按照索引顺序
+- 使用一个整数索引访问对应位置的值(随机访问): 
+
+其定义的用于随机访问的方法:
+
+```java
+void add(int index, E e);
+void remove(int index);
+E get(int index);
+E set(int index, E e);
+```
+
+
+
+对应的`ListIterator`接口是`Iterator`的一个子接口，其中的`add`方法可以用于在迭代器前面添加元素
+
+
+
+> 通过判断一个实例是否实现了`RandomAccess`接口，可以判断一个集合是否支持高效的随机访问
+
+![Xnip2022-05-28_15-18-48](JavaCore I.assets/Xnip2022-05-28_15-18-48.jpg)
+
+
+
+
+
+
+
+- Set: 称为集
+    -  `add`方法不允许添加重复的元素
+    - `equals`方法: 两个集只要包含相同的元素就认为两个集相等，不要求它们中元素的顺序相同
+    - `hashCode`包含相同元素的集对应的散列码相同
+
+不是所有的集合都是集
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2. 具体的集合
+
+除了`Map`对应的类之外，其他的集合类都实现了`Collection`接口，`Map`对应的类都实现了`Map`接口
+
+![IMG_827F0C4CCAE9-1](JavaCore I.assets/IMG_827F0C4CCAE9-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 1) 链表
+
+对应的类: `LinkedList`
+
+- 如果要将元素添加到链表中间，则`add`方法会使用迭代器来负责
+
+    > 因为一些集合中的元素是无序的，所以使用迭代器添加元素是无效的，因此`Iterator`接口中并没有`add`方法
+
+
+
+- 想要在迭代器中使用`add`方法，可以借助`ListIterator`接口，其包含`add`方法:
+- 与`Collection`中的`add`方法不同，这里的`add`方法假定操作总会改变列表
+
+```java
+interface ListIterator<E> extends Iterator<E> {
+  void add(E e);
+  E previous();
+  boolean hasPrevious();
+}
+```
+
+
+
+利用`previous`和`hasPrevious`方法可以反向遍历链表
+
+
+
+Eg:
+
+![Xnip2022-05-28_15-36-59](JavaCore I.assets/Xnip2022-05-28_15-36-59.jpg)
+
+
+
+
+
+注意:
+
+> 如果迭代器发现集合被另一个迭代器修改了，那么会抛出异常
+
+
+
+设置迭代器的原则:
+
+- 附加的多个迭代器只能读取列表
+- 能够读写的迭代器只能有一个
+
+
+
+
+
+注意:
+
+- `LinkedList`不支持随机访问，所以必须从头开始一个找
+
+> 其get方法有优化: 如果查找的对应位置的索引大于size() / 2，则从尾部开始
+
+
+
+- `ListIterator`接口还提供了`nextIndex`和`previousIndex`方法返回下一次调用对应方法时元素的索引
+
+
+
+Code:
+
+```java
+import java.util.*;
+
+public class LinkedListTest {
+    public static void main(String[] args) {
+        List<String> a = new LinkedList<>();
+        a.add("Amy");
+        a.add("Carl");
+        a.add("Erica");
+
+        List<String> b = new LinkedList<>();
+        b.add("Bob");
+        b.add("Doug");
+        b.add("Frances");
+        b.add("Gloria");
+
+        ListIterator<String> aIter = a.listIterator();
+        Iterator<String> bIter = b.iterator();
+
+        while (bIter.hasNext()) {
+            if (aIter.hasNext()) {
+                aIter.next();
+            }
+
+            aIter.add(bIter.next());
+        }
+
+        System.out.println(a);
+
+
+        bIter = b.iterator();
+        while (bIter.hasNext()) {
+            bIter.next();
+
+            if (bIter.hasNext()) {
+                bIter.next();
+                bIter.remove();
+            }
+        }
+
+        System.out.println(b);
+
+        a.removeAll(b);
+
+        System.out.println(a);
+    } 
+}
+```
+
+
+
+![Xnip2022-05-28_15-48-50](JavaCore I.assets/Xnip2022-05-28_15-48-50.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 数组列表
+
+- `ArrayList`封装了一个动态分配的对象数组
+
+> 如果需要考虑线程安全(多线程并发)，则需要使用`Vector`
+>
+> 如果只是单线程，则使用`ArrayList`即可
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 散列集
+
+- 优点: 可以快速查找某个元素是和否存在
+- 缺点: 无法保留顺序
+
+
+
+> Java中，散列表使用数组 + 链表的形式来实现，每个数字元素对应一个链表
+
+- 其中每个链表/列表称为桶(bucket)
+
+
+
+保存元素到散列表中的操作:
+
+- 计算这个元素的散列码(hashCode)，通过与桶的总数区余，获取对应的桶索引
+- 如果对应桶索引位置上有其他元素其确定两者不重复之后，就会连接起来形成链表
+
+Eg:
+
+![IMG_A3A10710A9C9-1](JavaCore I.assets/IMG_A3A10710A9C9-1.jpeg)
+
+
+
+- Java SE 8中，当桶满之后，会变为BST(平衡二叉树)
+
+> Java标准库中，默认的桶数(容量)为16
+
+
+
+- 通过负载/装载因子(load factor)来决定何时扩容
+
+> 装载因子的默认值为0.75(75%)，如果超过75%的桶/位置已经被填入了，那么就会用当前容量的双倍来扩容/再散列
+
+
+
+- HashSet是集合框架中实现了基于散列表的集，其`contains`方法只需要在某个桶中查找元素即可
+
+Code:
+
+```java
+import java.util.*;
+
+public class SetTest {
+    public static void main(String[] args) {
+        Set<String> words = new HashSet<>();
+        long totalTime = 0;
+
+        try (Scanner in = new Scanner(System.in)) {
+            while (!in.hasNext("exit")) {
+                String word = in.next();
+                long callTime = System.currentTimeMillis();
+                words.add(word);
+                callTime = System.currentTimeMillis() - callTime;
+                totalTime += callTime;
+            }
+        }
+
+        Iterator<String> iter = words.iterator();
+        for (int i = 0; i <= 20 && iter.hasNext(); i++) {
+            System.out.println(iter.next()); 
+        }
+
+        System.out.println("...");
+        System.out.println(words.size() + " distinct words. " + totalTime + " milliseconds");
+    }    
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 树集
+
+`TreeSet`是一个有序集合，插入后的元素会自动进行排序，其实现使用的是红黑树
+
+- 树集中的元素必须实现`Comparable`接口
+
+
+
+Code:
+
+
+
+Main:
+
+```java
+import java.util.*;
+
+public class TreeSetTest {
+    public static void main(String[] args) {
+        SortedSet<Item> parts = new TreeSet<>();
+        parts.add(new Item("Toaster", 1234));
+        parts.add(new Item("Widget", 4562));
+        parts.add(new Item("Modem", 9912));
+        System.out.println(parts);
+
+        NavigableSet<Item> sortedByDescription = new TreeSet<>(Comparator.comparing(Item::getDescription));
+        sortedByDescription.addAll(parts);
+        System.out.println(sortedByDescription);
+    }    
+}
+
+```
+
+
+
+Item:
+
+```java
+import java.util.*;
+
+public class Item implements Comparable<Item>{
+    private String description;
+    private int partNumber;
+
+    public Item(String aDescription, int aPartNumber) {
+        this.description = aDescription;
+        this.partNumber = aPartNumber;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    @Override
+    public String toString() {
+        return "[description=" + this.description + ", partNumber=" + partNumber + "]";
+    }
+
+    @Override
+    public boolean equals(Object otherObject) {
+        if (this == otherObject) {
+            return true;
+        }
+
+        if (otherObject == null) {
+            return false;
+        }
+
+        if (this.getClass() != otherObject.getClass()) {
+            return false;
+        }
+
+        Item other = (Item) otherObject;
+        return Objects.equals(description, other.description) && partNumber == other.partNumber;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.description, this.partNumber);
+    }
+
+    @Override
+    public int compareTo(Item other) {
+        int diff = Integer.compare(partNumber, other.partNumber);
+        return diff != 0 ? diff : description.compareTo(other.description);
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 队列/双端队列
+
+- Java SE 6引入了`Deque`(Double End Queue)接口，由`ArrayDeque`和`LinkedList`两个类实现
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 6) 优先级队列
+
+- 可以按照任意顺序插入，但按照排序的顺序进行检索，调用`remove`方法时总是会删除其中的最小元素
+- 迭代的顺序不是按照元素顺序来访问的，但删除时总是删除剩余元素中优先级最小的那个元素
+
+
+
+Code:
+
+```java
+import java.time.LocalDate;
+import java.util.PriorityQueue;
+
+public class PriorityQueueTest {
+    public static void main(String[] args) {
+        PriorityQueue<LocalDate> pq = new PriorityQueue<>();
+        pq.add(LocalDate.of(1906, 12, 9));
+        pq.add(LocalDate.of(1815, 12, 10));
+        pq.add(LocalDate.of(1903, 12, 3));
+        pq.add(LocalDate.of(1910, 6, 22));
+
+        System.out.println("Iterating over elements..,");
+        for (LocalDate date : pq) {
+            System.out.println(date); 
+        }
+
+        System.out.println("Removing elements...");
+        while (!pq.isEmpty()) {
+            System.out.println(pq.remove());
+        }
+    }    
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 3. 映射
+
+
+
+
+
+### 1) 基本映射操作
+
+映射的两个通用实现(都实现了Map接口):
+
+- HashMap
+- TreeMap
+
+
+
+其中`TreeMap`会按照键的顺序对元素进行排序，并构建成搜索树
+
+> 如果不需要按照顺序访问键，则使用`HashMap`即可
+
+
+
+- 通过`put`方法添加一个映射，其中键必须提供，如果该映射已经存在了，那么对应的值会被覆盖
+- 通过`get`方法获取键对应的值，如果没有则返回`null`，可以使用`getOrDefault`方法设置返回`null`时对应的值
+
+
+
+Code:
+
+```java
+package ninth.map;
+
+import java.util.*;
+import third.PackageTest.com.horstmann.corejava.Employee;
+
+public class MapTest {
+    public static void main(String[] args) {
+        Map<String, Employee> staff = new HashMap<>();
+        staff.put("144-25-5464", new Employee("Amy Lee"));
+        staff.put("567-24-2546", new Employee("Harry Hacker"));
+        staff.put("157-62-7935", new Employee("Gary Cooper"));
+        staff.put("456-62-5527", new Employee("Francesca Cruz"));
+
+        System.out.println(staff);
+
+        staff.remove("567-24-2546");
+
+        staff.put("456-62-5527", new Employee("Francesca Miller"));
+        
+        System.out.println(staff.get("157-62-7935"));
+
+        staff.forEach((k, v) -> System.out.println("key=" + k + ", value=" + v));
+    }    
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 更新
+
+为了防止使用`get`方法时，对应的键第一次出现，可以使用`putIfAbsent`方法来初始化对应的映射:
+
+```java
+counts.putIfAbsent(word, 0);
+counts.put(word, counts.get(word) + 1);
+```
+
+
+
+可以使用`merge`方法进行简化:
+
+```java
+counts.merge(word, 1, Integer::num);
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 映射视图
+
+- 在集合框架内，不认为映射(map)是一个集合，但是可以得到映射的视图(view)——某个实现了`Collection`接口/子接口的实例
+
+
+
+从`Map`中可以获取三种视图:
+
+- 键集: Set<K> keySet();
+- 值集合: Collection<V> values();
+- 键/值对集(条目): Set<Map<K, V>> entrySet();
+
+
+
+键/值(条目)对集中的元素是实现了`Map.Entry`接口的实例
+
+- 目前访问所有键/值对最高效的方法: `forEach`:
+
+```java
+map.forEach((k, v) -> {
+  execute;
+});
+```
+
+- 不能向键集(keySet)中添加元素
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 4) 弱散列映射
+
+- 因为散列是用数组 + 链表实现的，所以就算其中有不再使用的映射键值对，因为其他桶还在使用(数组中其他位置的链表)，不能被垃圾回收器自动回收
+
+> 此时需要使用WeakHashMap来解决
+
+
+
+`WeakHashMap`使用弱引用(weak reference)来保存键，弱引用对象会将映射的引用保存到散列键中，垃圾回收器会回收它(需要放入队列)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 链接集和映射
+
+`LinkedHashMap`和`LinkedHashSet`是能够记住元素的顺序的
+
+
+
+LinkedHashSet:
+
+- 根据插入的顺序来放置元素
+
+
+
+对于LinkedHashMap: 
+
+- 每次调用`get`或者`put`方法都会将对应的映射放在链表的`尾部`
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 6) 枚举集/映射
+
+`EnumSet`和`EnumMap`
+
+<hr>
+
+
+
+
+
+
+
+## 4. 视图/包装器
+
+- 通过使用视图可以获取其他实现了`Collection`接口和`Map`接口的实例对象，例如`keySet`方法返回的实例
+- `keySet`并不是创建了一个新的集，而是返回一个实现了`Set`接口的类实例对象，这个实例类的方法能够对原映射进行操作
+
+> 这样的集合称为视图
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 1) 轻量级集合包装器
+
+`Arrays`中的静态方法`asList`可以将普通的数组包装为一个`List`实例
+
+注意:
+
+- 其返回的实例对象是一个视图对象，其`只能读取不能修改`
+- 其调用了`Collections.nCopies`方法，所以返回了一个实现了`List`接口的不可修改的对象实例
+
+Eg:
+
+```java
+List<String> settings = Collections.nCopies(100, "DEFAULT");
+```
+
+- 该示例会创建一个包含100个字符串的List实例，每个字符串都为"DEFAULT"
+
+
+
+
+
+- Collections.singleton():
+
+该方法返回一个实现了`Set`接口的视图对象
+
+该对象实现了一个不可修改的单元素集，且不需要付出额外开销
+
+对应的还有`singletonList`，`singletonMap`等方法
+
+
+
+- 还有一些方法可以用来生成对应的空集、空列表、空映射:
+
+```java
+Set<String> deepThoughts = Collections.emptySet();
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 子范围
+
+通过`subList`方法可以获取一个列表的子范围视图(来自接口`List`)
+
+Eg:
+
+```java
+List group2 = staff.subList(10, 20);
+```
+
+
+
+第一个数字代表起始索引，第二数字代表第一个不包含的索引，与`substring`一致
+
+
+
+
+
+对于`SortedSet`和`SortedMap`:
+
+- 可以根据元素的排序顺序来获取对应范围内的元素:
+
+![IMG_1CA36C4A39E1-1](JavaCore I.assets/IMG_1CA36C4A39E1-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 不可修改的视图
+
+- 通过`Collections`还可以生成对应集合的不可修改视图(unmodifiable views)
+
+![IMG_EB46732E7010-1](JavaCore I.assets/IMG_EB46732E7010-1.jpeg)
+
+
+
+这些视图都只会返回一个包装了对于接口的实例，所以只能使用对于接口中定义的方法
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 同步视图
+
+> 如果需要实现线程安全的集合，可以使用`Collections`中对应的方法将一个对于的集合类实例转换为具有同步方法(synchronized修饰的)的实例
+
+Eg:
+
+```java
+Map<String, Employee> map = Collections.synchronizedMap(new HashMap<String, Employee>());
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 5) 受查视图
+
+可以通过`Collections.checkedList`等方法创建一个安全列表/集/映射等等，将其赋给一个集合实例引用变量，之后在操作中出现问题后就会报错，而不是等到使用元素的时候再报错
+
+
+
+Before:
+
+![Xnip2022-05-28_21-18-48](JavaCore I.assets/Xnip2022-05-28_21-18-48.jpg)
+
+
+
+
+
+After:
+
+![Xnip2022-05-28_21-19-53](JavaCore I.assets/Xnip2022-05-28_21-19-53.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5. 算法
+
+
+
+
+
+### 1) 排序/混排
+
+`Collections.sort()`方法可以对实现了`List`接口的实例进行排序:
+
+```java
+Collections.sort(listInstance);
+```
+
+- `reverseOrder()`方法将返回一个降序排序的`Comparator`实例
+
+
+
+对于`List`实例对象，可以直接使用`sort`方法，并传入一个`Comparator`实例即可，添加`reversed`方法实现逆序
+
+
+
+Code:
+
+```java
+import java.util.*;
+
+public class ShuffleTest {
+    public static void main(String[] args) {
+        List<Integer> numbers = new ArrayList<>();
+        for (int i = 0; i < 49; i++) {
+            numbers.add(i);
+        }
+
+        Collections.shuffle(numbers);
+        List<Integer> winningCombination = numbers.subList(0, 6);
+        Collections.sort(winningCombination);
+        System.out.println(winningCombination);
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 二分查找
+
+`Collections`类的`binarySearch`方法实现了二分查找算法，但传入的集合必须是排好序的，如果对应的集合实例没有实现`Comparable`接口，那么需要提供一个`Comparator`实例
+
+
+
+Eg:
+
+```java
+i = Collections.binarySearch(list, target);
+i = Collections.binarySearch(list, target, comparator);
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 批量操作
+
+- 从调用实例中删除参数实例中出现的元素:
+
+```java
+list1.removeAll(list2)
+```
+
+即集合A - 集合B
+
+
+
+- 从调用实例集合中删除未在参数实例中出现的元素:
+
+```java
+list1.retainAll(list2)
+```
+
+求两个集合的交集
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 集合和数组的转换
+
+数组转集合:
+
+- 使用Arrays.asList即可
+
+
+
+集合转数组:
+
+- 使用`toArray()`方法，但返回的是一个`Object`数组
+- 最好使用`toArray()`的变体方法，其参数需要一个对应类型的数组，如果传入的数组长度和需要转换的集合长度一致，则不会创建新的数组
+
+Eg:
+
+![Xnip2022-05-28_21-45-55](JavaCore I.assets/Xnip2022-05-28_21-45-55.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 6. 遗留的集合
+
+一些比较老的类:
+
+![IMG_EB6B475B55DD-1](JavaCore I.assets/IMG_EB6B475B55DD-1.jpeg)
+
+
+
+
+
+### 1) Hashtable
+
+- `Hashtable`和`HashMap`拥有相同的接口，但其中的方法是同步的(synchronized修饰)
+
+> 如果对同步性/并发性和代码兼容性没有要求的话，应该使用`HashMap`
+>
+> 如果需要并发访问，则需要使用`ConcurrentHashMap`
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 枚举
+
+通过`Enumeration`接口可以对遗留集合中的枚举值对象进行遍历，其中有`hasMoreElements`和`nextElement`两个和`Iterator`接口中的`hasNext`与`next`类似的方法
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 属性映射
+
+Property的三个特性:
+
+- 键值都是字符串
+- 表可以保存到文件中，也可以从文件中加载
+- 使用默认的辅助表
+
+
+
+该对应的类后缀为.properties
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 4) 栈
+
+- `Vector`由`Stack`扩展而来
+
+Methods:
+
+![IMG_762657A28849-1](JavaCore I.assets/IMG_762657A28849-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 5) 位集
+
+`BitSet`用来存放一个位序列
+
+
+
+Methods:
+
+![IMG_E497075D34CB-1](JavaCore I.assets/IMG_E497075D34CB-1.jpeg)
+
+
+
+
+
+
+
+Code:
+
+
+
+Java:
+
+```java
+import java.util.BitSet;
+
+public class Sieve {
+    public static void main(String[] args) {
+        int n = 2000000;
+        long start = System.currentTimeMillis();
+        BitSet b = new BitSet(n + 1);
+
+        int count = 0;
+        int i;
+        for (i = 2; i <= n; i++) {
+            b.set(i);
+        }
+
+        i = 2;
+        while (i * i <= n) {
+            if (b.get(i)) {
+                count++;
+                int k = 2 * i;
+                while (k <= n) {
+                    b.clear(k);
+                    k += i;
+                }
+            }
+
+            i++;
+        }
+
+        long end = System.currentTimeMillis();
+        System.out.println(count + " primes");
+        System.out.println((end - start) + " milliseconds");
+    }
+}
+
+```
+
+
+
+CPP:
+
+```cpp
+#include<bitset>
+#include<iostream>
+#include<ctime>
+
+using namespace std;
+
+int main()
+{
+    const int N = 2000000;
+    clock_t cstart = clock();
+
+    bitset<N + 1> b;
+    int count = 0;
+    int i = 0;
+    for (i = 2; i <= N; i++)
+    {
+        b.set(i);
+    }
+
+    i = 2;
+    while (i * i <= N)
+    {
+        if (b.test(i))
+        {
+            count++;
+            int k = 2 * i;
+            while (k <= N) {
+                b.reset(k);
+                k += i;
+            }
+        }
+
+        i++;
+    }
+
+    while (i <= N) {
+        if (b.test(i)) {
+            count++;
+        }
+        i++;
+    }
+
+    clock_t cend = clock();
+    double millis = 1000.0 * (cend - cstart) / CLOCKS_PER_SEC;
+    
+    cout << count << "primes\n" << millis << "milliseconds\n";
+    return 0;
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 八、部署Java应用程序
 
 
 
