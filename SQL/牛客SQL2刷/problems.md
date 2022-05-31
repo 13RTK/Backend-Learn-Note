@@ -590,6 +590,73 @@ GROUP BY t1.title
 ORDER BY AVG(t2.salary)
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十三、薪水第二多的员工信息
+
+![Xnip2022-05-31_08-28-05](problems.assets/Xnip2022-05-31_08-28-05.jpg)
+
+
+
+![Xnip2022-05-31_08-28-17](problems.assets/Xnip2022-05-31_08-28-17.jpg)
+
+题意:
+
+给你一张员工薪水表，请你查询出其中薪水第二高的所有员工
+
+
+
+思路:
+
+- 因为可能存在薪水重复的情况，所以不能简单的按照薪水排序后分页，而是要先求出第二高的薪水，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	salary
+FROM
+	salaries
+GROUP BY salary
+ORDER BY salary DESC
+LIMIT 1 OFFSET 1
+```
+
+- 注意这里需要按照薪资分组，这样才不会有重复
+
+
+
+- 有了上述临时表/内联视图后，我们直接匹配该薪资即可，最终SQL如下
+
+```mysql
+SELECT
+    emp_no,
+    salary
+FROM
+    salaries
+WHERE salary = (
+    SQL1
+    )
+```
+
+
+
+
+
+
+
 
 
 
