@@ -651,6 +651,7 @@ WHERE salary = (
     )
 ```
 
+<hr>
 
 
 
@@ -658,6 +659,63 @@ WHERE salary = (
 
 
 
+
+
+
+
+
+
+# 十四、薪水第二多的员工信息(不用ORDER BY)
+
+![Xnip2022-06-01_08-05-20](problems.assets/Xnip2022-06-01_08-05-20.jpg)
+
+
+
+![Xnip2022-06-01_08-06-18](problems.assets/Xnip2022-06-01_08-06-18.jpg)
+
+题意:
+
+需求和昨天一样，同样是求薪水第二高的员工信息，不过这里要求我们不能使用ORDER BY来排序解决
+
+
+
+思路:
+
+- 昨天的我们的做法是通过排序后跳过第一条数据后取第二条数据即为第二高的薪资
+- 但本质上其实是求除去最大值之外的最大值，刚好，求最大值可以使用聚合函数之一的MAX，所以我们只需要两次MAX即可获取第二高的薪资，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	MAX(salary)
+FROM
+	salaries
+WHERE salary < (
+		SELECT
+			MAX(salary)
+		FROM
+			salaries
+)
+```
+
+
+
+- 同样的，剩下的部分也和昨天一致，只需要简单的匹配salary字段即可，SQL如下
+
+```mysql
+SELECT
+    t1.emp_no,
+    t2.salary,
+    t1.last_name,
+    t1.first_name
+FROM
+    employees AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
+WHERE t2.salary = (
+    SQL1
+)
+```
 
 
 
