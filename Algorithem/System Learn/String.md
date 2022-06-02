@@ -1073,6 +1073,10 @@ https://www.bilibili.com/video/BV1PD4y1o7nd
 
 ![Xnip2022-02-15_16-47-54](String/Xnip2022-02-15_16-47-54.jpg)
 
+
+
+![Xnip2022-06-02_08-00-21](String/Xnip2022-06-02_08-00-21.jpg)
+
 题意:
 
 给你一个非空字符串，请你判断其是否可以由其子串重复多次构成
@@ -1090,8 +1094,6 @@ https://www.bilibili.com/video/BV1PD4y1o7nd
 
 
 复杂度:
-
-- 
 
 - 我们为str创建了一个next数组，所以时间复杂度为O(n)
 - 同上，空间复杂度为O(n)

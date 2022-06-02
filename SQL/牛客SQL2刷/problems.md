@@ -717,6 +717,57 @@ WHERE t2.salary = (
 )
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 十五、查找所有员工的信息
+
+![Xnip2022-06-02_08-04-41](problems.assets/Xnip2022-06-02_08-04-41.jpg)
+
+
+
+![Xnip2022-06-02_08-04-48](problems.assets/Xnip2022-06-02_08-04-48.jpg)
+
+题意:
+
+给你一张员工信息表，一张部门信息表，一张部门员工关系表，请你查询出其中所有员工的对应信息和对应部门，也包括没有分配部门的员工
+
+
+
+
+
+思路:
+
+- 依然要查询出所有的员工信息，所以在连接表时，要以员工信息表为准，因此需要将员工信息表作为驱动表来写，因此需要使用外连接，然后连接相应字段即可，SQL如下
+
+```mysql
+SELECT
+    t1.last_name,
+    t1.first_name,
+    t3.dept_name
+FROM
+    employees AS t1
+LEFT JOIN dept_emp AS t2 ON t1.emp_no = t2.emp_no
+LEFT JOIN departments AS t3 ON t2.dept_no = t3.dept_no
+```
+
+
+
+
+
+
+
+
+
 
 
 
