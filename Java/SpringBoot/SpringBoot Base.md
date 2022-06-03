@@ -2,7 +2,7 @@
 
 好处:
 
-- 比起之前SSM阶段，SpringBoot可以直接省去编写配置类的步骤，通过started整合相关的框架、依赖和工具(Tomcat、Mybatis)
+- 比起之前SSM阶段，SpringBoot可以直接省去编写配置类的步骤，**通过started整合相关的框架、依赖和工具(**Tomcat、Mybatis)
 
 
 

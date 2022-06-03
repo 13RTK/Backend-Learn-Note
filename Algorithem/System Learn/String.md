@@ -1065,7 +1065,7 @@ https://www.bilibili.com/video/BV1PD4y1o7nd
 
 
 
-# 23、重复子字符串
+# 23、重复子字符串(不熟悉)
 
 ![Xnip2022-02-15_16-37-51](String/Xnip2022-02-15_16-37-51.jpg)
 

@@ -760,11 +760,71 @@ LEFT JOIN dept_emp AS t2 ON t1.emp_no = t2.emp_no
 LEFT JOIN departments AS t3 ON t2.dept_no = t3.dept_no
 ```
 
+<hr>
 
 
 
 
 
+
+
+
+
+# 十六、员工工资涨幅
+
+![Xnip2022-06-03_10-24-59](problems.assets/Xnip2022-06-03_10-24-59.jpg)
+
+
+
+![Xnip2022-06-03_10-25-04](problems.assets/Xnip2022-06-03_10-25-04.jpg)
+
+题意:
+
+给你一张员工信息表，一张员工薪资信息表，请你计算出每个员工从入职开始到现在还在职时的薪资涨幅
+
+
+
+
+
+思路:
+
+- 部分老铁可能上来就是最大薪资减去最小薪资，还觉得员工信息表没用，但一提交就G了
+- 这是因为部分员工可能存在入职时的薪资不是最低数值的情况(出个P0事故降薪很正常吧?)
+- 所以我们不能简单地用最值相减的方式来做，而是需要老老实实的查询出当前薪资再减去入职当天的薪资
+- 因为部分员工可能中途就跑路了，所以我们需要先筛选出至今还在摸鱼的员工，即to_date为9999-01-01的员工，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	emp_no
+FROM
+	salaries
+WHERE to_date = '9999-01-01'
+```
+
+
+
+- 然后我们需要通过两表连接获取入职当天对应员工的薪资
+- 而一旦连接后，当前薪资就需要在另一张表中去取了，所以我们需要写一个三表连接，最终SQL如下
+
+```mysql
+SELECT
+    t1.emp_no,
+    t3.salary - t1.salary AS 'growth'
+FROM
+    salaries AS t1,
+    employees AS t2,
+    salaries AS t3
+WHERE t1.from_date = t2.hire_date
+AND t1.emp_no = t2.emp_no
+AND t1.emp_no IN (
+    SQL1
+)
+AND t3.emp_no = t2.emp_no
+AND t3.to_date = '9999-01-01'
+ORDER BY growth
+```
 
 
 
