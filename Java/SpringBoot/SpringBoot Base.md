@@ -52,15 +52,34 @@ SpringBootApplication注解中实现了自动扫描，所以不需要我们自�
 
 ![Xnip2022-03-25_12-40-13](SpringBoot.assets/Xnip2022-03-25_12-40-13.jpg)
 
-第一个依赖是SpringBoot的核心依赖，第二个依赖是SpringBoot的测试依赖
+- 第一个依赖是SpringBoot的核心依赖
+- 第二个依赖是SpringBoot的测试依赖
 
-其中的插件是用于打包的
+
+
+父项目中定义了一个依赖文件，专门用来管理当前SpringBoot版本对应的可兼容依赖版本:
+
+![Xnip2022-06-03_17-56-27](SpringBoot.assets/Xnip2022-06-03_17-56-27.jpg)
+
+- 我们的项目可以直接使用该父项目中的依赖，而不需要指定具体的版本:
+
+![Xnip2022-06-03_17-58-59](SpringBoot.assets/Xnip2022-06-03_17-58-59.jpg)
+
+
+
+
+
+
+
+
 
 
 
 
 
 - properties
+
+> 这是SpringBoot中唯一的配置文件
 
 ![Xnip2022-03-25_12-41-48](SpringBoot.assets/Xnip2022-03-25_12-41-48.jpg)
 
@@ -75,6 +94,10 @@ SpringBootApplication注解中实现了自动扫描，所以不需要我们自�
 其中展示的是git忽略的目录
 
 <hr>
+
+
+
+
 
 
 

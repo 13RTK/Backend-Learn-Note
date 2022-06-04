@@ -826,6 +826,63 @@ AND t3.to_date = '9999-01-01'
 ORDER BY growth
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十七、各部门工资数
+
+![Xnip2022-06-04_12-11-07](problems.assets/Xnip2022-06-04_12-11-07.jpg)
+
+
+
+![Xnip2022-06-04_12-11-14](problems.assets/Xnip2022-06-04_12-11-14.jpg)
+
+题意:
+
+给你一张部门信息表，一张员工关系表，一张薪水表，请你查询出每个部门对应的工资记录数量
+
+
+
+
+
+思路:
+
+- 因为部门信息和薪资表没有直接关联的字段，所以我们需要借助员工关系表来做中转
+- 最后注意分组和排序即可，不过在统计的时候推荐使用`COUNT(*)`，因为该写法不会对列进行任何判断，而`COUNT(列名)`会对列进行NOT NULL的判断，该思路适用于MySQL、MariaDB和PostgreSQL
+- 所以最终SQL如下
+
+```mysql
+SELECT
+    t1.dept_no,
+    t1.dept_name,
+    COUNT(*) AS 'sum'
+FROM
+    departments AS t1
+INNER JOIN dept_emp AS t2 ON t1.dept_no = t2.dept_no
+INNER JOIN salaries AS t3 ON t2.emp_no = t3.emp_no
+GROUP BY t1.dept_no, t1.dept_name
+ORDER BY t1.dept_no
+```
+
+
+
+
+
+
+
+
+
 
 
 
