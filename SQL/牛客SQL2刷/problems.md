@@ -875,9 +875,69 @@ GROUP BY t1.dept_no, t1.dept_name
 ORDER BY t1.dept_no
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+# 十八、员工薪资排名
+
+![Xnip2022-06-05_10-20-57](problems.assets/Xnip2022-06-05_10-20-57.jpg)
+
+
+
+![Xnip2022-06-05_10-21-44](problems.assets/Xnip2022-06-05_10-21-44.jpg)
+
+题意:
+
+给你一张薪资信息表，请你查询出每个员工的薪资排名
+
+
+
+
+
+思路:
+
+- 最简单的方法就是使用窗口函数了，只需要按照salary字段进行倒序排列即可，SQL如下
+
+```mysql
+SELECT
+    emp_no,
+    salary,
+    DENSE_RANK() OVER(
+        ORDER BY salary DESC
+    ) AS 't_rank'
+FROM
+    salaries
+ORDER BY t_rank, emp_no
+```
+
+
+
+- 但如果MySQL版本不是8.0及以上呢？那就需要使用关联子查询了，而且需要放在SELECT列表上，SQL如下
+
+```mysql
+SELECT
+    t1.emp_no,
+    t1.salary,
+    (
+        SELECT
+            COUNT(DISTINCT t2.salary)
+        FROM
+            salaries AS t2
+        WHERE t2.salary >= t1.salary
+    ) AS 't_rank'
+FROM
+    salaries AS t1
+ORDER BY t_rank, t1.emp_no
+```
 
 
 

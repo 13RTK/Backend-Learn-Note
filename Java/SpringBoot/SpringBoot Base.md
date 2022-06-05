@@ -153,6 +153,16 @@ Eg:
 
 
 
+- properties配置文件里的值可以通过`@Value`注解来获取
+
+Eg:
+
+![Xnip2022-06-04_20-38-50](SpringBoot.assets/Xnip2022-06-04_20-38-50.jpg)
+
+
+
+
+
 
 
 
@@ -174,9 +184,45 @@ Eg:
 
 可在properties文件中填写用户信息
 
-但还是需要我们自己写Initializer类
+但还是需要我们自己写配置类:
 
-![Xnip2022-03-26_16-02-17](SpringBoot.assets/Xnip2022-03-26_16-02-17.jpg)
+![Xnip2022-06-04_19-36-43](SpringBoot.assets/Xnip2022-06-04_19-36-43.jpg)
+
+
+
+- 在application.properties配置文件中即可设置对应的用户信息:
+
+```properties
+server.port=80
+
+spring.security.user.name=alex
+spring.security.user.password=abcdef
+spring.security.user.roles=user, admin
+```
+
+
+
+- 可以使用更简洁的`yaml`或者`yml`格式文件来代替`properties`:
+
+```yaml
+server:
+  port: 80
+
+spring:
+  security:
+    user:
+      name: alex
+      password: abcdef
+      roles:
+      - user
+      - admin
+```
+
+
+
+
+
+> 在Spring Security5.7中，WebSecurityConfigurerAdapter类被弃置了
 
 <hr>
 

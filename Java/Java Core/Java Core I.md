@@ -8978,7 +8978,442 @@ t.start();
 
 ## 5. 同步
 
+- 当两个或者以上线程操作同一个数据时，每个线程都对该数据进行了修改，此时数据可能会出现错误(被多次修改为负数等等)，该情况称为竞争条件
 
+<hr>
+
+
+
+
+
+
+
+### 1) 例子
+
+- 创建一个Bank类，其中的transfer类将一个账号中的一定数额钱款转移到另一个账户中
+- 通过lambda表达式设置一个重写了run方法的Runnable实例，其中的run方法内会随机选择一个目标银行账户，调用transfer方法后进入阻塞状态(sleep)
+
+
+
+Code:
+
+
+
+Main:
+
+```java
+package unsynch;
+
+public class UnsynchBankTest {
+    public static final int N_ACCOUNTS = 100;
+    public static final double INITIAL_BALANCE = 1000;
+    public static final double MAX_AMOUNT = 1000;
+    public static final int DELAY = 10;
+
+    public static void main(String[] args) {
+        Bank bank = new Bank(N_ACCOUNTS, INITIAL_BALANCE);
+        for (int i = 0; i < N_ACCOUNTS; i++) {
+            int fromAccount = i;
+
+            Runnable r = () -> {
+                try {
+                    while (true) {
+                        int toAccount = (int) (bank.size() * Math.random());
+                        double amount = MAX_AMOUNT * Math.random();
+                        bank.transfer(fromAccount, toAccount, amount);
+                        Thread.sleep((int) (DELAY * Math.random()));
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            };
+
+            Thread t = new Thread(r);
+            t.start();
+        }
+    }
+}
+
+```
+
+
+
+
+
+Bank:
+
+```java
+package unsynch;
+
+import java.util.Arrays;
+
+public class Bank {
+    private final double[] accounts;
+
+    public Bank(int n, double initialBalance) {
+        this.accounts = new double[n];
+        Arrays.fill(this.accounts, initialBalance);
+    }
+
+    public void transfer(int from, int to, double amount) {
+        if (accounts[from] < amount) {
+            return;
+        }
+
+        System.out.println(Thread.currentThread());
+        accounts[from] -= amount;
+
+        System.out.printf(" %10.2f from %d to %d", amount, from, to);
+        accounts[to] += amount;
+
+        System.out.printf(" Total Balance : %10.2f%n", getTotalBalance());
+    }
+
+    public double getTotalBalance() {
+        double sum = 0;
+
+        for (double a : this.accounts) {
+            sum += a;
+        }
+
+        return sum;
+    }
+
+    public int size() {
+        return accounts.length;
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 2) 竞争条件
+
+上述Code运行后发现，总金额会发生变动，该问题会出现是因为:
+
+```java
+accounts[from] -= amount;
+accounts[to] += amount;
+```
+
+不是原子操作
+
+
+
+正常的流程:
+
+1. 将accounts[to]的数值写入CPU寄存器进行处理
+2. 增加该变量的值
+3. 将寄存器里处理过的数据写回到accounts[to]在内存中的位置
+
+
+
+但一个线程可能只执行了前两步就被剥夺了运行权，此时其他的线程再次对同一个值进行了修改，但之前的修改此时还未生效，从此开始金额就变得不再正常了
+
+> 对应线程执行该操作时，可能在任何一点被中断，使得过程出现错误
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 3) 锁对象
+
+Java中让并发访问保持正确的两种机制:
+
+1. `synchronized`关键字: 自动提供一个锁和相关的条件
+2. Java SE5.0引入的`ReentrantLock`类
+
+
+
+
+
+使用`ReentrantLock`保护代码块的语法结构:
+
+```java
+// 创建一个锁对象
+ReentrantLock myLock = new ReentrantLock();
+
+// 获取锁
+myLock.lock();
+try {
+  
+} finally {
+  
+  // 释放锁
+  myLock.unlock();
+}
+```
+
+> 该结构确保只能有一个线程能够进入锁的区域内
+>
+> 一旦一个线程锁定该锁对象，其他线程在调用该锁对象获取锁时都会被`阻塞`，直到锁对象被占用的线程释放
+
+
+
+- 注意: 解锁操作必须放在`finally`里，否则可能发生异常后，该锁永远不会解开，从而导致其他的线程永远阻塞
+
+
+
+通过锁来重写保护Bank类的transfer方法:
+
+```java
+public class Bank {
+  private Lock bankLock = new ReentrantLock();
+
+  public void transfer(int from, int to, int amount) {
+    bankLock.lock();
+    try {
+      System.out.println(Thread.currentThread());
+      accounts[from] -= amount;
+
+      System.out.printf(" %10.2f from %d to %d", amount, from, to);
+      accounts[to] += amount;
+
+      System.out.printf(" Total Balance : %10.2f%n", getTotalBalance());
+    } finally {
+      bankLock.unlock();
+    }
+  }
+}
+```
+
+
+
+- 如果一个线程调用该方法，且在执行结束之前就被剥夺了运行权，那么其他线程因为不能获取该方法的锁，因此在调用lock方法时被阻塞
+- 其他线程必须等待持有锁的线程完成transfer方法并释放锁之后，才能运行
+
+
+
+- 线程可以重复获取已经持有的锁，锁保持一个持有计数(hold count)来记录对`lock`方法的嵌套调用
+- 被锁保护的代码可以调用另一个使用相同的锁的方法(即使用同一个锁对象的方法)
+
+
+
+`ReentrantLock`类:
+
+- ReentrantLock(): 创建一个可重入锁实例对象
+- ReentrantLock(boolean fair): 创建一个带有公平策略的锁(公平锁):
+
+公平锁会偏向等待时间最长的线程，但会降低性能，所以默认是关闭的
+
+> 公平锁并不能保证线程调度器是公平的
+
+<hr>
+
+
+
+
+
+
+
+### 4) 条件对象
+
+- 有时候，线程获取了锁，但需要满足对应的条件才能执行
+
+> 使用一个`条件实例对象`来管理获取了锁，但不满足条件的线程
+>
+> 条件对象被称为`条件变量`(conditional variable)
+
+
+
+Eg:
+
+```java
+if (bank.getBalance() >= amount) {
+  
+  // 该位置可能被中断
+  bank.transfer(from, to, amount);
+}
+```
+
+- 有可能在判断后，还没有调用`transfer`方法时，该线程就被打断了，而重新恢复后，余额很可能已经发生了变化，因此:
+
+> 需要确保其他线程不会在检查余额和转账之间修改余额
+
+
+
+可通过锁来保护这两个动作:
+
+```java
+public void transfer(int from, int to, int amount) {
+  banckLock.lock();
+  
+  try {
+    while (accounts[from] < amount) {
+      // 线程等待
+    }
+    
+    // 执行转账操作
+  } finally {
+    bankLock.unlock();
+  }
+}
+```
+
+
+
+- 当余额不足时，当前线程进入等待状态，此时需要其他线程往该用户注入资金
+- 但该线程持有了锁，其他线程无法进行存款操作，`此时我们需要条件对象`:
+
+
+
+通过锁实例，调用`newCondition`方法可以创建一个条件对象实例:
+
+```java
+class Bank {
+  private Condition sufficientFunds;
+  ...
+    
+  public Bank() {
+    sufficientFunds = bankLock.newCondition();
+  }
+}
+```
+
+
+
+发现余额不足时，通过该条件对象实例调用:
+
+```java
+sufficientFunds.await();
+```
+
+- 此时当前线程被阻塞，并放弃了锁
+
+
+
+等待获取锁的线程(阻塞)和调用了`await`方法的线程的区别:
+
+- 后者会进入对应条件的等待集(创建的条件实例)，当锁可用时，该线程还需要等待另一个线程通过同一个条件对象实例调用`signalAll`方法才能进行运行:
+
+```java
+sufficientFunds.signallAll();
+```
+
+> 该方法的调用会重新激活因为该条件而等待的所有线程
+>
+> 调用signalAll方法后，还需要再次测试对应的条件
+
+
+
+
+
+`重点`:
+
+- 当一个线程通过`Condition`对象调用`await`方法时，其需要其他的线程调用`signalAll`方法
+- 如果没有其他的线程来重写激活等待的线程的话，就会导致死锁
+- 当最后一个线程在解除其他线程的阻塞状态之前就调用了`await`方法，那么该程序就会挂起(没有活动线程了)
+
+
+
+
+
+- signalAll方法只会解除对应线程的阻塞，以便让这些线程得以重新竞争获取锁对象
+- singal方法会随机解除某个线程的阻塞状态
+
+
+
+Code:
+
+
+
+Bank锁保护版:
+
+```java
+package synch;
+
+import java.util.Arrays;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Bank {
+    private final double[] accounts;
+    private Lock bankLock;
+    private Condition sufficientFunds;
+
+    public Bank(int n, double initialBalance) {
+        this.accounts = new double[n];
+        Arrays.fill(this.accounts, initialBalance);
+        bankLock = new ReentrantLock();
+        sufficientFunds = bankLock.newCondition();
+    }
+
+    public void transfer(int from, int to, double amount) throws InterruptedException {
+        bankLock.lock();
+
+        try {
+            while (accounts[from] < amount) {
+                sufficientFunds.await();
+            }
+
+            System.out.println(Thread.currentThread());
+            accounts[from] -= amount;
+
+            System.out.printf(" %10.2f from %d to %d", amount, from, to);
+            accounts[to] += amount;
+
+            System.out.printf(" Total Balance : %10.2f%n", getTotalBalance());
+
+            sufficientFunds.signalAll();
+        } finally {
+            bankLock.unlock();
+        }
+    }
+
+    public double getTotalBalance() {
+        bankLock.lock();
+
+        try {
+            double sum = 0;
+
+            for (double a : this.accounts) {
+                sum += a;
+            }
+
+            return sum;
+        } finally {
+            bankLock.unlock();
+        }
+    }
+
+    public int size() {
+        return accounts.length;
+    }
+}
+```
+
+
+
+
+
+java.util.concurrent.locks.Lock类:
+
+- Condition newCondition(): 创建一个条件对象
+
+
+
+java.util.concurrent.locks.Condition类:
+
+- void await(): 将线程放在等待集中
+- void signalAll(): 解除该条件等待集中的所有线程的阻塞状态
+- void signal(): 随机解除一个该条件等待集中线程的阻塞状态
 
 
 
