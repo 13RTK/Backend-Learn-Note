@@ -939,9 +939,73 @@ FROM
 ORDER BY t_rank, t1.emp_no
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+# 十九、非经理员工的薪水
+
+![Xnip2022-06-06_07-32-36](problems.assets/Xnip2022-06-06_07-32-36.jpg)
+
+
+
+![Xnip2022-06-06_07-33-28](problems.assets/Xnip2022-06-06_07-33-28.jpg)
+
+题意:
+
+给你一张员工信息表，一张部门员工关系表，一张部门经理表，一张薪资表，请你查询出其中所有非经理的员工信息和薪资
+
+
+
+
+
+思路:
+
+- 看起来有四张表，其实我们只需要用到其中的三张，员工信息表是多余的
+- 从结果上看，我们只需要部门号、员工号和薪资即可，但最后需要排除掉所有的经理，所以使用NOT IN是最简单的写法，SQL如下
+
+```mysql
+SELECT
+    t1.dept_no,
+    t1.emp_no,
+    t2.salary
+FROM
+    dept_emp AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
+WHERE t1.emp_no NOT IN (
+    SELECT
+        emp_no
+    FROM
+        dept_manager
+)
+```
+
+
+
+- 当然，有NOT IN，就有NOT EXISTS，SQL如下
+
+```mysql
+SELECT
+    t1.dept_no,
+    t1.emp_no,
+    t2.salary
+FROM
+    dept_emp AS t1
+INNER JOIN salaries AS t2 ON t1.emp_no = t2.emp_no
+WHERE NOT EXISTS (
+    SELECT
+        emp_no
+    FROM
+        dept_manager AS t3
+    WHERE t1.emp_no = t3.emp_no
+)
+```
 
 
 

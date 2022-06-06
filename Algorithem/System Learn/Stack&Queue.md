@@ -57,10 +57,49 @@ class MyQueue {
 
 
 
+# 二、两个队列实现栈
+
+![Xnip2022-06-06_08-07-41](Stack:Queue/Xnip2022-06-06_08-07-41.jpg)
 
 
 
+Code:
 
+```java
+class MyStack {
+    Queue<Integer> mainQueue;
+    Queue<Integer> auxiliaryQueue;
+
+    public MyStack() {
+        mainQueue = new LinkedList<>();
+        auxiliaryQueue = new LinkedList<>();
+    }
+
+    public void push(int x) {
+        auxiliaryQueue.add(x);
+
+        while (!mainQueue.isEmpty()) {
+            auxiliaryQueue.add(mainQueue.remove());
+        }
+
+        Queue<Integer> temp = auxiliaryQueue;
+        auxiliaryQueue = mainQueue;
+        mainQueue = temp;
+    }
+
+    public int pop() {
+        return mainQueue.remove();
+    }
+
+    public int top() {
+        return mainQueue.element();
+    }
+
+    public boolean empty() {
+        return mainQueue.isEmpty();
+    }
+}
+```
 
 
 

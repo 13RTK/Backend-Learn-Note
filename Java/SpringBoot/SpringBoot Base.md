@@ -256,6 +256,55 @@ spring:
 
 编写Mapper:
 
+- 注意加上`@Mapper`注解
+
+![Xnip2022-06-05_20-34-21](SpringBoot.assets/Xnip2022-06-05_20-34-21.jpg)
+
+
+
+编写对应的用户实体类:
+
+![Xnip2022-06-05_20-36-25](SpringBoot.assets/Xnip2022-06-05_20-36-25.jpg)
+
+
+
+
+
+编写对应的鉴权服务:
+
+- 注意添加`@Service`注解
+- 通过实现`UserDetailService`接口，重写其中的`loadUserByUserName`方法，通过自动注入`Mapper`来查询对应的用户实体类实例
+
+![Xnip2022-06-05_20-40-36](SpringBoot.assets/Xnip2022-06-05_20-40-36.jpg)
+
+
+
+
+
+
+
+编写SpringSecurity配置，重写另一个configure方法，验证用户:
+
+- 通过`@Resource`注解将Service实例自动注入
+
+![Xnip2022-06-05_20-44-13](SpringBoot.assets/Xnip2022-06-05_20-44-13.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 五、整合Thymeleaf模版引擎
+
+
+
 
 
 
