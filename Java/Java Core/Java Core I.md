@@ -9418,12 +9418,594 @@ java.util.concurrent.locks.Condition类:
 <hr>
 
 
+### 锁和条件
+
+总结:
+
+- 锁用来保护代码片段，只能有一个线程能够执行被锁保护的代码
+- 锁会管理尝试进入被保护代码段的线程
+- 锁可以拥有一个或者多个相关的条件对象
+- 每个条件对象会管理进入被保护代码段但还不能运行的线程
+
+<hr>
 
 
 
 
 
 
+
+### 5) synchronized关键字
+
+- 从Java 1.0开始，每个对象中都有一个内部锁
+- 如果用`synchronized`关键字声明一个方法，那么对象锁会保护整个方法
+
+> 即调用该方法时，需要获取调用方法的这个对象的内部锁
+
+
+
+Eg:
+
+```java
+public synchronized void method() {
+  method body;
+}
+
+// 等价于
+public void method() {
+  this.intrinsicLock.lock();
+  
+  try {
+    method body;
+  } finally {
+    this.intrinsicLock.unlock();
+  }
+}
+```
+
+
+
+> 对象的内部锁只有一个相关条件(之前创建的锁对象可以有多个)
+
+- 对于内部锁，通过wait()方法可以将线程添加到等待集中，使用`notifyAll/notify`方法解除等待集中线程的阻塞状态
+- 即，内部对象锁调用`wait`和`nofityall`方法等价于使用`Condition`对象调用`await`和`signalAll`方法
+
+
+
+总结:
+
+> 每个对象有一个内部锁，锁内有一个内部条件
+>
+> 由锁来管理那些进入`synchronized`方法的线程，由条件来管理那些调用了`wait`方法后阻塞的线程
+
+
+
+
+
+- 在静态方法上使用`synchronized`:
+
+该方法会获取相关类对象的内部锁(`Bank.class`对象)
+
+
+
+内部锁和条件的缺点:
+
+- 不能中断一个正在试图获取锁的线程
+- 试图获取锁时不能设置超时
+- 每个锁只有一个条件
+
+
+
+使用建议:
+
+- 不管是`Lock`, `Condition`还是`synchronized`，最好都不使用，而是应该使用并发包下的类来处理
+- 一定要使用的话，尽量使用`synchronized`
+- 特别需要`Lock/Condition`的特性时，才应该使用它
+
+
+
+Code:
+
+```java
+package synch2;
+
+import java.util.Arrays;
+
+public class Bank {
+    private final double[] accounts;
+
+    public Bank(int n, double initialBalance) {
+        this.accounts = new double[n];
+        Arrays.fill(this.accounts, initialBalance);
+    }
+
+    public synchronized void transfer(int from, int to, double amount) throws InterruptedException {
+        while (this.accounts[from] < amount) {
+            wait();
+        }
+
+        System.out.println(Thread.currentThread());
+        accounts[from] -= amount;
+
+        System.out.printf(" %10.2f from %d to %d", amount, from, to);
+        accounts[to] += amount;
+
+        System.out.printf(" Total Balance: %10.2f%n", getTotalBalance());
+        notifyAll();
+    }
+
+    public synchronized double getTotalBalance() {
+        double sum = 0;
+
+        for (double a : accounts) {
+            sum += a;
+        }
+
+        return sum;
+    }
+
+    public int size() {
+        return accounts.length;
+    }
+}
+```
+
+
+
+以下方法只能在同步块/方法中使用:
+
+- void notifyAll(): 解除该对象上调用wait方法而阻塞的线程
+- void notify(): 随机解除一个线程的阻塞状态
+- void wait(): 使线程进入等待状态直到被通知
+- void wait(long millis): 计时等待
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 6) 同步阻塞
+
+要获取对象的内部锁，可以通过同步方法，也可以通过进入一个同步阻塞:
+
+```java
+synchronized(obj) {
+  critical section;
+}
+```
+
+
+
+> 通过使用一个对象的锁来实现额外的原子操作，称为客户端锁定
+
+
+
+Eg:
+
+```java
+public void transfer(Vector<Double> accounts, int from, int amount) {
+  accounts.set(from, accounts.get(from) - amount);
+  accounts.set(to, accounts.get(to) + amount);
+  System.out.println();
+}
+```
+
+
+
+我们可以截获acconuts对象的锁:
+
+```java
+public void transfer(Vector<Double> accounts, int from, int amount) {
+  synchronized(accounts) {
+    accounts.set(from, accounts.get(from) - amount);
+  	accounts.set(to, accounts.get(to) + amount);
+  }
+  System.out.println();
+}
+```
+
+
+
+> 客户端锁定非常脆弱，通常不推荐使用
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 7) Volatile
+
+- volatile关键字为实例域的**同步访问**提供了一种免锁机制
+
+> 当一个域声明为volatile时，编译器和虚拟机就知道该域可能被另一个线程并发更新
+
+
+
+注意:
+
+- volatile修饰域不能保证其读取、写入不被中断
+- volatile修饰的域/变量不能提供原子性
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 8) final变量
+
+> 当域声明为`final`时，其可以保证被安全地访问
+
+<hr>
+
+
+
+
+
+
+
+
+
+### *9) 原子性
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 10) 死锁
+
+死锁场景:
+
+账户1: 200$
+
+账户2: 300$
+
+线程1: 从账户1转300到账户2
+
+线程2: 从账户2转400到账户1
+
+
+
+> 此时，两个线程都会被阻塞，即为死锁(deadlock)
+>
+> Java中没有任何机制可以避免或者解决死锁，所以需要仔细设计程序才行
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 11) 线程局部变量
+
+> 使用ThreadLocal辅助类可以为每个线程提供各自的实例，从而避免共享变量
+
+
+
+Eg:
+
+```java
+public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+String dateStamp = dateFormat.format(new Date());
+```
+
+如果多个线程同时访问`dateFormat`实例，那么会出现问题
+
+
+
+可以为每个线程都创建一个对应的实例对象:
+
+```java
+public static final ThreadLocal<SimpleDateFormat> dateFormat = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd"));
+
+String dateStamp = dateFormat().get().format(new Date());
+```
+
+
+
+
+
+API:
+
+
+
+java.lang.ThreadLocal:
+
+- T get(): 获取当前线程的值
+- protected initialize(): 覆盖该方法提供一个默认值
+- void set(T t): 为线程设置一个新值
+- void remove(): 删除线程的值
+- static <S> ThreadLocal<S>	withInitial(Supplier<? extends S> supplier): 创建一个线程局部变量，初始值通过参数中的表达式获取
+
+
+
+java.util.concurrent.ThreadLocalRandom:
+
+- static ThreadLocalRandom current(): 返回用于当前线程的`Random`实例
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 12) 锁测试/超时
+
+> 通过`tryLock`方法可以尝试申请一个锁，成功的话返回true
+>
+> 其可以设置超时参数
+
+
+
+区别:
+
+- lock: 该方法无法被中断，如果线程通过lock方法获取锁时被中断，中断的线程在获取锁之前会一直处于阻塞状态
+
+> 出现死锁的话，lock方法无法终止
+
+- tryLock方法如果在等待获取锁的时候被中断，则会抛出异常
+
+> 这样就可以打破死锁了
+
+
+
+
+
+同理可以在条件对象上调用带有超时参数的`await`方法
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 13) 读/写锁
+
+`ReentrantReadWriteLock`: 用于很多线程从一个数据结构读取数据，而很少线程进行修改的情况
+
+> 读线程共享访问
+>
+> 写线程必须互斥访问
+
+
+
+使用读/写锁的步骤:
+
+1. 构造一个ReentraintReadWriteLock实例对象
+
+```java
+private ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+```
+
+
+
+2. 获取读/写锁对象实例
+
+```java
+private Lock readLock = rwl.readLock();
+private Lock writeLock = rwl.writeLock();
+```
+
+
+
+3. 对所有的获取方法加读锁
+
+```java
+public double getTotalBalance() {
+  readLock.lock();
+  try {
+    ...
+  } finally {
+    readLock.unlock();
+  }
+}
+```
+
+
+
+4. 对所有的修改方法加写锁
+
+```java
+public void transfer(...) {
+  writeLock.lock();
+  try {
+    ...
+  } finally {
+    writeLock.unlock();
+  }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6. 阻塞队列
+
+- 实际使用中，最好使用较高实现层次结构来处理并发
+- 可以通过使用多个队列将线程安全地形式化:
+
+> 生产者线程向队列插入元素
+>
+> 消费者线程取出元素
+>
+> 队列已经满了/为空的时候，阻塞队列使得线程阻塞
+
+
+
+阻塞队列提供的方法:
+
+![IMG_8A4B52F5C49D-1](JavaCore I.assets/IMG_8A4B52F5C49D-1.jpeg)
+
+- 这些方法都可以设置超时参数
+
+
+
+阻塞队列的实现类:
+
+- LinkedBlockingQueue(没有容量上限)
+- LinkedBlockingDeque(双端队列)
+- ArrayBlockingQueue(构造时需要指定容量)
+- PriorityBlockingQueue(优先队列)
+- DelayQueue(实现了Delayed接口，其拓展了Comparable接口)
+
+
+
+Code:
+
+```java
+package blockingQueue;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Scanner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
+public class BlockingQueueTest {
+
+    private static final int FILE_QUEUE_SIZE = 10;
+    private static final int SEARCH_THREADS = 100;
+    private static final File DUMMY = new File("");
+    private static BlockingQueue<File> queue = new ArrayBlockingQueue<>(FILE_QUEUE_SIZE);
+
+    public static void main(String[] args) {
+        try (Scanner in = new Scanner(System.in)) {
+            System.out.println("Enter base directory (e.g. /opt/jdk1.8.0/src): ");
+            String directory = in.nextLine();
+
+            System.out.println("Enter keyword (e.g. volatile): ");
+            String keyword = in.nextLine();
+
+            Runnable enumerator = () -> {
+                try {
+                    enumerate(new File(directory));
+                    queue.put(DUMMY);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            };
+
+            new Thread(enumerator).start();
+
+            for (int i = 0; i < SEARCH_THREADS; i++) {
+                Runnable searcher = () -> {
+                    try {
+                        boolean done = false;
+
+                        while (!done) {
+                            File file = queue.take();
+                            if (file == DUMMY) {
+                                queue.put(file);
+                                done = true;
+                            } else {
+                                search(file, keyword);
+                            }
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                };
+
+                new Thread(searcher).start();
+            }
+        }
+
+    }
+
+    public static void enumerate(File directory) throws InterruptedException {
+        File[] files = directory.listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                enumerate(file);
+            } else {
+                queue.put(file);
+            }
+        }
+    }
+
+    public static void search(File file, String keyword) throws IOException {
+        try (Scanner in = new Scanner(file, "UTF-8")) {
+            int lineNumber = 0;
+
+            while (in.hasNextLine()) {
+                lineNumber++;
+                String line = in.nextLine();
+
+                if (line.contains(keyword)) {
+                    System.out.printf("%s:%d:%s%n", file.getPath(), lineNumber, line);
+                }
+            }
+        }
+    }
+}
+
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 7. 线程安全的集合
 
 
 

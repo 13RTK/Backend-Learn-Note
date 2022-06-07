@@ -1,5 +1,4 @@
 import java.util.Scanner;
-import java.util.Arrays;
 
 public class MyArrayStack {
     public static void main(String[] args) {
@@ -20,6 +19,8 @@ public class MyArrayStack {
             
 //             System.out.println(Arrays.toString(stack.myStack));
         }
+
+        scanner.close();
     }
 }
 

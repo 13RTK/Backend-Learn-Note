@@ -303,6 +303,34 @@ spring:
 
 # 五、整合Thymeleaf模版引擎
 
+在maven中导入对应的starter依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-thymeleaf</artifactId>
+</dependency>
+```
+
+
+
+将主页和登录页放入resources下的template文件夹中，将静态资源放入resources下的static文件夹中:
+
+- 注意在页面中设置thymeleaf的命名空间
+
+![Xnip2022-06-06_20-55-49](SpringBoot.assets/Xnip2022-06-06_20-55-49.jpg)
+
+
+
+然后注意在登录页面设置csrf:
+
+![Xnip2022-06-06_20-58-29](SpringBoot.assets/Xnip2022-06-06_20-58-29.jpg)
+
+
+
+在登录表单中设置行为和发送的路径:
+
+![Xnip2022-06-06_21-00-24](SpringBoot.assets/Xnip2022-06-06_21-00-24.jpg)
 
 
 
@@ -312,6 +340,23 @@ spring:
 
 
 
+在controller中注册登录页面:
+
+![Xnip2022-06-06_20-59-17](SpringBoot.assets/Xnip2022-06-06_20-59-17.jpg)
+
+
+
+在SecurityConfiguration中设置登录页，并重新分配对应的页面权限和记住用户功能
+
+![:Users:alex:Library:Application Support:typora-user-images:image-20220606210316551](SpringBoot.assets/:Users:alex:Library:Application Support:typora-user-images:image-20220606210316551.png)
+
+
+
+
+
+在配置文件的spring.mvc项里设置对应的静态资源路径:
+
+![Xnip2022-06-06_21-04-35](SpringBoot.assets/Xnip2022-06-06_21-04-35.jpg)
 
 
 

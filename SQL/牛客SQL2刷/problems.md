@@ -1007,6 +1007,52 @@ WHERE NOT EXISTS (
 )
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# 二十、薪水高于经理的员工
+
+![Xnip2022-06-07_07-17-26](problems.assets/Xnip2022-06-07_07-17-26.jpg)
+
+
+
+![Xnip2022-06-07_07-17-32](problems.assets/Xnip2022-06-07_07-17-32.jpg)
+
+题意:
+
+给你一张员工部门关系表，一张部门经理信息表，一张薪水表，请你查询出其中薪资大于其经理的员工对应的信息和其经理的信息
+
+
+
+
+
+思路:
+
+- 解法很简单，只需要连接表后查询出员工、经理的id和薪资即可，需要注意的是，员工和经理的薪资需要分开处理，所以salaries表需要连接两次，最终SQL如下
+
+```mysql
+SELECT
+    t1.emp_no,
+    t2.emp_no AS 'manager_no',
+    t3.salary AS 'emp_salary',
+    t4.salary AS 'manager_salary'
+FROM
+    dept_emp AS t1
+INNER JOIN dept_manager AS t2 ON t1.dept_no = t2.dept_no
+INNER JOIN salaries AS t3 ON t1.emp_no = t3.emp_no
+INNER JOIN salaries AS t4 ON t2.emp_no = t4.emp_no
+WHERE t3.salary > t4.salary
+```
+
+
+
 
 
 
