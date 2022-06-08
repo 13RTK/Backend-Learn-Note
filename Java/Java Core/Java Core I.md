@@ -10013,6 +10013,384 @@ public class BlockingQueueTest {
 
 
 
+### 1) 映射、集和队列
+
+并发包内提供了一些**允许并发访问数据结构的不同部分使得竞争极小化**的高效的实现:
+
+`ConcurrentHashMap`, `ConcurrentSkipListMap`, `ConcurrentSkipListSete`和`ConcurrentLinkedQueue`
+
+
+
+> 这些集合返回的迭代器不一定能够反映出真实情况(一直被修改)，但其不会重复返回同一个值
+
+- util包中的迭代器会抛出异常
+
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+### 2) 早期的线程安全集合
+
+Vector和Hashtabler现在都用`ArrayList`和`HashMap`代替，但这些类不是线程安全的
+
+集合库中提供了同步包装器，可以将它们变成线程安全的集合:
+
+```java
+List<E> synchArrayList = Collections.synchronizedList(new ArrayList<E>());
+Map<K, V> synchHahMap = Collections.synchronizedMap(new HashMap<K, V>());
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 8. Callable和Future
+
+Runnable接口会封装一个非同步运行的任务(异步)，其没有参数和返回值
+
+- Callable和Runnable类似，但有返回值
+
+
+
+Callable接口:
+
+```java
+public interface Callable<V> {
+  V call() throws Exception;
+}
+```
+
+
+
+Future接口:
+
+```java
+public interface Future<V> {
+  V get() throws ...;
+  V get(long timeout, TimeUnit unit) throws ...;
+  void cancel(boolena mayInterrupt);
+  boolean isCancalled();
+  boolean isDone();
+}
+```
+
+- Future对象用来保存非同步计算的结果
+
+
+
+FutureTask包装器可以将`Callable`转换为`Future`和`Runnable`实例:
+
+```java
+Callable<Integer> myComputation = ...;
+FutureTask<Integer> task = new FutureTask<>(myComputation);
+Thread t = new Thread(task);
+t.start();
+...
+```
+
+
+
+
+
+Code:
+
+```java
+package future;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+
+public class FutureTest {
+    public static void main(String[] args) {
+        try (Scanner in = new Scanner(System.in)) {
+            System.out.println("Enter base directory (e.g. /usr/local/jdk5.0/src): ");
+            String directory = in.nextLine();
+
+            System.out.println("Enter keyword (e.g. volatile): ");
+            String keyword = in.nextLine();
+
+            MatchCounter counter = new MatchCounter(new File(directory), keyword);
+            FutureTask<Integer> task = new FutureTask<>(counter);
+            Thread t = new Thread(task);
+            t.start();
+
+            try {
+                System.out.println(task.get() + " matching files.");
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+class MatchCounter implements Callable<Integer> {
+    private File directory;
+    private String keyWord;
+
+    public MatchCounter(File directory, String keyWord) {
+        this.directory = directory;
+        this.keyWord = keyWord;
+    }
+
+    @Override
+    public Integer call() throws Exception {
+        int count = 0;
+
+        try {
+            File[] files = directory.listFiles();
+            List<Future<Integer>> results = new ArrayList<>();
+
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    MatchCounter counter = new MatchCounter(file, keyWord);
+
+                    FutureTask<Integer> task = new FutureTask<>(counter);
+                    results.add(task);
+
+                    Thread t = new Thread(task);
+                    t.start();
+                } else {
+                    if (search(file)) {
+                        count++;
+                    }
+                }
+            }
+
+            for (Future<Integer> result : results) {
+                try {
+                    count += result.get();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
+
+
+    public boolean search(File file) {
+        try {
+            try(Scanner in = new Scanner(file, "UTF-8")) {
+                boolean found = false;
+
+                while (!found && in.hasNextLine()) {
+                    String line = in.nextLine();
+                    if (line.contains(keyWord)) {
+                        found = true;
+                    }
+                }
+
+                return found;
+            }
+
+        } catch (IOException e) {
+            return false;
+        }
+    }
+}
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 9. 执行器
+
+> 执行器类(Executor)有许多静态工厂方法用来构建线程池
+
+- 如果程序中创建了大量生命周期短的线程，那么就应该使用`线程池`(thread pool)
+- 使用线程池可以减少并发线程的数量，其能够限制并发线程的总数
+
+
+
+线程池中包含许多准备运行的空闲线程:
+
+- 将一个`Runnable`对象实例交给线程池，就会有一个线程调用`run`方法
+- `run`方法退出后，线程不会死亡，而是在线程池中准备为下一个请求服务(Runnable/Callable)
+
+![IMG_2D2C953078CA-1](JavaCore I.assets/IMG_2D2C953078CA-1.jpeg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 1) 线程池
+
+- ThreadPoolExecutor类:
+
+其实现了`ExecutorService`接口
+
+通过`ExecutorService`中的三个方法可以将`Runnable`/`Callable`实例提交给`ExecutorService`:
+
+- Future<?> submit(Runnable task);
+- Future<T> submit(Runnable task, T result);
+- Future<T> submit(Callable<T>task);
+
+通过返回的Future实例可以查询对应任务的状态
+
+
+
+
+
+> 使用线程池的流程:
+
+1. 调用Executor类中的静态方法: `newCachedThreadPool`或者`newFixedThreadPool`创建线程池实例
+2. 调用`submit`提交`Runnable/Callable`实例
+3. 需要通过`Future`实例来取消或者提交`Callable`实例
+4. 不需要再提交任务时，调用`shutdown`关闭线程池(shutdonwNow关闭所有的任务)
+
+
+
+Code:
+
+```java
+package threadPool;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.*;
+
+public class ThreadPoolTest {
+    public static void main(String[] args) {
+        try (Scanner in = new Scanner(System.in)) {
+            System.out.println("Enter base directory (e.g. /usr/local/jdk5.0/src): ");
+            String directory = in.nextLine();
+            System.out.println("Enter keyword (e.g. volatile): ");
+            String keyword = in.nextLine();
+
+            ExecutorService pool = Executors.newCachedThreadPool();
+
+            MatchCounter counter = new MatchCounter(new File(directory), keyword, pool);
+            Future<Integer> result = pool.submit(counter);
+
+            try {
+                System.out.println(result.get() + "matching file.");
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+
+            }
+            pool.shutdown();
+
+            int largestPoolSize = ((ThreadPoolExecutor) pool).getLargestPoolSize();
+            System.out.println("largest pool size=" + largestPoolSize);
+        }
+    }
+}
+
+class MatchCounter implements Callable<Integer> {
+    private File directory;
+    private String keyword;
+    private ExecutorService pool;
+    private int count;
+
+
+    public MatchCounter(File directory, String keyword, ExecutorService pool) {
+        this.directory = directory;
+        this.keyword = keyword;
+        this.pool = pool;
+    }
+
+    @Override
+    public Integer call() throws Exception {
+        count = 0;
+
+        try {
+            File[] files = directory.listFiles();
+            List<Future<Integer>> results = new ArrayList<>();
+
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    MatchCounter counter = new MatchCounter(file, keyword, pool);
+                    Future<Integer> result = pool.submit(counter);
+                    results.add(result);
+                } else {
+                    if (search(file)) {
+                        count++;
+                    }
+                }
+            }
+
+            for (Future<Integer> result : results) {
+                try {
+                    count += result.get();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
+
+    public boolean search(File file) {
+        try {
+            try (Scanner in = new Scanner(file, "UTF-8")) {
+                boolean found = false;
+                while (!found && in.hasNextLine()) {
+                    String line = in.nextLine();
+                    if (line.contains(keyword)) {
+                        found = true;
+                    }
+                }
+
+                return found;
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+}
+```
+
 
 
 

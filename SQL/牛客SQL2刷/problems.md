@@ -1051,9 +1051,54 @@ INNER JOIN salaries AS t4 ON t2.emp_no = t4.emp_no
 WHERE t3.salary > t4.salary
 ```
 
+<hr>
 
 
 
+
+
+
+
+
+
+
+
+
+
+# 二十一、各部门不同title的员工数量
+
+![Xnip2022-06-08_08-12-17](problems.assets/Xnip2022-06-08_08-12-17.jpg)
+
+
+
+![Xnip2022-06-08_08-12-27](problems.assets/Xnip2022-06-08_08-12-27.jpg)
+
+题意:
+
+给你一张部门信息表，一张员工部门关系表，一张员工职称表，请你查询出每个部门中不同职称的员工数量，并按照指定规则对结果排序
+
+
+
+
+
+思路:
+
+- 又一道外强中干的题目，别看它是困难，其实最多就算个中等题
+- 其实只需要连接三张表，取出相应字段并进行分组统计就行了，排序规则自然也就不算什么了，最终SQL如下
+
+```mysql
+SELECT
+    t1.dept_no,
+    t1.dept_name,
+    t3.title,
+    COUNT(*) AS 'count'
+FROM
+    departments AS t1
+INNER JOIN dept_emp AS t2 ON t1.dept_no = t2.dept_no
+INNER JOIN titles AS t3 ON t2.emp_no = t3.emp_no
+GROUP BY t1.dept_no, t1.dept_name, t3.title
+ORDER BY t1.dept_no, t3.title
+```
 
 
 
