@@ -1100,6 +1100,47 @@ GROUP BY t1.dept_no, t1.dept_name, t3.title
 ORDER BY t1.dept_no, t3.title
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# 二十二、没有分类的电影
+
+![Xnip2022-06-09_07-14-32](problems.assets/Xnip2022-06-09_07-14-32.jpg)
+
+
+
+![Xnip2022-06-09_07-14-40](problems.assets/Xnip2022-06-09_07-14-40.jpg)
+
+题意:
+
+给你一张电影信息表，一张电影类别表，一张电影分类表，请你查询出其中没有分类的电影信息
+
+
+
+思路:
+
+- 所谓的没有分类其实就是仅存在于电影信息表内，但不存在于电影分类表中
+- 所以以电影信息表为驱动表，进行外连接后，不存在分类id的自然就是没有分类的电影了，所以最终SQL如下:
+
+```mysql
+SELECT
+    t1.film_id,
+    t1.title
+FROM
+    film AS t1
+LEFT JOIN film_category AS t2 ON t1.film_id = t2.film_id
+WHERE t2.category_id IS NULL
+```
+
+
+
 
 
 
