@@ -1139,7 +1139,80 @@ LEFT JOIN film_category AS t2 ON t1.film_id = t2.film_id
 WHERE t2.category_id IS NULL
 ```
 
+<hr>
 
+
+
+
+
+
+
+# 二十三、动作电影信息
+
+![Xnip2022-06-10_07-17-44](problems.assets/Xnip2022-06-10_07-17-44.jpg)
+
+
+
+![Xnip2022-06-10_07-16-47](problems.assets/Xnip2022-06-10_07-16-47.jpg)
+
+题意:
+
+给你一张电影信息表，一张电影类别表，一张电影类别对应表，请你通过子查询的方式查询出其中所有的动作电影(name字段为Action)
+
+
+
+
+
+思路:
+
+- 因为要用子查询，所以我们可以先查询出所有的动作电影对应的id，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	film_id
+FROM
+	film_category AS t1
+INNER JOIN category AS t2 ON t1.category_id = t2.category_id
+WHERE name = 'Action'
+```
+
+
+
+- 最后只需要使用IN即可，最终查询如下:
+
+```mysql
+SELECT
+    title,
+    description
+FROM
+    film
+WHERE film_id IN (
+    SQL1
+    )
+```
+
+
+
+- 当然，我们也可以使用EXISTS将其改写为关联子查询:
+
+```mysql
+SELECT
+    t3.title,
+    t3.description
+FROM
+    film AS t3
+WHERE EXISTS (
+    SELECT
+        t1.film_id
+    FROM
+        film_category AS t1
+    INNER JOIN category AS t2 ON t1.category_id = t2.category_id
+    WHERE name = 'Action'
+    AND t3.film_id = t1.film_id
+    )
+```
 
 
 
