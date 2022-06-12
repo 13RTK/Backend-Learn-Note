@@ -358,6 +358,79 @@ spring:
 
 ![Xnip2022-06-06_21-04-35](SpringBoot.assets/Xnip2022-06-06_21-04-35.jpg)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 六、日志系统
+
+> 不管项目中其他组建/工具使用的是什么日志实现(Mybatis、Thymeleaf等框架工具的日志)
+>
+> - SpringBoot会将所有其他依赖的日志实现都去除
+> - 将所有的日志都导向Slf4j作为日志门面(facade)
+> - 最后统一使用LogBack作为日志实现(Log4j同一个作者的另一个更高效的日志实现)
+
+
+
+- 通过Lombok注解可以直接使用LogBack日志实例对象
+
+![Xnip2022-06-11_21-12-02](SpringBoot.assets/Xnip2022-06-11_21-12-02.jpg)
+
+
+
+
+
+
+
+- 想要自定义自己的日志格式的话，需要创建一个`logback-spring.xml`文件
+- 其会覆盖掉SpringBoot原本的日志配置
+
+Eg:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--  导入其他配置文件，作为预设  -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+
+    <!--  Appender作为日志打印器配置，这里命名随意  -->
+    <!--  ch.qos.logback.core.ConsoleAppender是专用于控制台的Appender  -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <!--  指定日志输出级别，以及启用的Appender，这里就使用了我们上面的ConsoleAppender  -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
+```
+
+
+
+
+
+- SpringBoot的默认图标可以通过创建`banner.txt`文件来替换:
+
+Eg:
+
+![Xnip2022-06-11_21-49-18](SpringBoot.assets/Xnip2022-06-11_21-49-18.jpg)
+
+
+
+
+
 
 
 
