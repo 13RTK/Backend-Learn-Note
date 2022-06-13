@@ -237,7 +237,11 @@ class MyStack {
 
 
 
-![Xnip2022-06-10_07-50-17](Stack:Queue/Xnip2022-06-10_07-50-17.jpg)
+![Xnip2022-06-12_13-12-29](Stack:Queue/Xnip2022-06-12_13-12-29.jpg)
+
+
+
+![Xnip2022-06-12_13-12-59](Stack:Queue/Xnip2022-06-12_13-12-59.jpg)
 
 题意:
 

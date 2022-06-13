@@ -318,6 +318,15 @@ spring:
 
 - 注意在页面中设置thymeleaf的命名空间
 
+```html
+<html lang="en" xmlns:th="http://www.thymeleaf.org" 
+				xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+  
+</html>
+```
+
+
+
 ![Xnip2022-06-06_20-55-49](SpringBoot.assets/Xnip2022-06-06_20-55-49.jpg)
 
 
@@ -426,6 +435,183 @@ Eg:
 Eg:
 
 ![Xnip2022-06-11_21-49-18](SpringBoot.assets/Xnip2022-06-11_21-49-18.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 七、多环境配置
+
+- 实际开发中，我们往往需要进行将项目在多种环境下运行(开发，测试，生产等等)，不同环境下使用到的配置往往也是不同的
+
+
+
+创建两个`.yaml`文件作为不同环境下的配置:
+
+![Xnip2022-06-12_18-05-01](SpringBoot.assets/Xnip2022-06-12_18-05-01.jpg)
+
+
+
+- 通过原来的`application.yaml`文件中配置`spring.profile.active`选项来选择对应的配置
+
+Eg:
+
+![Xnip2022-06-12_18-07-14](SpringBoot.assets/Xnip2022-06-12_18-07-14.jpg)
+
+
+
+
+
+通过在日志中设置`springProfile`标签，即可指定日志在不同环境下的输出:
+
+![Xnip2022-06-12_18-09-48](SpringBoot.assets/Xnip2022-06-12_18-09-48.jpg)
+
+```xml
+<springProfile name="dev">
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</springProfile>
+
+<springProfile name="prod">
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+    </root>
+</springProfile>
+```
+
+
+
+
+
+
+
+
+
+配置不同的打包配置:
+
+- 在maven的pom.xml中添加`profiles`标签
+
+![Xnip2022-06-12_18-12-10](SpringBoot.assets/Xnip2022-06-12_18-12-10.jpg)
+
+
+
+Eg:
+
+```xml
+<!--分别设置开发，生产环境-->
+<profiles>
+    <!-- 开发环境 -->
+    <profile>
+        <id>dev</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <properties>
+            <environment>dev</environment>
+        </properties>
+    </profile>
+    <!-- 生产环境 -->
+    <profile>
+        <id>prod</id>
+        <activation>
+            <activeByDefault>false</activeByDefault>
+        </activation>
+        <properties>
+            <environment>prod</environment>
+        </properties>
+    </profile>
+</profiles>
+```
+
+
+
+
+
+
+
+
+
+
+
+但具体的配置还需要在`build`标签中添加`resources`，并且在`application`主配置文件中修改active为`'@environment@'`才能生效:
+
+![Xnip2022-06-12_18-18-20](SpringBoot.assets/Xnip2022-06-12_18-18-20.jpg)
+
+Eg:
+
+```xml
+<resources>
+<!--排除配置文件-->
+    <resource>
+        <directory>src/main/resources</directory>
+        <!--先排除所有的配置文件-->
+        <excludes>
+            <!--使用通配符，当然可以定义多个exclude标签进行排除-->
+            <exclude>application*.yml</exclude>
+        </excludes>
+    </resource>
+
+    <!--根据激活条件引入打包所需的配置和文件-->
+    <resource>
+        <directory>src/main/resources</directory>
+        <!--引入所需环境的配置文件-->
+        <filtering>true</filtering>
+        <includes>
+            <include>application.yml</include>
+            <!--根据maven选择环境导入配置文件-->
+            <include>application-${environment}.yml</include>
+        </includes>
+    </resource>
+</resources>
+```
+
+
+
+
+
+
+
+
+
+
+
+![Xnip2022-06-12_18-18-25](SpringBoot.assets/Xnip2022-06-12_18-18-25.jpg)
+
+
+
+
+
+
+
+> 记得每次更换配置后，需要通过maven将原来的打包项目文件清理掉
+>
+> 注意maven配置的文件后缀名要与实际项目中的文件后缀相同: .properties, .yaml, /yml
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 八、
+
+
 
 
 

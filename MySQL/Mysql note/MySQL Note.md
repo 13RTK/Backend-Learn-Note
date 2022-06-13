@@ -4267,6 +4267,16 @@ SET PASSWORD FOR user_name = PASSWORD('content');
 
 
 
+MySQL5.7中推荐使用方式:
+
+```mysql
+SET PASSWORD FOR user_name  = password
+```
+
+
+
+
+
 
 Eg:
 

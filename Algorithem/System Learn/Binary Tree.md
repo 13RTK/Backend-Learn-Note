@@ -419,6 +419,10 @@
 
 ![Xnip2021-11-15_08-37-05](../Algorithem/Xnip2021-11-15_08-37-05.jpg)
 
+
+
+![D2575BE1-ECEB-4A4E-942F-B1DECC37EE8B](Binary Tree/D2575BE1-ECEB-4A4E-942F-B1DECC37EE8B.png)
+
 题意:
 
 给你一颗二叉树，请你判断其是否对称

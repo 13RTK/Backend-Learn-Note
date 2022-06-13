@@ -1252,6 +1252,47 @@ WHERE EXISTS (
 
 ![2021762E-B294-4011-8283-DE207A5472A0](problems.assets/2021762E-B294-4011-8283-DE207A5472A0.png)
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 二十六、从既有表中创建新表
+
+![Xnip2022-06-13_07-15-38](problems.assets/Xnip2022-06-13_07-15-38.jpg)
+
+题意:
+
+给你一张actor表，请你根据其中的`first_name`和`last_name`字段创建一个新的表
+
+
+
+思路:
+
+- 记住语法即可:
+
+```mysql
+CREATE TABLE IF NOT EXISTS table_name (
+  
+)
+SELECT
+	field1,
+	field2
+FROM
+	actor
+```
+
+
+
+
+
 
 
 
