@@ -1289,6 +1289,65 @@ FROM
 	actor
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 二十七、创建索引
+
+![Xnip2022-06-14_07-31-19](problems.assets/Xnip2022-06-14_07-31-19.jpg)
+
+
+
+![Xnip2022-06-14_07-34-00](problems.assets/Xnip2022-06-14_07-34-00.jpg)
+
+题意:
+
+给你一张表，请你为其中的两个字段创建索引
+
+
+
+思路:
+
+- MySQL中，创建索引的语法有两种:
+
+```mysql
+ALTER TABLE table_name ADD [UNIQUE/PRIMARY/INDEX] index_name(field);
+CREATE [UNIQUE/PRIMARY] INDEX index_name ON table_name(field);
+```
+
+
+
+
+
+
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 二十八、
+
+
+
 
 
 
