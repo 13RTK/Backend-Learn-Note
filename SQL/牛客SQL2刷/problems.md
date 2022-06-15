@@ -1324,12 +1324,6 @@ ALTER TABLE table_name ADD [UNIQUE/PRIMARY/INDEX] index_name(field);
 CREATE [UNIQUE/PRIMARY] INDEX index_name ON table_name(field);
 ```
 
-
-
-
-
-
-
 <hr>
 
 
@@ -1343,10 +1337,26 @@ CREATE [UNIQUE/PRIMARY] INDEX index_name ON table_name(field);
 
 
 
+# 二十八、创建视图
 
-# 二十八、
+![Xnip2022-06-15_07-21-55](problems.assets/Xnip2022-06-15_07-21-55.jpg)
+
+题意:
+
+给你一张actor表，请你以其中的两个列为基础创建一个视图，且视图的两个列需要创建别名
 
 
+
+
+
+思路:
+
+- 同样的，只需要记住语法即可(Navicat里只需要直接写SQL):
+
+```mysql
+CREATE VIEW view_name AS
+SQL
+```
 
 
 
