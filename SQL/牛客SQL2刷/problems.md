@@ -1358,6 +1358,50 @@ CREATE VIEW view_name AS
 SQL
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+# 二十九、使用强制索引
+
+![Xnip2022-06-16_07-35-38](problems.assets/Xnip2022-06-16_07-35-38.jpg)
+
+题意:
+
+给你一张salary表，请你通过使用强制索引idx_emp_no来查询出其中emp_no = 10005的记录
+
+
+
+
+
+思路:
+
+- 使用强制索引会在查询时直接使用对应的索引，而不是先让查询优化器去得出一个查询计划
+- 只需要在查询时添加一句即可:
+
+```mysql
+SELECT
+	[field...]
+FROM
+	table_name
+FORCE INDEX(idx_name)
+WHERE ...
+```
+
+
+
+
+
+
+
+
+
 
 
 
