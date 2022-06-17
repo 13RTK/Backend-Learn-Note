@@ -1394,6 +1394,7 @@ FORCE INDEX(idx_name)
 WHERE ...
 ```
 
+<hr>
 
 
 
@@ -1403,12 +1404,13 @@ WHERE ...
 
 
 
+# 三十、添加列
+
+![Xnip2022-06-17_08-25-21](problems.assets/Xnip2022-06-17_08-25-21.jpg)
 
 
 
-
-
-
+![Xnip2022-06-17_08-29-00](problems.assets/Xnip2022-06-17_08-29-00.jpg)
 
 
 
