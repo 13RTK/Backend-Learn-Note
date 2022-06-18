@@ -3718,6 +3718,14 @@ CLOSE cursor_name;
 
 
 
+> 在Navicat中只需要写FOR EACH ROW之后的内容
+
+Eg:
+
+![Xnip2022-06-18_09-40-21](MySQL Note.assets/Xnip2022-06-18_09-40-21.jpg)
+
+
+
 
 
 ## 1. 创建/删除/查看触发器

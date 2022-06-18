@@ -1412,6 +1412,60 @@ WHERE ...
 
 ![Xnip2022-06-17_08-29-00](problems.assets/Xnip2022-06-17_08-29-00.jpg)
 
+<hr>
+
+
+
+
+
+
+
+# 三十一、添加触发器
+
+![Xnip2022-06-18_09-53-13](problems.assets/Xnip2022-06-18_09-53-13.jpg)
+
+
+
+![Xnip2022-06-18_09-53-42](problems.assets/Xnip2022-06-18_09-53-42.jpg)
+
+题意:
+
+给你一张测试表，一张日志表，请你创建一个触发器，使得任何插入到测试表中的数据都能够被记录到日志表中
+
+
+
+思路:
+
+- 这里需要我们使用INSERT触发器，所以记住触发器的语法即可:
+
+```mysql
+CREATE TRIGGER trigger_name AFTER/BEFORE INSERT/UPDATE/DELETE ON modify_table
+(FOR EACH ROW)
+BEGIN
+	SQL;
+END;
+```
+
+- 对于添加的数据，我们需要从NEW表中取，删除的数据则需要从OLD表中取，所以这里我们需要从NEW中取，最终创建触发器的SQL语句如下:
+
+```mysql
+CREATE TRIGGER audit_log AFTER INSERT ON employees_test
+FOR EACH ROW 
+BEGIN
+    INSERT INTO audit VALUES(NEW.id, NEW.name);
+END;
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
