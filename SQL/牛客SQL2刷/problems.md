@@ -1456,6 +1456,63 @@ BEGIN
 END;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 三十二、删除重复记录
+
+![Xnip2022-06-19_09-35-52](problems.assets/Xnip2022-06-19_09-35-52.jpg)
+
+题意:
+给你一张测试表，请你删除其中emp_no重复的记录，保留最小的id记录
+
+
+
+
+
+思路:
+
+- 对于每个emp_no而言，其实只需要删除除了最小id之外的所有记录即可
+- 所以我们只需要查询出每个emp_no对应的最小id即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	min_id
+FROM (
+	SELECT
+		MIN(id) AS 'min_id'
+	FROM
+		titles_test
+	GROUP BY emp_no
+) AS temp
+```
+
+
+
+最后删除时直接排除掉这些id即可，最终SQL如下
+
+```mysql
+DELETE FROM titles_test
+WHERE id NOT IN (
+    SQL1
+)
+```
+
+
+
+
+
 
 
 
