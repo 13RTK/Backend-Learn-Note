@@ -1509,6 +1509,7 @@ WHERE id NOT IN (
 )
 ```
 
+<hr>
 
 
 
@@ -1518,8 +1519,24 @@ WHERE id NOT IN (
 
 
 
+# 三十三、更新记录
+
+![Xnip2022-06-20_07-25-33](problems.assets/Xnip2022-06-20_07-25-33.jpg)
+
+题意:
+
+请你更新表中对应的记录中的两个字段
 
 
+
+思路:
+
+- 更新的语法如下:
+
+```mysql
+UPDATE table_name SET field1 = new_val, ...
+[WHERE field1 = cur_val, ...]
+```
 
 
 

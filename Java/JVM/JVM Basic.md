@@ -325,6 +325,57 @@ Eg:
 
 
 
+## 7. 元空间
+
+- JDK8中，方法区转由元空间实现了，永久代被抛弃了
+- 物理内存有多大，元空间就可以有多大
+
+> 元空间由堆外内存(直接内存)存储，而不是和永久代一样在堆中
+
+
+
+永久代实现方法区的缺点:
+
+- 永久代的调优很困难，很难确定一个合适的大小
+
+
+
+内存结构的发展历程:
+
+![Xnip2022-06-19_14-11-55](JVM.assets/Xnip2022-06-19_14-11-55.jpg)
+
+
+
+当前(JDK8)的内存结构:
+
+![Xnip2022-06-19_14-12-47](JVM.assets/Xnip2022-06-19_14-12-47.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+
+
+
+
+
+
+
 
 
 # 二、垃圾回收
@@ -975,12 +1026,91 @@ Eg:
 
 
 
+## 4. 引用
+
+
+
+强引用:
+
+> 即平时写的: Class 引用变量 = new Class()
+
+- 就算堆内存空间不够，JVM也不会去回收`还有引用连接的`强引用对象
+
+
+
+软引用:
+
+> 只有当内存不足时，JVM才会在GC中回收软引用
+
+- 内存足够的时候不会回收有连接的软引用对象
+
+
+
+Eg:
+
+```java
+package com.example.JVMtest;
+
+import java.lang.ref.SoftReference;
+
+public class Demo {
+    public static void main(String[] args) {
+        SoftReference<int[]> softReference = new SoftReference<>(new int[20]);
+
+        System.out.println(softReference.get());
+    }
+}
+```
+
+
+
+- SoftReference的另一个构造方法中可以传入一个队列，当空间不够时，软引用对象就会被回收到该队列中去
+
+Eg:
+
+![Xnip2022-06-19_14-58-23](JVM.assets/Xnip2022-06-19_14-58-23.jpg)
 
 
 
 
 
 
+
+弱引用:
+
+> 只要进行GC回收，就会被回收
+
+
+
+Eg:
+
+![Xnip2022-06-19_15-02-05](JVM.assets/Xnip2022-06-19_15-02-05.jpg)
+
+
+
+WeakHashMap中的键一旦没有引用连接，则会被回收
+
+Eg:
+
+![Xnip2022-06-19_15-05-08](JVM.assets/Xnip2022-06-19_15-05-08.jpg)
+
+
+
+
+
+- 虚引用(鬼引用)
+
+> 相当于没有引用，随时可能被回收
+
+
+
+
+
+
+
+### 总结:
+
+> Java中引用的级别: 强引用 > 软引用 > 弱引用 > 虚引用
 
 
 
