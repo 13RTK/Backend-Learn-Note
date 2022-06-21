@@ -608,8 +608,201 @@ Eg:
 
 
 
+# 八、邮件接发
 
-# 八、
+
+
+## 1. demo
+
+1. 在SpringBoot项目中导入mail依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+```
+
+
+
+![Xnip2022-06-20_20-44-59](SpringBoot.assets/Xnip2022-06-20_20-44-59.jpg)
+
+
+
+
+
+2. 在发送邮箱的设置中打开SMTP服务(SMTP服务器作为发送服务器，POP3是接收协议)
+
+![Xnip2022-06-20_20-49-08](SpringBoot.assets/Xnip2022-06-20_20-49-08.jpg)
+
+- 注意保存弹出的code，之后要作为密码添加到SpringBoot的配置文件中
+
+
+
+
+
+
+
+3. 填写配置文件
+
+![Xnip2022-06-20_20-56-10](SpringBoot.assets/Xnip2022-06-20_20-56-10.jpg)
+
+
+
+
+
+
+
+4. 编写测试用例
+
+- 导入start-mail后，可以通过自动注入的方式获取一个`JavaMailSender`实例对象
+- 可以通过创建`SimpleMailMessage`或者`MimeMessage`实例对象来设置邮箱的内容:
+
+
+
+SimpleMailMessage:
+
+- void setSubject(String subject): 设置邮箱的`标题`内容
+- void setText(String text): 设置邮箱的`正文内容`
+- void setSentDate(Date sentDate): 设置邮件的`发送日期`
+- void setTo(String to): 设置`收件人`的邮箱地址
+- void setFrom(String from): 设置`发件人`的邮箱地址(必须与之前开通SMTP服务的邮箱地址同)
+
+
+
+JavaMailSender:
+
+> 其继承了MailSender接口
+
+- void send(SimpleMailMessage simpleMessage) throws MailException: 接收一个`SimpleMailMessage`实例对象，完成邮件的发送
+- 
+
+
+
+
+
+Eg:
+
+```java
+SimpleMailMessage mailMessage = new SimpleMailMessage();
+mailMessage.setSubject("【Microsoft】About your XGP account");
+mailMessage.setText("Hello, Dear user,\n" +
+                    "We are contacting you about your current Xbox Game Pass subscription." +
+                    "While we appreciate add our Xbox fans, we have detected that your subscription was obtained through illegitimate means and is therefore in violation of the Microsoft Services Agreement.");
+mailMessage.setSentDate(new Date());
+mailMessage.setTo("907785012@qq.com");
+mailMessage.setFrom("907785012@qq.com");
+
+mailSender.send(mailMessage);
+```
+
+
+
+![Xnip2022-06-20_21-19-20](SpringBoot.assets/Xnip2022-06-20_21-19-20.jpg)
+
+
+
+
+
+
+
+添加附件:
+
+- 需要使用`JavaMailSender`实例对象调用`createMimeMessage()`方法才能创建一个`MimeMessage`对象
+- 然后还需要创建一个`MimeMessageHelper`实例调用构造器方法传入`MimeMessage`对象实例，并制定multipart为true:
+
+```java
+MimeMessage mimeMessage = mailSender.createMimeMessage();
+MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+```
+
+
+
+- 通过`addAttachment`方法可以传入附件(文件名, 文件):
+
+```java
+helper.addAttachment("Joy.jpg", new File("/Users/alex/Projects/Java/SpringBootStudy/src/main/resources/static/image/Joy.jpg"));
+```
+
+
+
+其余和SimpleMailMessage一样:
+
+```java
+MimeMessage mimeMessage = mailSender.createMimeMessage();
+MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+
+helper.setSubject("【Microsoft】About your XGP account");
+helper.setText("Hello, Dear user,\n" +
+               "We are contacting you about your current Xbox Game Pass subscription." +
+               "While we appreciate add our Xbox fans, we have detected that your subscription was obtained through illegitimate means and is therefore in violation of the Microsoft Services Agreement.");
+helper.addAttachment("Joy.jpg", new File("/Users/alex/Projects/Java/SpringBootStudy/src/main/resources/static/image/Joy.jpg"));
+
+helper.setTo("907785012@qq.com");
+helper.setFrom("907785012@qq.com");
+mailSender.send(mimeMessage);
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+## 2. 邮箱注册
+
+- 导入`register.html`页面，记得修改对应的按钮:
+
+```html
+<button type="submit" class="btn btn-primary squer-btn sm-btn">登录</button>
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

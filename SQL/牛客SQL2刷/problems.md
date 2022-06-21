@@ -1538,6 +1538,54 @@ UPDATE table_name SET field1 = new_val, ...
 [WHERE field1 = cur_val, ...]
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 三十四、REPLACE
+
+![Xnip2022-06-21_08-00-52](problems.assets/Xnip2022-06-21_08-00-52.jpg)
+
+题意:
+
+给你一张测试表，请你将其中id为5且emp_no为10001的数据替换为emp_no = 10005
+
+
+
+
+
+思路:
+
+- 替换操作对应的函数为REPLACE，所以我们直接调用即可，SQL如下
+
+```mysql
+UPDATE titles_test
+SET emp_no = REPLACE(emp_no, 10001, 10005)
+WHERE id = 5
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
