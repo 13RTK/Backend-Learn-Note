@@ -1574,6 +1574,18 @@ SET emp_no = REPLACE(emp_no, 10001, 10005)
 WHERE id = 5
 ```
 
+<hr>
+
+
+
+
+
+# 三十五、外键
+
+![Xnip2022-06-22_07-45-41](problems.assets/Xnip2022-06-22_07-45-41.jpg)
+
+
+
 
 
 
