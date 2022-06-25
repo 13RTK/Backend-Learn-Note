@@ -1584,6 +1584,7 @@ WHERE id = 5
 
 ![Xnip2022-06-22_07-45-41](problems.assets/Xnip2022-06-22_07-45-41.jpg)
 
+<hr>
 
 
 
@@ -1591,6 +1592,92 @@ WHERE id = 5
 
 
 
+
+
+# 三十六、奖金增加
+
+![Xnip2022-06-23_07-38-06](problems.assets/Xnip2022-06-23_07-38-06.jpg)
+
+题意:
+
+给你一张员工奖金表，一张薪水信息表，请将你奖金表中的员工在薪水表中的薪资提高10%
+
+
+
+
+
+思路:
+
+- 简单的UPDATE语句确实不难，但在这里我们需要更新的是to_date字段值为'9999-01-01'的记录，所以需要加上对应的条件限制才行，最终SQL如下:
+
+```mysql
+UPDATE salaries SET salary = salary * 1.1
+WHERE emp_no IN (SELECT emp_no FROM emp_bonus)
+AND to_date = '9999-01-01'
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 三十七、字符串拼接
+
+![Xnip2022-06-24_07-23-08](problems.assets/Xnip2022-06-24_07-23-08.jpg)
+
+题意:
+
+给你一张职员表，请你将其中每个人的last_name和first_name用'连接起来
+
+
+
+思路:
+
+- 题目已经说了要用到CONCAT函数，不过这里的'不能简单的写入，而是要进行转义，可以通过两个连续的单引号进行转义，也可以通过\进行转义，最终SQL如下
+
+```mysql
+SELECT
+    CONCAT(last_name, '\'',first_name) AS 'name'
+FROM
+    employees
+```
+
+<hr>
+
+
+
+
+
+
+# 三十八、统计逗号
+
+![Xnip2022-06-25_10-10-35](problems.assets/Xnip2022-06-25_10-10-35.jpg)
+
+题意:
+给你一张字符串表，请你计算出其中每行字符中的逗号数量
+
+
+
+思路:
+
+- 一个一个计算对于SQL来说显然不现实，这里我们可以利用REPLACE函数将逗号替换为空字符串，这样其与原字符串之间的长度差就是我们替换掉的逗号数量了，SQL如下
+
+```mysql
+SELECT
+    id,
+    LENGTH(string) - LENGTH(REPLACE(string, ",", "")) AS 'cnt'
+FROM
+    strings
+```
+
+<hr>
 
 
 

@@ -754,8 +754,11 @@ mailSender.send(mimeMessage);
 
 
 
-
 ## 2. 邮箱注册
+
+
+
+### 前端
 
 - 导入`register.html`页面，记得修改对应的按钮:
 
@@ -767,6 +770,195 @@ mailSender.send(mimeMessage);
 
 
 
+- 填写发送邮箱服务器的用户名、密码和smtp服务器地址
+- 填写redis服务器地址(记得启动它)
+
+![Xnip2022-06-22_08-56-04](SpringBoot.assets/Xnip2022-06-22_08-56-04.jpg)
+
+
+
+
+
+- 修改前端注册页面，编写验证码板块
+
+![Xnip2022-06-22_08-58-57](SpringBoot.assets/Xnip2022-06-22_08-58-57.jpg)
+
+
+
+- 为验证码按钮创建对应的JS函数，通过jQuery中的AJAX相关函数进行异步请求
+
+![Xnip2022-06-22_14-42-01](SpringBoot.assets/Xnip2022-06-22_14-42-01.jpg)
+
+
+
+- AJAX的语法:
+
+    - ajax(url [,settings]):
+
+    ```javascript
+    function verifyCode() {
+      $.ajax({
+        method: "POST/GET",
+        url: "back_end_api_path",
+        data: {param1: $('#html_id').val(), param2...}
+      });
+    }
+    ```
+
+    - get(url, function(){}):
+
+    ```js
+    $.get (
+      'request_url',
+      function(param) {
+        back_end_param: $('#html_id').val()
+    })
+    ```
+
+    - post(url, function(){}):
+
+    ```js
+    $.post (
+      'request_url',
+      function(param) {
+        back_end_param: $('#html_id').val()
+    })
+    ```
+
+    
+
+实例:
+
+```js
+function askVerifyCode() {
+    let emailAddress = $('#input-email').val();
+    alert("Send email to: " + emailAddress);
+
+    $.ajax({
+        method: "GET",
+        url: "/api/auth/verify-code",
+        data: {email: emailAddress}
+    });
+}
+```
+
+
+
+
+
+注意给对应的发送信息添加name标签，并设置表单的提交地址和方法:
+
+![Xnip2022-06-22_15-22-03](SpringBoot.assets/Xnip2022-06-22_15-22-03.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+### 后端
+
+- 创建一个处理页面的`Controller`，其用于返回注册页面:
+
+![Xnip2022-06-22_15-40-22](SpringBoot.assets/Xnip2022-06-22_15-40-22.jpg)
+
+
+
+
+
+- 定义发送验证码的接口和验证的接口:
+
+![Xnip2022-06-22_16-26-01](SpringBoot.assets/Xnip2022-06-22_16-26-01.jpg)
+
+
+
+- 通过自动注入的`JavaMailSender`实现邮件发送功能，并将邮箱和验证码的映射关系写入到Redis中，并设置过期时间
+- 在对前端POST请求发送过来的验证码进行检验(查找对应邮箱在Redis中存储的验证码)
+
+Code:
+
+```java
+@Resource
+JavaMailSender javaMailSender;
+
+@Resource
+StringRedisTemplate template;
+
+@Value("${spring.mail.username}")
+String mailUsername;
+
+@Override
+public void sendVerifyCode(String email) {
+  File attentionFile = null;
+  // Build the directory
+  File redFile = new File("/Users/alex/Projects/Java/SpringBootTest/src/main/resources/static/image/Red-Velvet");
+
+  File[] files = redFile.listFiles();
+  int curShuffle = new Random().nextInt(files.length);
+
+  // Random select a file as an attention girl
+  for (int i = 0; i < files.length; i++) {
+    if (i == curShuffle) {
+      attentionFile = files[i];
+    }
+  }
+
+  // Build the attention girl name from the file name
+  String attentionGirl = attentionFile.getName().substring(0, attentionFile.getName().indexOf("."));
+  int verifyCode = new Random().nextInt(899999) + 100000;
+
+  // Set the map between email and verify code in redis
+  template.opsForValue().set("verify:code:" + email, verifyCode + "", 3, TimeUnit.MINUTES);
+
+  MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+  try {
+    MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+
+    mimeMessageHelper.setSubject("【From Alex】");
+    mimeMessageHelper.setSentDate(new Date());
+    mimeMessageHelper.setText(attentionGirl + ": This is your verify code: " + verifyCode + ", it will expire in 3 minutes.");
+    mimeMessageHelper.addAttachment(attentionFile.getName(), attentionFile);
+
+    mimeMessageHelper.setFrom(mailUsername);
+    mimeMessageHelper.setTo(email);
+  } catch (MessagingException e) {
+    e.printStackTrace();
+  }
+
+  javaMailSender.send(mimeMessage);
+  System.out.println("Send success");
+}
+
+
+
+@Override
+public boolean doVerify(String email, String verifyCode) {
+  String s = template.opsForValue().get("verify:code:" + email);
+
+  if (s != null && s.equals(verifyCode)) {
+    // Sign in success, delete the map
+    template.delete("verify:code:" + email);
+
+    return true;
+  }
+
+  return false;
+}
+```
+
+
+
+
+
+- 通过自动注入在ApiController中使用这两个Service进行验证码的发送和检验:
+
+![Xnip2022-06-22_16-34-29](SpringBoot.assets/Xnip2022-06-22_16-34-29.jpg)
+
+<hr>
 
 
 
@@ -777,7 +969,91 @@ mailSender.send(mimeMessage);
 
 
 
+# 九、JPA
 
+
+
+
+
+## 1. 上手
+
+设置对应的依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+
+
+
+
+
+在SpingBoot的配置中设置:
+
+![Xnip2022-06-23_14-58-42](SpringBoot.assets/Xnip2022-06-23_14-58-42.jpg)
+
+- 刚开始的时候只需要将ddl-auto设置为create，执行后就会在对应的数据库中创建一个对应的表了
+- 有了表之后将ddl-auto设置为update即可
+
+
+
+
+
+
+
+编写一个实体类，需要在该实体类上标注其对应的表名，每个字段都要标注其在表中对应的字段名称:
+
+- 通过`@Id`注解可以标记对应的属性为表中的主键
+- 通过`@GeneratedValue(strategy = )`注解可以指定主键的策略(自增等等)
+
+![Xnip2022-06-23_14-23-35](SpringBoot.assets/Xnip2022-06-23_14-23-35.jpg)
+
+
+
+创建一个该实体类的接口，作为之后的操作实例类的接口:
+
+- 通过`@Reposity`注解可以将该接口注册为Bean，该接口应该继承`JpaRepository`接口，该接口有两个泛型:
+    - 第一个是对应的实体类
+    - 第二个是主键的类型
+
+![Xnip2022-06-23_14-26-53](SpringBoot.assets/Xnip2022-06-23_14-26-53.jpg)
+
+
+
+
+
+
+
+然后通过自动注入即可获取该接口的实现类对象，并通过它进行数据库的CRUD操作:
+
+```java
+@Resource
+AccountRepository accountRepository;
+
+@Test
+void jpaTest() {
+  Account john = new Account(2, "john", "abcdef");
+  Account save = accountRepository.save(john);
+  System.out.println("save = " + save);
+
+  System.out.println(accountRepository.findAll());
+}
+```
+
+
+
+对应的CRUD操作:
+
+- List<T> findAll(): 查询出表中所有的记录
+- Optional<T> findById(ID var1): 查询出对应id的对象(封装为`Optional`)
+- <S extends T> S save(S var1): 将对应的实体类对象作为一条记录保存在数据库中
+- void delete(T var1): 删除参数实体类对应的记录
+- void deleteById(ID var1): 根据id删除对应的记录
+- void deleteAll(): 删除表中的所有记录
+
+![Xnip2022-06-23_14-43-04](SpringBoot.assets/Xnip2022-06-23_14-43-04.jpg)
 
 <hr>
 
@@ -791,6 +1067,50 @@ mailSender.send(mimeMessage);
 
 
 
+
+
+## 2. 条件查询
+
+- 在接口中，我们可以自定义一些方法，但必须是在自带方法的基础上拼接其它的方法:
+
+![Xnip2022-06-23_15-27-52](SpringBoot.assets/Xnip2022-06-23_15-27-52.jpg)
+
+
+
+Eg:
+
+| Logical keyword       | Keyword expressions                            |
+| :-------------------- | :--------------------------------------------- |
+| `AND`                 | `And`                                          |
+| `OR`                  | `Or`                                           |
+| `AFTER`               | `After`, `IsAfter`                             |
+| `BEFORE`              | `Before`, `IsBefore`                           |
+| `CONTAINING`          | `Containing`, `IsContaining`, `Contains`       |
+| `BETWEEN`             | `Between`, `IsBetween`                         |
+| `ENDING_WITH`         | `EndingWith`, `IsEndingWith`, `EndsWith`       |
+| `EXISTS`              | `Exists`                                       |
+| `FALSE`               | `False`, `IsFalse`                             |
+| `GREATER_THAN`        | `GreaterThan`, `IsGreaterThan`                 |
+| `GREATER_THAN_EQUALS` | `GreaterThanEqual`, `IsGreaterThanEqual`       |
+| `IN`                  | `In`, `IsIn`                                   |
+| `IS`                  | `Is`, `Equals`, (or no keyword)                |
+| `IS_EMPTY`            | `IsEmpty`, `Empty`                             |
+| `IS_NOT_EMPTY`        | `IsNotEmpty`, `NotEmpty`                       |
+| `IS_NOT_NULL`         | `NotNull`, `IsNotNull`                         |
+| `IS_NULL`             | `Null`, `IsNull`                               |
+| `LESS_THAN`           | `LessThan`, `IsLessThan`                       |
+| `LESS_THAN_EQUAL`     | `LessThanEqual`, `IsLessThanEqual`             |
+| `LIKE`                | `Like`, `IsLike`                               |
+| `NEAR`                | `Near`, `IsNear`                               |
+| `NOT`                 | `Not`, `IsNot`                                 |
+| `NOT_IN`              | `NotIn`, `IsNotIn`                             |
+| `NOT_LIKE`            | `NotLike`, `IsNotLike`                         |
+| `REGEX`               | `Regex`, `MatchesRegex`, `Matches`             |
+| `STARTING_WITH`       | `StartingWith`, `IsStartingWith`, `StartsWith` |
+| `TRUE`                | `True`, `IsTrue`                               |
+| `WITHIN`              | `Within`, `IsWithin`                           |
+
+<hr>
 
 
 
