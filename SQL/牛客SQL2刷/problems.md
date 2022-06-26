@@ -1686,6 +1686,38 @@ FROM
 
 
 
+# 三十九、聚合分组
+
+![Xnip2022-06-26_08-10-08](problems.assets/Xnip2022-06-26_08-10-08.jpg)
+
+题意:
+
+给你一张部门职员信息表，请你查询出其中不同部门对应的员工id
+
+
+
+思路:
+
+- 因为示例中将同一个部门的职员id放在了一起，所以不能使用常规的分组，而是要使用聚合分组`GROUP_CONCAT`，最终SQL如下
+
+```mysql
+SELECT
+    dept_no,
+    GROUP_CONCAT(emp_no) AS 'employees'
+FROM
+    dept_emp
+GROUP BY dept_no
+```
+
+
+
+
+
+
+
+
+
+
 
 
 

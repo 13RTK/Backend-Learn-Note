@@ -1052,6 +1052,7 @@ void jpaTest() {
 - void delete(T var1): 删除参数实体类对应的记录
 - void deleteById(ID var1): 根据id删除对应的记录
 - void deleteAll(): 删除表中的所有记录
+- 
 
 ![Xnip2022-06-23_14-43-04](SpringBoot.assets/Xnip2022-06-23_14-43-04.jpg)
 
@@ -1119,6 +1120,48 @@ Eg:
 
 
 
+
+
+
+
+## 3. 自定义SQL
+
+
+
+### 1) 使用原生SQL
+
+- 只需要在该`Repository`接口中添加`@Query`注解，在注解中设置`value`为SQL语句，将`nativeQuery`设置为true即可:
+
+![Xnip2022-06-25_17-43-15](SpringBoot.assets/Xnip2022-06-25_17-43-15.jpg)
+
+
+
+
+
+更新操作:
+
+- 通过`?序号`的方式即可将对应的参数和条件字段对应起来
+- 注意更新操作需要写上`@Modifying`和`@Transactional`注解，所有被`@Transactional`注解修饰的操作最后都需要添加`@Commit`注解来提交修改
+
+![Xnip2022-06-25_18-01-54](SpringBoot.assets/Xnip2022-06-25_18-01-54.jpg)
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 十、前后端分离操作
 
 
 
