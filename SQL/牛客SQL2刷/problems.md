@@ -1709,7 +1709,60 @@ FROM
 GROUP BY dept_no
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+# 四十、平均工资
+
+![Xnip2022-06-27_07-59-59](problems.assets/Xnip2022-06-27_07-59-59.jpg)
+
+题意:
+给你一张薪资表，请你查询出在职员工中除了最大、最小salary之后的其他在职员工的平均工资
+
+
+
+思路:
+
+- 因为计算平均值的前提是排除最大最小值，所以我们需要先查询出这两个值，因为之后需要一并使用，所以我们直接通过上下连接将两个最值连在一起即可，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	MAX(salary)
+FROM
+	salaries
+UNION ALL
+SELECT
+	MIN(salary)
+FROM
+	salaries
+WHERE to_date = '9999-01-01'
+```
+
+
+
+- 最后我们只需要调用AVG函数求平均值即可，最终SQL如下
+
+```mysql
+SELECT
+    AVG(salary) AS 'avg_salary'
+FROM
+    salaries
+WHERE salary NOT IN (
+    SQL1
+)
+AND to_date = '9999-01-01'
+```
 
 
 
