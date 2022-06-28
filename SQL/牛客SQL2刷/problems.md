@@ -1764,7 +1764,42 @@ WHERE salary NOT IN (
 AND to_date = '9999-01-01'
 ```
 
+<hr>
 
+
+
+
+
+
+
+
+
+
+
+
+
+# 四十一、分页查询
+
+![Xnip2022-06-28_07-32-44](problems.assets/Xnip2022-06-28_07-32-44.jpg)
+
+题意:
+
+给你一张雇员信息表，以5条数据为一页，请你查询出其中第2页的数据
+
+
+
+思路:
+
+- 这其实就是传说中的分页，在MySQL中只需要使用LIMIT或者LIMIT配合OFFSET即可(个人推荐使用后者)，最终SQL如下
+
+```mysql
+SELECT
+    *
+FROM
+    employees
+LIMIT 5
+OFFSET 5
+```
 
 
 
