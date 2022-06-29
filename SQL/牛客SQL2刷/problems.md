@@ -1801,6 +1801,62 @@ LIMIT 5
 OFFSET 5
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 四十二、EXISTS查询
+
+![Xnip2022-06-29_12-03-46](problems.assets/Xnip2022-06-29_12-03-46.jpg)
+
+题意:
+
+给你一张职员表，一张部门关系表，请你使用`EXISTS`查询出其中没有分配部门的员工信息
+
+
+
+
+
+思路:
+
+- 使用`EXISTS`需要使用连接，所以通过`NOT EXISTS`即可，只需要通过`emp_no`字段进行连接即可，最终SQL如下
+
+```mysql
+SELECT
+    *
+FROM
+    employees AS t1
+WHERE NOT EXISTS (
+    SELECT
+        emp_no
+    FROM
+        dept_emp AS t2
+    WHERE t1.emp_no = t2.emp_no
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
