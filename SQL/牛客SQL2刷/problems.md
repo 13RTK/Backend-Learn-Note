@@ -1843,6 +1843,7 @@ WHERE NOT EXISTS (
 )
 ```
 
+<hr>
 
 
 
@@ -1852,12 +1853,46 @@ WHERE NOT EXISTS (
 
 
 
+# 四十三、有奖金员工
+
+![Xnip2022-06-30_16-13-31](problems.assets/Xnip2022-06-30_16-13-31.jpg)
+
+
+
+![Xnip2022-06-30_16-13-42](problems.assets/Xnip2022-06-30_16-13-42.jpg)
+
+题意:
+
+给你一张员工信息表，一张员工奖金信息表，一张薪水表，请你查询所有员工的信息和对应的奖金，奖金的计算方式参照题目
 
 
 
 
 
+思路:
 
+- 该题目有三个需要注意的点，一是需要根据不同的奖金类型对奖金进行计算，即需要通过`btype`的值进行分支计算，这里我们使用`CASE WHEN`即可
+- 二是保留一位小数，在MySQL中，我们只需要使用`ROUND`函数即可
+- 三是注意我们计算奖金时对应的薪资基准是`to_date`字段值为'9999-01-01'的数据，因此最终SQL如下
+
+```mysql
+SELECT
+    t1.emp_no,
+    t1.first_name,
+    t1.last_name,
+    t2.btype,
+    t3.salary,
+    ROUND(
+    CASE WHEN btype = 1 THEN t3.salary * 0.1
+    WHEN btype = 2 THEN t3.salary * 0.2
+    ELSE t3.salary * 0.3 END, 1) AS 'bonus'
+FROM
+    employees AS t1
+INNER JOIN emp_bonus AS t2 ON t1.emp_no = t2.emp_no
+INNER JOIN salaries AS t3 ON t2.emp_no = t3.emp_no
+WHERE t3.to_date = '9999-01-01'
+ORDER BY t1.emp_no
+```
 
 
 
