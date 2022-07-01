@@ -1894,6 +1894,72 @@ WHERE t3.to_date = '9999-01-01'
 ORDER BY t1.emp_no
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 四十四、
+
+![Xnip2022-07-01_11-40-44](problems.assets/Xnip2022-07-01_11-40-44.jpg)
+
+
+
+![Xnip2022-07-01_11-41-45](problems.assets/Xnip2022-07-01_11-41-45.jpg)
+
+题意:
+
+给你一张薪资表，请你查询出其中每个员工对应的薪资信息和对应的薪资累加值
+
+
+
+思路:
+
+- 说到累加，那首先想到的必然是窗口函数之一——`SUM() OVER()`
+- 所以这里所谓的薪资累加值只需要一个窗口函数即可解决，SQL如下:
+
+```mysql
+SELECT
+    emp_no,
+    salary,
+    SUM(salary) OVER(
+        ORDER BY emp_no
+    )
+FROM
+    salaries
+WHERE to_date = '9999-01-01'
+ORDER BY emp_no
+```
+
+
+
+- 如果不用窗口函数的话，其实也能做，只不过会稍微麻烦一点，这里我们需要使用非等值自连接:
+
+```mysql
+SELECT
+    t1.emp_no,
+    t1.salary,
+    (
+        SELECT
+            SUM(t2.salary)
+        FROM
+            salaries AS t2
+        WHERE t1.emp_no >= t2.emp_no
+        AND t2.to_date = '9999-01-01'
+    ) AS 'running_total'
+FROM
+    salaries AS t1
+WHERE t1.to_date = '9999-01-01'
+ORDER BY t1.emp_no
+```
+
 
 
 
