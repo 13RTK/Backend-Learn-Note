@@ -1906,7 +1906,7 @@ ORDER BY t1.emp_no
 
 
 
-# 四十四、
+# 四十四、累加值
 
 ![Xnip2022-07-01_11-40-44](problems.assets/Xnip2022-07-01_11-40-44.jpg)
 
@@ -1959,6 +1959,70 @@ FROM
 WHERE t1.to_date = '9999-01-01'
 ORDER BY t1.emp_no
 ```
+
+<hr>
+
+
+
+
+
+
+
+
+
+# 四十五、奇数排序
+
+![Xnip2022-07-02_12-31-20](problems.assets/Xnip2022-07-02_12-31-20.jpg)
+
+
+
+![Xnip2022-07-02_12-31-01](problems.assets/Xnip2022-07-02_12-31-01.jpg)
+
+题意:
+
+给你一张员工信息表，请你查询出其中按照姓名排序后排名为奇数的所有员工的名字，而且结果中的顺序要与原表保持一致
+
+
+
+
+
+思路:
+
+- 该题目的难点在于，如果保持原有的顺序
+- 为了解决这点，我们需要先查询出所有员工对应的排名，我们可以使用窗口函数，或者非等值自连接，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	first_name,
+	DENSE_RANK() OVER(
+		ORDER BY first_name
+	) AS 'rk'
+FROM
+	employees
+```
+
+
+
+- 最后只需要连接该表即可，最终SQL如下:
+
+```mysql
+SELECT
+    t1.first_name AS 'first'
+FROM
+    employees AS t1
+INNER JOIN (
+    SQL1
+) AS t2 ON t1.first_name = t2.first_name
+WHERE t2.rk % 2 = 1
+```
+
+
+
+
+
+
 
 
 
