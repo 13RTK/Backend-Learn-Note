@@ -2018,11 +2018,106 @@ INNER JOIN (
 WHERE t2.rk % 2 = 1
 ```
 
+<hr>
 
 
 
 
 
+
+
+
+
+# 四十六、相同积分
+
+![Xnip2022-07-03_07-50-25](problems.assets/Xnip2022-07-03_07-50-25.jpg)
+
+题意:
+
+给你一张积分表，请你查询出其中出现次数大于等于3次的积分
+
+
+
+思路:
+
+- 最基础的做法就是查询出每个积分的出现次数，所以需要根据积分分组，然后再筛选出出现次数≥3的积分
+- 搞清楚逻辑后，其实我们限制的是分组后的数据，因此使用`HAVING`是较好的选择，最终SQL如下:
+
+```mysql
+SELECT
+    number
+FROM
+    grade
+GROUP BY number
+HAVING COUNT(*) >= 3
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 四十七、刷题排名
+
+![Xnip2022-07-04_11-26-23](problems.assets/Xnip2022-07-04_11-26-23.jpg)
+
+
+
+![Xnip2022-07-04_11-41-15](problems.assets/Xnip2022-07-04_11-41-15.jpg)
+
+题意:
+
+给你一张题目通过记录表，请你将其中所有用户按照答题通过的数量进行排名，且题目数相同的，排名相同，相同排名的按照id排序
+
+
+
+
+
+思路:
+
+- 最简单的方法自然是使用窗口函数，毕竟它就是干这个的，SQL如下:
+
+```mysql
+SELECT
+    id,
+    number,
+    DENSE_RANK() OVER(
+        ORDER BY number DESC
+    ) AS 't_rank'
+FROM
+    passing_number 
+ORDER BY t_rank, id
+```
+
+
+
+- 如果不用窗口函数改用自连接的话就比较麻烦了，这里需要在SELECT列表里写一个关联子查询，且需要使用非等值自连接
+- 又因为题目要求重复排名后，之后的排名不能跳过，所以需要对统计的字段进行去重才行(详见SQL进阶教程第一章2.4节的内容)，所以SQL如下:
+
+```mysql
+SELECT 
+    t1.id,
+    t1.number,
+    (
+        SELECT
+            COUNT(DISTINCT t2.number) 
+        FROM 
+            passing_number AS t2
+        WHERE t2.number >= t1.number 
+    )
+FROM 
+    passing_number AS t1 
+ORDER BY t1.number DESC, t1.id;
+```
 
 
 
