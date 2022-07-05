@@ -2119,6 +2119,47 @@ FROM
 ORDER BY t1.number DESC, t1.id;
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 四十八、任务信息
+
+![Xnip2022-07-05_10-09-52](problems.assets/Xnip2022-07-05_10-09-52.jpg)
+
+题意:
+
+给你一张人员信息表，一张任务信息表，请你查询出其中所有人的任务情况
+
+
+
+
+
+思路:
+
+- 这道题目需要注意的是，我们需要查询出所有人的情况，甚至包括没有任务的人，所以需要使用外连接，最终SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t1.name,
+    t2.content
+FROM
+    person AS t1
+LEFT JOIN task AS t2 ON t1.id = t2.person_id
+ORDER BY t1.id
+```
+
 
 
 

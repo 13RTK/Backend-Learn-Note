@@ -170,11 +170,140 @@ management.endpoints.web.exposure.include=health, beans, info
 
 
 
+### 1) 配置数据源
+
+必要的内容:
+
+```yaml
+spring:
+  datasource:
+    url: "jdbc:mysql://localhost/test"
+    username: "dbuser"
+    password: "dbpass"
+```
+
+
+
+导入对应的依赖:
+
+- JDBC API
+- MySQL Driver
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+<dependency>
+  <groupId>mysql</groupId>
+  <artifactId>mysql-connector-java</artifactId>
+  <version>8.0.28</version>
+</dependency>
+```
 
 
 
 
-### 1) 数据库连接池
+
+通用的配置:
+
+```yaml
+spring:
+	datasource:
+    url: jdbc:mysql://localhost:3306/book_manage
+    username: root
+    password: abcdef
+    driver-class-name: com.mysql.cj.jdbc.Driver
+```
+
+
+
+
+
+> 默认的数据库连接池为HikariCP
+
+- 设置HikariCP的配置:
+
+```yaml
+spring:
+	datasource:
+      hikari:
+        maximumPoolSize: 5
+        minimumIdle: 5
+        idleTimeout: 600000
+        connectionTimeout: 30000
+        maxLifetime: 1800000
+```
+
+
+
+
+
+导入配置后，通过`@Resource`注解即可自动注入`JdbcTemplate`实例对象进行JDBC操作:
+
+![Xnip2022-07-04_16-02-39](Spring.assets/Xnip2022-07-04_16-02-39.jpg)
+
+
+
+JdbcTemplate文档:
+
+https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/jdbc/core/JdbcTemplate.html
+
+
+
+其他人的博客:
+
+https://www.cnblogs.com/caoyc/p/5630622.html
+
+
+
+
+
+
+
+- 通过在配置文件中设置`initialization-mode: always`，即可自动加载`resources`目录下的.sql文件并运行:
+
+```yaml
+spring:
+  datasource:
+    initialization-mode: always
+```
+
+![Xnip2022-07-04_18-51-14](Spring.assets/Xnip2022-07-04_18-51-14.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 数据库连接池
 
 
 
@@ -182,7 +311,7 @@ management.endpoints.web.exposure.include=health, beans, info
 
 官网:
 
-[brettwooldridge/HikariCP: 光 HikariCP・A solid, high-performance, JDBC connection pool at last. (github.com)](https://github.com/brettwooldridge/HikariCP)
+https://github.com/brettwooldridge/HikariCP
 
 
 
@@ -202,7 +331,7 @@ management.endpoints.web.exposure.include=health, beans, info
 
 官网:
 
-[alibaba/druid: 阿里云计算平台DataWorks(https://help.aliyun.com/document_detail/137663.html) 团队出品，为监控而生的数据库连接池 (github.com)](https://github.com/alibaba/druid)
+https://github.com/alibaba/druid
 
 
 
@@ -216,11 +345,11 @@ management.endpoints.web.exposure.include=health, beans, info
 
 补充:
 
-- @Component注解: 注册一个通用的bean
-- @Repository: 注册一个与Dao相关的类为bean
-- @Service: 注册一个服务类为bean
-- @Controller: 注册一个Controller类为bean
-- @RestController: 注册一个类为Restful风格的bean(返回的数据都是JSON)
+- `@Component`注解: 注册一个通用的bean
+- `@Repository`: 注册一个与Dao相关的类为bean
+- `@Service`: 注册一个服务类为bean
+- `@Controller`: 注册一个Controller类为bean
+- `@RestController`: 注册一个类为Restful风格的bean(返回的数据都是JSON)
 
 
 
@@ -240,7 +369,7 @@ management.endpoints.web.exposure.include=health, beans, info
 
 
 
-### 2) 常用注解
+### 3) 常用注解
 
 
 
