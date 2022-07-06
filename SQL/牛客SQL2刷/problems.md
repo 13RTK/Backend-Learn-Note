@@ -2160,6 +2160,86 @@ LEFT JOIN task AS t2 ON t1.id = t2.person_id
 ORDER BY t1.id
 ```
 
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 四十九、邮件异常概率
+
+![Xnip2022-07-06_10-40-53](problems.assets/Xnip2022-07-06_10-40-53.jpg)
+
+
+
+![Xnip2022-07-06_10-41-07](problems.assets/Xnip2022-07-06_10-41-07.jpg)
+
+题意:
+
+给你一张邮件发送记录表，一张用户信息表，请你查询出其中正常用户之间发送邮件的失败概率
+
+
+
+思路:
+
+- 题目首先对用户进行了限制，即发送方和接收方都必须是正常用户
+- 想要实现这一限制有多种方法，要么就先查询出所有的黑名单用户然后用NOT IN或者NOT EXISTS来排除，要么就在自连接中进行限制
+- 为了理清逻辑，这里我们选择前者，使用WITH AS语法创建一个临时表来保存黑名单用户的id，SQL如下
+
+SQL1:
+
+```mysql
+WITH black_user AS (
+    SELECT
+        id
+    FROM
+        user
+    WHERE is_blacklist = 1
+)
+```
+
+
+
+- 获取所有的正常用户后，我们只需要根据记录中的type字段值进行分支计算，然后注意保留三位小数即可，最终如下
+
+```mysql
+SQL1
+
+SELECT
+    t1.date,
+    ROUND(SUM(CASE WHEN t1.type = 'no_completed' THEN 1 ELSE 0 END) / COUNT(*), 3) AS 'p'
+FROM
+    email AS t1
+WHERE t1.send_id NOT IN(SELECT id FROM black_user)
+AND t1.receive_id NOT IN(SELECT id FROM black_user)
+GROUP BY t1.date
+ORDER BY t1.date
+```
+
+
+
+- 如果觉得太多了，也可以用自连接来代替，SQL如下:
+
+```mysql
+SELECT
+    t1.date,
+    ROUND(SUM(CASE WHEN t1.type = 'no_completed' THEN 1 ELSE 0 END) / COUNT(*), 3) AS 'p'
+FROM
+    email AS t1
+INNER JOIN user AS t2 ON t1.send_id = t2.id AND t2.is_blacklist = 0
+INNER JOIN user AS t3 ON t1.receive_id = t3.id AND t3.is_blacklist = 0
+GROUP BY t1.date
+ORDER BY t1.date
+```
+
+
+
 
 
 

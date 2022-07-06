@@ -265,7 +265,7 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 
 
-# 六、分割回文串
+# 六、分割回文串(不熟悉)
 
 ![Xnip2022-02-26_11-14-45](Backtrack/Xnip2022-02-26_11-14-45.jpg)
 

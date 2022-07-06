@@ -283,6 +283,82 @@ spring:
 
 
 
+### 2) 配置多个数据源
+
+- 首先需要在配置文件中填写多个数据源的基本信息
+
+Eg:
+
+```properties
+management.endpoints.web.exposure.include=*
+spring.output.ansi.enabled=ALWAYS
+
+foo.datasource.url=jdbc:mysql://localhost:3306/sql_practice
+foo.datasource.username=root
+foo.datasource.password=abcdef
+foo.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+bar.datasource.url=jdbc:mysql://localhost:3306/book_manage
+bar.datasource.username=root
+bar.datasource.password=abcdef
+bar.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+```
+
+- 这里我们用不同的开头来区分不同的数据源，而不是使用默认的`spring`
+
+
+
+
+
+在运行主类中加载两个数据源并获取它们的url:
+
+![Xnip2022-07-05_15-22-07](Spring.assets/Xnip2022-07-05_15-22-07.jpg)
+
+
+
+结果:
+
+![Xnip2022-07-05_15-30-42](Spring.assets/Xnip2022-07-05_15-30-42.jpg)
+
+
+
+
+
+
+
+注意:
+
+1. 多彩输出
+
+如果终端支持ANSI，设置彩色输出会让日志更具可读性。通过在`application.properties`中设置`spring.output.ansi.enabled`参数来支持。
+
+
+
+2. 自动配置排除
+
+在`@SpringBootApplication`注解中，通过指定`exclude`的值即可排除对应的自动配置类:
+
+```java
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class,
+                              DataSourceTransactionManagerAutoConfiguration.class,
+                                  JdbcTemplateAutoConfiguration.class})
+```
+
+
+
+3. `@ConfigurationProperties("")`
+
+我们可以通过该注解自动加载配置文件中对应的配置
+
+> 在方法上使用该注解时，该方法必须有`@Bean`注解，且其所在的类上必须有`@Configuration`注解(@SpringBootApplication注解中含有)
+
+
+
+说明文章:
+
+https://cloud.tencent.com/developer/article/1870740
+
+---
 
 
 
@@ -300,10 +376,7 @@ spring:
 
 
 
-
-
-
-### 2) 数据库连接池
+### 3) 数据库连接池
 
 
 
@@ -314,6 +387,8 @@ spring:
 https://github.com/brettwooldridge/HikariCP
 
 
+
+在Spring Boot1.x中，默认会使用Tomcat作为数据源，所以想要使用HikariCP时还需要先排除掉Tomcat的数据源
 
 在Spring Boot2.x中，会默认使用HikariCP作为数据库连接池
 
@@ -338,6 +413,85 @@ https://github.com/alibaba/druid
 在Wiki常见问题一栏中可以看到其各种使用上的方法解答:
 
 ![Xnip2022-07-03_10-54-03](Spring.assets/Xnip2022-07-03_10-54-03.jpg)
+
+
+
+
+
+使用时的注意事项:
+
+1. 因为SpringBoot2.x默认使用的是HikariCP，所以我们需要先在JDBC依赖中排除掉它:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-jdbc</artifactId>
+  <exclusions>
+    <exclusion>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+```
+
+
+
+2. Druid依赖需要我们手动导入:
+
+```xml
+<dependency>
+  <groupId>com.alibaba</groupId>
+  <artifactId>druid-spring-boot-starter</artifactId>
+  <version>1.1.10</version>
+</dependency>
+```
+
+
+
+
+
+使用Druid对密码进行加密的操作:
+
+1. 首先在命令行中进入jar包所在的路径中，然后运行命令:
+
+```shell
+java -cp druid-1.0.16.jar com.alibaba.druid.filter.config.ConfigTools 自己的密码
+```
+
+
+
+2. 之后会生成私钥、公钥和加密后的密码:
+
+![Xnip2022-07-05_16-56-50](Spring.assets/Xnip2022-07-05_16-56-50.jpg)
+
+
+
+3. 将公钥和密码写在配置文件中，并启用加密配置
+
+![Xnip2022-07-05_16-58-17](Spring.assets/Xnip2022-07-05_16-58-17.jpg)
+
+
+
+加密配置:
+
+```properties
+spring.datasource.druid.connection-properties=config.decrypt=true;config.decrypt.key=${public-key}
+# 启用ConfigFilter
+spring.datasource.druid.filter.config.enabled=true
+```
+
+---
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -369,7 +523,7 @@ https://github.com/alibaba/druid
 
 
 
-### 3) 常用注解
+### 4) 常用注解
 
 
 
