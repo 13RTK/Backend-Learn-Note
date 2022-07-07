@@ -481,6 +481,12 @@ spring.datasource.druid.connection-properties=config.decrypt=true;config.decrypt
 spring.datasource.druid.filter.config.enabled=true
 ```
 
+
+
+开启慢SQL记录的配置项:xs
+
+![Xnip2022-07-06_15-30-00](Spring.assets/Xnip2022-07-06_15-30-00.jpg)
+
 ---
 
 
@@ -518,12 +524,110 @@ spring.datasource.druid.filter.config.enabled=true
 
 
 
+### 4) Spring中的JDBC操作
+
+环境:
+
+
+
+schema:
+
+![Xnip2022-07-06_14-40-05](Spring.assets/Xnip2022-07-06_14-40-05.jpg)
 
 
 
 
 
-### 4) 常用注解
+配置文件:
+
+![Xnip2022-07-06_14-41-48](Spring.assets/Xnip2022-07-06_14-41-48.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+- 执行单条SQL语句:
+
+<T> T	queryForObject(String sql, Class<T> requiredType): 执行第一个参数中的sql，返回类型为第二个参数指定的泛型
+
+Eg:
+
+![Xnip2022-07-06_14-42-42](Spring.assets/Xnip2022-07-06_14-42-42.jpg)
+
+
+
+<T> List<T>	queryForList(String sql, Class<T> elementType): 执行第一个参数中的sql，返回类型为第二个参数指定的泛型对应的list实例
+
+Eg:
+
+![Xnip2022-07-06_14-45-45](Spring.assets/Xnip2022-07-06_14-45-45.jpg)
+
+
+
+<T> T	queryForObject(String sql, RowMapper<T> rowMapper): 执行第一个参数中的sql，返回类型为第二个参数指定的类型(需手动将字段对应实体类的字段)
+
+Eg:
+
+![Xnip2022-07-06_14-55-20](Spring.assets/Xnip2022-07-06_14-55-20.jpg)
+
+- 将`queryForObject`换成`query`即可返回对应的对象集合
+
+
+
+
+
+修改/查询操作:
+
+- 直接使用update方法即可
+
+![Xnip2022-07-06_15-01-04](Spring.assets/Xnip2022-07-06_15-01-04.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+- 执行多条SQL语句
+
+我们可以使用JdbcTemplate或者NamedParameterJdbcTemplate中的方法:
+
+![Xnip2022-07-06_15-04-34](Spring.assets/Xnip2022-07-06_15-04-34.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 常用注解
 
 
 
@@ -543,9 +647,101 @@ spring.datasource.druid.filter.config.enabled=true
     - @Resource: 直接根据名字进行注入
     - @Value: 获取配置文件中的值
 
+---
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. ORM FrameWork
+
+- ORM: 即Object Relation Mapping
+
+
+
+其解决了从OOP到RDBMS之间的关联问题
+
+
+
+
+
+### 1) JPA
+
+- JPA: 即Java Persistence API，其基于Hibernate
+
+在SpringBoot中引入:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+<dependency>
+```
+
+
+
+
+
+> 在JPA中，我们不会用到具体的SQL，而是通过注解将实体类与表直接对应起来
+
+用到的注解:
+
+- 表 - 实体类注解:
+    - @Entity: 表明该类是一个实体类
+    - @MappedSuperClass: 指定该实体类对应的父类
+    - @Table(name=""): 指定与该实体类关联的表的名称
+
+
+
+- 主键:
+    - @Id: 指明该字段为主键
+    - @GeneratedValue(strategy, generator): 指定主键的生成策略和生成器
+    - @SequenceGenerator(name, sequenceName): 设置生成器策略
+
+
+
+- 字段 - 属性映射
+    - @Column(name, nullable, length, insertable, updatable): 设置与该类属性对应的表中字段，以及该字段是否为空、字段的长度、是否可修改
+    - @JoinColumn(name): 指明该字段为表连接使用的字段
+    - @JoinTable(name): 指明连接所对应的表
+
+
+
+- 关系
+    - @OneToOne、@OneToMany、@ManyToOne、@ManyToMany
+    - @OrderBy
+
+
+
+
+
+
+
+
+
+
+
+项目背景:
+
+
+
+
+
+
+
+
+
+Eg:
 
 
 
