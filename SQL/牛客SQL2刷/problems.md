@@ -2256,9 +2256,117 @@ ORDER BY t1.date
 
 ![Xnip2022-07-07_11-50-32](problems.assets/Xnip2022-07-07_11-50-32.jpg)
 
+题意:
+给你一张登录记录表，请你查询出其中所有人最近一天的登录日期
 
 
 
+思路:
+
+- 很明显，因为要分人，所以我们需要进行分组，而最近日期自然就是日期值最大的日期，所以使用MAX函数即可，最终SQL如下
+
+```mysql
+SELECT
+	user_id,
+	MAX(date) AS 'id'
+FROM
+	login
+GROUP BY user_id
+ORDER BY user_id
+```
+
+<hr>
+
+
+
+
+
+
+
+
+
+
+
+# 五十二、最近登录日期2
+
+![Xnip2022-07-08_10-25-05](problems.assets/Xnip2022-07-08_10-25-05.jpg)
+
+
+
+![Xnip2022-07-08_10-25-14](problems.assets/Xnip2022-07-08_10-25-14.jpg)
+
+
+
+![Xnip2022-07-08_10-28-21](problems.assets/Xnip2022-07-08_10-28-21.jpg)
+
+题意:
+
+给你一张登录记录表，一张用户信息表，一张客户端信息表，请查询出每个用户最近一次登录时使用的客户端和日期
+
+
+
+
+
+思路:
+
+- 看完题目后，估计有不少老哥和我一样，以为只需要两次内连接即可，但连接后发现，因为这里存在客户端，所以在SELECT列表中必然会存在用户名和客户端两个字段
+- 稍微了解过标准SQL和MySQL的老哥应该知道：标准SQL中，GROUP BY分组的列表中必须和SELECT列表中的字段一一对应才行，而MySQL中可以利用sql_mode来修改这一规则
+- 然而牛客网中，MySQL的sql_mode规则就设置为了与标准SQL一致，因此这里我们直接使用内连接分组的话，求得的是每个用户不同终端的最近登录日期记录
+- 为了让我们获取到的是最近日期的记录，我们需要先获取每个用户的最近登录日期，SQL如下:
+
+SQL1:
+
+```mysql
+SELECT
+	user_id,
+	MAX(date) AS 'last_date'
+FROM
+	login
+GROUP BY user_id
+```
+
+
+
+
+
+- 有了该记录作为保证后，我们再使用自连接就可以获取正确的结果了，最终SQL如下
+
+```mysql
+SELECT
+    t2.name AS 'u_n',
+    t3.name AS 'c_n',
+    MAX(t1.date) AS 'date'
+FROM
+    login AS t1
+INNER JOIN user AS t2 ON t1.user_id = t2.id
+INNER JOIN client AS t3 ON t1.client_id = t3.id
+WHERE (t1.user_id, t1.date) IN (
+    SQL1
+)
+GROUP BY t2.name, t3.name
+ORDER BY t2.name
+```
+
+
+
+
+
+- 当然，这并不是最简洁的写法，这里再po一个其他大佬的版本:
+
+```mysql
+SELECT
+    t2.name,
+    t3.name,
+    t1.date
+FROM
+    login AS t1,
+    user AS t2,
+    client AS t3
+WHERE t1.date = (SELECT MAX(l2.date) FROM login AS l2 WHERE t1.user_id=l2.user_id)
+AND t1.user_id = t2.id
+AND t1.client_id = t3.id
+ORDER BY t2.name
+```
 
 
 

@@ -273,6 +273,10 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 ![Xnip2022-02-26_11-29-15](Backtrack/Xnip2022-02-26_11-29-15.jpg)
 
+
+
+![Xnip2022-07-07_14-20-53](Backtrack/Xnip2022-07-07_14-20-53.jpg)
+
 题意:
 
 给你一个字符串，请尝试你将其划分为若干个回文子串，最后返回所有的分割组合
@@ -302,7 +306,7 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 
 
-# 七、IP地址复原
+# 七、IP地址复原(不熟悉)
 
 ![Xnip2022-02-27_09-19-45](Backtrack/Xnip2022-02-27_09-19-45.jpg)
 
@@ -319,8 +323,6 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 
 思路:
-
-- 
 
 - 如果从分割子串的角度来说，这道题目其实就是获取特殊的子串罢了
 - 但不同的是，这里我们在判断是否分割完成的条件不能像昨天那样从索引的角度来判断了，而是该从分割的部分来计算
