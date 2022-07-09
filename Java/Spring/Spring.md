@@ -483,9 +483,25 @@ spring.datasource.druid.filter.config.enabled=true
 
 
 
-开启慢SQL记录的配置项:xs
+开启慢SQL记录的配置项:
 
 ![Xnip2022-07-06_15-30-00](Spring.assets/Xnip2022-07-06_15-30-00.jpg)
+
+
+
+配置项:
+
+![Xnip2022-07-08_14-13-47](Spring.assets/Xnip2022-07-08_14-13-47.jpg)
+
+
+
+![Xnip2022-07-08_14-15-24](Spring.assets/Xnip2022-07-08_14-15-24.jpg)
+
+
+
+注:
+
+- 这里通过在SQL末尾添加了`FOR UPDATE`为当前的读操作加了X锁(独占锁)
 
 ---
 
@@ -690,7 +706,7 @@ Eg:
 
 
 
-
+#### 1. 实体的定义
 
 > 在JPA中，我们不会用到具体的SQL，而是通过注解将实体类与表直接对应起来
 
@@ -727,21 +743,205 @@ Eg:
 
 
 
-
-
-
-
 项目背景:
 
+- 线上咖啡馆，完成客户的询问、点单、支付功能，完成服务员的咖啡师之间的通知功能
+
+![Xnip2022-07-08_14-19-51](Spring.assets/Xnip2022-07-08_14-19-51.jpg)
 
 
 
+实体关系:
 
-
+![Xnip2022-07-08_14-21-55](Spring.assets/Xnip2022-07-08_14-21-55.jpg)
 
 
 
 Eg:
+
+为了处理金额，这里引入了两个额外的依赖:
+
+![Xnip2022-07-08_14-35-59](Spring.assets/Xnip2022-07-08_14-35-59.jpg)
+
+
+
+两个实体类都添加了createtime和updatetime:
+
+![Xnip2022-07-08_14-42-02](Spring.assets/Xnip2022-07-08_14-42-02.jpg)
+
+
+
+运行效果:
+
+![Xnip2022-07-08_14-44-13](Spring.assets/Xnip2022-07-08_14-44-13.jpg)
+
+- 因为使用了`@ManyToMany`注解，所以这里会为我们创建一个外键
+
+
+
+
+
+因为两个实体中有相同的字段(id, createtime和updatetime)，因此我们可以将这相同的字段抽象出来作为一个父类，注意在父类上添加`@MappedSuperclass`注解来表明该类为父类
+
+Eg:
+
+![Xnip2022-07-08_15-07-08](Spring.assets/Xnip2022-07-08_15-07-08.jpg)
+
+- 注意在子类的`@ToString`注解中加上callsuper选项，这样才能将父类的信息一并打印出来
+
+
+
+SpringBootJPA对应的配置:
+
+- spring.jpa.hibernate.ddl-auto=create-drop: 设置jpa创建表的模式
+    - create ----每次运行该程序，没有表格会新建表格，表内有数据会清空
+    - create-drop ----每次程序结束的时候会清空表
+    - update ---- 每次运行程序，没有表格会新建表格，表内有数据不会清空，只会更新
+    - validate ---- 运行程序会校验数据与数据库的字段类型是否相同，不同会报错
+
+- spring.jpa.properties.hibernate.show_sql=true: 设置是否显示对应的sql操作
+- spring.jpa.properties.hibernate.format_sql=true: 设置是否格式化对应的sql操作
+
+---
+
+
+
+
+
+
+
+
+
+
+
+#### 2. 操作数据库
+
+
+
+步骤:
+
+1. 定义接口，其需要继承`CrudRepository`或者`JpaRepository`，在泛型中添加对应的实体类和主键的类型
+
+> 注意要在主类中添加`@EnableJpaRepositories`注解才行
+
+Eg:
+
+![Xnip2022-07-08_15-13-24](Spring.assets/Xnip2022-07-08_15-13-24.jpg)
+
+
+
+2. 通过注解创建对应的实例，调用save方法即可将实体类对象保存到对应的表中去
+
+![Xnip2022-07-08_15-15-01](Spring.assets/Xnip2022-07-08_15-15-01.jpg)
+
+
+
+
+
+3. 可以在接口中自定义自己想要的查询方法，并且用于接口继承
+
+![Xnip2022-07-08_15-16-26](Spring.assets/Xnip2022-07-08_15-16-26.jpg)
+
+
+
+4. 通过自动注入的方式通过接口的实例调用对应的方法即可
+
+Eg:
+
+![Xnip2022-07-08_15-32-05](Spring.assets/Xnip2022-07-08_15-32-05.jpg)
+
+
+
+![Xnip2022-07-08_15-32-25](Spring.assets/Xnip2022-07-08_15-32-25.jpg)
+
+
+
+![Xnip2022-07-08_15-33-15](Spring.assets/Xnip2022-07-08_15-33-15.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 2) Mybatis
+
+导入依赖:
+
+```xml
+<dependency>
+  <groupId>org.mybatis.spring.boot</groupId>
+  <artifactId>mybatis-spring-boot-starter</artifactId>
+</dependency>
+```
+
+
+
+mybatis在SpringBoot中的配置:
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 1. 创建Mapper
+
+
+
+Mapper中的注解:
+
+- @Mapper: 标记该类为一个映射
+- @Insert: 标记该方法为一个插入方法
+- @Select: 标记该方法为一个查询方法
+- @Update: 标记该方法为一个更新方法
+- @Delete: 标记该方法为一个删除方法
+- @Options: 设置是否使用生成的值等等
+- @Results: 
+    - @Result: 手动将对象的字段与表中字段进行对应(可以通过配置项`map-underscore-to-camel-case`来代替)
+- @Param: 将方法中的参数与SQL中的参数对应起来
+
+
+
+![Xnip2022-07-08_17-17-14](Spring.assets/Xnip2022-07-08_17-17-14.jpg)
+
+
+
+Eg:
+
+- 因为save方法没有将实体类字段和表的字段对应起来，所以输出的类中没有createtime和updatetime字段的值
+
+![Xnip2022-07-08_17-32-34](Spring.assets/Xnip2022-07-08_17-32-34.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+#### 2. generator
+
+
+
+
 
 
 

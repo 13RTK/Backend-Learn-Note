@@ -2287,7 +2287,7 @@ ORDER BY user_id
 
 
 
-# 五十二、最近登录日期2
+# 五十一、最近登录日期2
 
 ![Xnip2022-07-08_10-25-05](problems.assets/Xnip2022-07-08_10-25-05.jpg)
 
@@ -2368,11 +2368,63 @@ AND t1.client_id = t3.id
 ORDER BY t2.name
 ```
 
+---
 
 
 
 
 
+
+
+
+
+
+
+# 五十二、最近登录日期3
+
+![Xnip2022-07-09_12-48-15](problems.assets/Xnip2022-07-09_12-48-15.jpg)
+
+
+
+![Xnip2022-07-09_12-48-27](problems.assets/Xnip2022-07-09_12-48-27.jpg)
+
+题意:
+给你一张用户登录记录表，请你查询出新用户的留存率
+
+
+
+思路:
+
+- 首先我们需要明确计算新用户留存率的方法：即每个新用户第二天登录的人数 / 新用户的总数量
+- 所以我们首先需要的是新用户首次登录的记录，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id,
+	MIN(date) AS 'first_login'
+FROM
+	login
+GROUP BY user_id
+```
+
+
+
+- 有了这些记录后，我们只需要在同一个新用户的首次登录的日期上加1，即可获取其对应的次日记录了
+- 然后使用外连接通过COUNT(字段) / COUNT(*)的方法即可计算出留存率了，最终SQL如下:
+
+```mysql
+SELECT
+   ROUND(COUNT(t2.date) / COUNT(*), 3) AS 'p'
+FROM (
+    SQL1
+    ) AS t1
+LEFT JOIN login AS t2 ON DATEDIFF(t2.date, t1.first_login) = 1
+AND t1.user_id = t2.user_id
+```
+
+- 这里用外连接是考虑到部分新用户次日可能没有任何登录记录，此时使用自连接的话，其首日登录记录也不会被查询出来，所以这里以首日记录为基准使用了外连接
 
 
 
