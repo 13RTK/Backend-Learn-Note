@@ -2426,5 +2426,94 @@ AND t1.user_id = t2.user_id
 
 - 这里用外连接是考虑到部分新用户次日可能没有任何登录记录，此时使用自连接的话，其首日登录记录也不会被查询出来，所以这里以首日记录为基准使用了外连接
 
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 五十三、最近登录日期4
+
+![Xnip2022-07-10_10-12-56](problems.assets/Xnip2022-07-10_10-12-56.jpg)
+
+
+
+![Xnip2022-07-10_10-13-45](problems.assets/Xnip2022-07-10_10-13-45.jpg)
+
+题意:
+给你一张登录记录表，请你查询出其中每天的新用户登录人次
+
+
+
+
+
+思路:
+
+- 因为计算的是新用户，所以我们首先需要将用户和其第一次登录的日期对应起来，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id,
+	MIN(date) AS 'date'
+FROM
+	login
+GROUP BY user_id
+```
+
+
+
+- 之后因为需要根据日期来计算对应的人次，所以我们需要以原表中的日期为准
+- 但需要注意的是，原表中的日期有重复，直接使用外连接的话，获取的记录条数会比原有的要多，所以我们需要先去重才行，SQL如下:
+
+SQL2:
+
+```mysql
+SELECT
+	date
+FROM
+	login
+GROUP BY date
+```
+
+
+
+
+
+- 最后，我们只需要连接两表，记录相关的字段即可，最终SQL如下:
+
+```mysql
+SELECT
+    t1.date,
+    COUNT(t2.user_id)
+FROM (
+    SQL2
+) AS t1
+LEFT JOIN (
+    SQL1
+    ) AS t2 ON t1.date = t2.date
+GROUP BY t1.date
+ORDER BY t1.date
+```
+
+
+
+
+
+
+
+
+
 
 
