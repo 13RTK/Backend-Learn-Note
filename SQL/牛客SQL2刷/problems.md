@@ -2507,6 +2507,102 @@ GROUP BY t1.date
 ORDER BY t1.date
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+# 五十四、最近登录日期5
+
+![Xnip2022-07-11_10-35-17](problems.assets/Xnip2022-07-11_10-35-17.jpg)
+
+
+
+![Xnip2022-07-11_10-36-13](problems.assets/Xnip2022-07-11_10-36-13.jpg)
+
+题意:
+给你一张登录记录表，请你查询出其中每天的用户留存率
+
+
+
+思路:
+
+- 该题目需要注意的是，留存率对应的日期是其当天的新用户数对应的留存率
+- 为了有新用户的记录，我们需要先查询出所有的新用户记录，SQL如下
+
+SQL1:
+
+```mysql
+WITH new_login AS (
+    SELECT
+        user_id,
+        MIN(date) AS 'date'
+    FROM
+        login AS t1
+    GROUP BY user_id
+)
+```
+
+
+
+- 之后只需要连接原表后统计每天的留存率即可，SQL如下\
+
+SQL2:
+
+```mysql
+SQL1
+
+SELECT
+    t1.date,
+    ROUND(COUNT(DISTINCT t2.user_id) / COUNT(*), 3) AS 'p'
+FROM
+    new_login AS t1
+LEFT JOIN login AS t2 ON t1.user_id = t2.user_id
+AND DATEDIFF(t2.date, t1.date) = 1
+GROUP BY t1.date
+```
+
+
+
+- 但这样查询出来的是所有有新用户的日期，没有新用户的日期则没法被查询出来，因此我们还需要查询出没有新用户的日期，最终SQL如下
+
+```mysql
+SQL2
+UNION ALL
+SELECT
+    date,
+    0.000 AS 'p'
+FROM
+    login
+WHERE date NOT IN(
+    SELECT
+        date
+    FROM
+        new_login
+)
+GROUP BY date
+ORDER BY date
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

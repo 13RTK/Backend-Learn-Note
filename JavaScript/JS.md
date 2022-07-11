@@ -540,7 +540,7 @@ Eg:
 
 1. getElementById
 
-通过该方法可以获取有指定id值的元素节点对应的对象
+通过该方法可以获取有**指定id值的元素节点对应的对象**
 
 Syntax:
 
@@ -568,7 +568,7 @@ Eg:
 
 2. getElementsByTagName
 
-通过该方法，可以通过标签的名字返回一个对象数组
+通过该方法，可以**通过标签的名字返回一个对象数组**
 
 syntax:
 
@@ -591,6 +591,82 @@ Eg:
 Eg:
 
 ![Xnip2022-07-04_22-42-24](JS.assets/Xnip2022-07-04_22-42-24.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+3. getElementsByClassName
+
+> 改方法为HTML5中新增的方法
+
+改方法可以让我们能够通过`class`属性中的类名获取对应的元素集合
+
+
+
+Syntax:
+
+```js
+document.getElementsByClassName(class_name);
+```
+
+- 如果需要查找带有多个类名的元素，可以在参数同通过空格将类名进行分隔即可:
+
+```js
+document.getElementsByClassName(class_name1 class_name2);
+```
+
+
+
+Eg:
+
+![Xnip2022-07-10_20-57-52](JS.assets/Xnip2022-07-10_20-57-52.jpg)
+
+
+
+![Xnip2022-07-10_20-57-31](JS.assets/Xnip2022-07-10_20-57-31.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+## 5. 获取/设置属性
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

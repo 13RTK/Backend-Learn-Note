@@ -937,7 +937,111 @@ Eg:
 
 
 
-#### 2. generator
+
+
+## 3. NoSQL
+
+
+
+
+
+### 1) Redis
+
+
+
+
+
+#### 1. Jedis的简单使用
+
+导入依赖:
+
+```xml
+<dependency>
+  <groupId>redis.clients</groupId>
+  <artifactId>jedis</artifactId>
+</dependency>
+```
+
+对应的配置:
+
+```properties
+redis.host=localhost
+redis.max-total=3
+redis.max-idle=3
+redis.test-on-borrow=true
+```
+
+
+
+
+
+
+
+通过JedisPool获取一个Jedis实例，直接使用其对应的方法即可
+
+> 注意，Jedis不是线程安全的
+
+
+
+1. 通过注入获取一个JedisPool实例:
+
+![Xnip2022-07-10_14-45-13](Spring.assets/Xnip2022-07-10_14-45-13.jpg)
+
+
+
+
+
+2. 通过该JedisPool实例调用`getResource`方法获取一个Jedis实例对象:
+
+![Xnip2022-07-10_14-47-26](Spring.assets/Xnip2022-07-10_14-47-26.jpg)
+
+
+
+
+
+3. 通过该实例对象创建对应的Redis数据
+
+Jedis中的方法和Redis终端中的命令相同
+
+![Xnip2022-07-10_14-50-11](Spring.assets/Xnip2022-07-10_14-50-11.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

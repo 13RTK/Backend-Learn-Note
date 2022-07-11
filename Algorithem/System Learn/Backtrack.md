@@ -418,7 +418,7 @@ if (idx > startIdx && candidates[idx] == candidates[idx - 1]) {
 
 
 
-# 十、递增子序列(每层一次性标记)
+# 十、递增子序列(每层一次性标记/不熟悉)
 
 ![Xnip2022-03-02_08-38-20](Backtrack/Xnip2022-03-02_08-38-20.jpg)
 
