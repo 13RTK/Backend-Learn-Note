@@ -2591,11 +2591,52 @@ GROUP BY date
 ORDER BY date
 ```
 
+---
 
 
 
 
 
+
+
+
+
+
+
+# 五十五、最近登录日期6
+
+![Xnip2022-07-12_11-37-50](problems.assets/Xnip2022-07-12_11-37-50.jpg)
+
+
+
+![Xnip2022-07-12_11-37-58](problems.assets/Xnip2022-07-12_11-37-58.jpg)
+
+题意:
+
+给你一张通过记录表，一张用户信息表，一张登录记录表，请你查询出其每个用户每天的累积刷题数
+
+
+
+
+
+思路:
+
+- 看起来有三张表，其实我们只需要其中的两张表，即刷题通过和用户表
+- 因为我们需要的是每天的累加通过数，所以用窗口函数是一个极好的选择，因此我们连接两表后，再排序即可，最终SQL如下:
+
+```mysql
+SELECT
+    t2.name AS 'u_n',
+    t1.date,
+    SUM(t1.number) OVER(
+        PARTITION BY t2.name
+        ORDER BY t1.date
+    ) AS 'ps_num'
+FROM
+    passing_number AS t1
+INNER JOIN user AS t2 ON t1.user_id = t2.id
+ORDER BY t1.date, t2.name
+```
 
 
 
