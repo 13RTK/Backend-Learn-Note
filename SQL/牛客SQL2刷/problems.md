@@ -2638,7 +2638,41 @@ INNER JOIN user AS t2 ON t1.user_id = t2.id
 ORDER BY t1.date, t2.name
 ```
 
+---
 
+
+
+
+
+
+
+
+
+# 五十六、考试分数1
+
+![Xnip2022-07-13_10-10-45](problems.assets/Xnip2022-07-13_10-10-45.jpg)
+
+题意:
+
+给你一张考试成绩表，请你查询出其中所有岗位对应的平均分数
+
+
+
+
+
+思路:
+
+- 求平均分需要用到AVG函数，又因为这里是各科平均分，所以需要分组才行，最终SQL如下
+
+```mysql
+SELECT
+    job,
+    ROUND(AVG(score), 3) AS 'avg'
+FROM
+    grade
+GROUP BY job
+ORDER BY `avg` DESC
+```
 
 
 
