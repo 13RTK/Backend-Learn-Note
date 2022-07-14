@@ -2674,6 +2674,7 @@ GROUP BY job
 ORDER BY `avg` DESC
 ```
 
+---
 
 
 
@@ -2681,6 +2682,56 @@ ORDER BY `avg` DESC
 
 
 
+
+
+# 五十七、考试分数2
+
+![Xnip2022-07-14_09-10-44](problems.assets/Xnip2022-07-14_09-10-44.jpg)
+
+
+
+![Xnip2022-07-14_09-11-29](problems.assets/Xnip2022-07-14_09-11-29.jpg)
+
+题意:
+
+给你一张考试成绩表，请你查询出其中所有大于当前岗位平均分的用户记录
+
+
+
+
+
+思路:
+
+- 因为这里需要和平均分比较，所以我们可以先直接查询出每个岗位的平均分，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	job,
+	AVG(score) AS 'avg_score'
+FROM
+	grade
+GROUP BY job
+```
+
+
+
+- 最后只需要保证job字段一致，且score大于即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t1.job,
+    t1.score
+FROM
+    grade AS t1
+INNER JOIN (
+    SQL1
+    ) AS t2 ON t1.job = t2.job
+WHERE t1.score > t2.avg_score
+ORDER BY t1.id
+```
 
 
 
