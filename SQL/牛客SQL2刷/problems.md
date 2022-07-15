@@ -2733,6 +2733,77 @@ WHERE t1.score > t2.avg_score
 ORDER BY t1.id
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+# 五十八、考试分数3
+
+![Xnip2022-07-15_13-09-53](problems.assets/Xnip2022-07-15_13-09-53.jpg)
+
+
+
+![Xnip2022-07-15_13-10-02](problems.assets/Xnip2022-07-15_13-10-02.jpg)
+
+题意:
+
+给你一张考试记录表，一张语言岗位表，请你查询每个岗位中排名前两位的用户信息
+
+
+
+
+
+思路:
+
+- 根据示例可知，我们需要匹配的排名是需要考虑分数并列的情况的，所以我们首先需要查询出每个岗位对应的分数排名和对应的用户id及分数
+- 从需要的字段来看，我们简单地使用GROUP BY是无法一次性满足条件的，因此需要借助窗口函数的帮助，因为我们需要考虑分数并列的排名情况，所以我们应该选择`DENSE_RANK`而不是`ROW_NUMBER`，SQL如下
+
+```mysql
+SELECT
+	language_id,
+	id,
+	score,
+	DENSE_RANK() OVER(
+		PARTITION BY language_id
+		ORDER BY score DESC
+	) AS 'rn'
+FROM
+	grade
+```
+
+
+
+- 有了这排名信息后，我们只需要连接岗位信息表，查询出对应的字段即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t2.name,
+    t1.score
+FROM (
+    SQL1
+    ) AS t1
+INNER JOIN language AS t2 ON t1.language_id = t2.id
+WHERE t1.rn <= 2
+ORDER BY t2.name, t1.score DESC, t1.id
+```
+
+
+
+
+
+
+
+
+
 
 
 

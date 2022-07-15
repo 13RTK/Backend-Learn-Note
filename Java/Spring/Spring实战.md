@@ -1474,6 +1474,69 @@ public class Taco {
 }
 ```
 
+- 通过`@size`注解中的min属性值还可以设置该字段的最小长度，通过message属性值还可以设置其对应的规则信息
+
+
+
+
+
+对于订单类(TacoOrder)进行验证:
+
+- 地址不能为空白字段，所以需要使用`Hibernate.validator`下的`@NotBlank`注解
+- 信用卡卡号字段(ccNumber)即Credit Card Num需要确保它有效，因此用到了`@CreditCardNumber`注解
+- 信用卡有效期需要符合"MM/YY"格式，这里我们用到了`@Pattern`注解来表示一个`正则表达式`
+- ccCVV(Card Validation Value)必须为一个三位数，这里用到了`@Digits`注解
+
+Eg:
+
+```java
+package tacos;
+
+import lombok.Data;
+import org.hibernate.validator.constraints.CreditCardNumber;
+
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+public class TacoOrder {
+
+    @NotBlank(message = "Delivery name is required")
+    private String deliveryName;
+
+    @NotBlank(message = "Street is required")
+    private String deliveryStreet;
+
+    @NotBlank(message = "City is required")
+    private String deliveryCity;
+
+    @NotBlank(message = "State is required")
+    private String deliveryState;
+
+    @NotBlank(message = "Zip code is required")
+    private String deliveryZip;
+
+    @CreditCardNumber(message = "Not a valid credit card number")
+    private String ccNumber;
+
+    @Pattern(regexp = "^(0[1-9]|1[0-2])([\\/])([1-9][0-9])$", message = "Must be formatted MM/YY")
+    private String ccExpiration;
+
+    @Digits(integer = 3, fraction = 0, message = "Invalid CVV")
+    private String ccCVV;
+
+    private List<Taco> tacos = new ArrayList<>();
+
+    public void addTaco(Taco taco) {
+        this.tacos.add(taco);
+    }
+}
+```
+
+---
 
 
 
@@ -1487,6 +1550,369 @@ public class Taco {
 
 
 
+
+
+### 2) 表单绑定验证
+
+- 在相应的类上设置好验证规则后，我们需要`在控制器中指定验证的执行`
+
+
+
+- 在前端页面中，**返回的是一个Taco实例对象**，所以我们`需要验证的也是这个对象`，因此在对应的控制器方法(processTaco)中，我们需要`对Taco对象参数进`行验证
+- 设置验证的方法就是在参数前添加一个`@Valid`注解
+- 如果返回的对象有任何错误，那么这些`错误就会被第二个参数捕获`，我们只需要通过它调用`hasErrors`方法即可
+
+
+
+Eg:
+
+```java
+@PostMapping
+public String processTaco(@Valid @ModelAttribute("taco") Taco taco, Errors errors) {
+  if (errors.hasErrors()) {
+    return "design";
+  }
+
+  log.info("Processing taco: " + taco);
+
+  return "redirect:/orders/current";
+}
+```
+
+
+
+逻辑:
+
+如果有错误，我们便不处理这个订单，而是重新显示表单(design)
+
+
+
+
+
+
+
+- 同样的，我们也需要验证提交的订单
+
+Eg:
+
+```java
+@PostMapping
+public String processOrder(@Valid @ModelAttribute("tacoOrder") TacoOrder tacoOrder, Errors errors) {
+  if (errors.hasErrors()) {
+    return "orderForm";
+  }
+
+  log.info("Order submitted: " + tacoOrder);
+  return "redirect:/";
+}
+```
+
+
+
+
+
+问题:
+
+- 我们虽然验证了错误，但用户并未收到任何提示，所以我们需要给用户一些提醒
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 为用户显示验证错误
+
+- thymeleaf中提供了`fields`属性和`th:errors`属性用来访问Errors对象
+
+Eg:
+
+```html
+<label for="ccNumber">Credit Card #: </label>
+<input type="text" th:field="*{ccNumber}"/>
+<span class="validationError"
+      th:if="${#fields.hasErrors('ccNumber')}"
+      th:errors="*{ccNumber}">CC Num Error</span>
+```
+
+
+
+Eg:
+
+
+
+Html:
+
+```html
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Taco Cloud</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap-theme.css}" />
+</head>
+
+<body>
+<form method="POST" th:action="@{/orders}" th:object="${tacoOrder}">
+    <h1>Order your taco creations!</h1>
+    <img th:src="@{/images/TacoCloud.png}"/>
+    <a th:href="@{/design}" id="another">Design another taco</a><br/>
+    <div th:if="${#fields.hasErrors()}">
+                <span class="validationError">
+                    Please correct the problems below and resubmit.
+                </span>
+    </div>
+    <h3>Deliver my taco masterpieces to...</h3>
+
+    <label for="name">Name: </label>
+    <input type="text" th:field="*{deliveryName}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('deliveryName')}"
+          th:errors="*{deliveryName}">Delivery Name Error</span>
+    <br/>
+
+    <label for="street">Street address: </label>
+    <input type="text" th:field="*{deliveryStreet}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('deliveryStreet')}"
+          th:errors="*{deliveryStreet}">Delivery Street Error</span>
+    <br/>
+
+    <label for="city">City: </label>
+    <input type="text" th:field="*{deliveryCity}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('deliveryCity')}"
+          th:errors="*{deliveryCity}">Delivery City Error</span>
+    <br/>
+
+    <label for="state">State: </label>
+    <input type="text" th:field="*{deliveryState}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('deliveryState')}"
+          th:errors="*{deliveryState}">Delivery State Error</span>
+    <br/>
+
+    <label for="zip">Zip code: </label>
+    <input type="text" th:field="*{deliveryZip}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('deliveryZip')}"
+          th:errors="*{deliveryZip}">Delivery Zip Error</span>
+    <br/>
+
+    <h3>Here's how I'll pay...</h3>
+
+    <label for="ccNumber">Credit Card #: </label>
+    <input type="text" th:field="*{ccNumber}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('ccNumber')}"
+          th:errors="*{ccNumber}">CC Num Error</span>
+    <br/>
+
+    <label for="ccExpiration">Expiration: </label>
+    <input type="text" th:field="*{ccExpiration}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('ccExpiration')}"
+          th:errors="*{ccExpiration}">CC Expiration Error</span>
+    <br/>
+
+    <label for="ccCVV">CVV: </label>
+    <input type="text" th:field="*{ccCVV}"/>
+    <span class="validationError"
+          th:if="${#fields.hasErrors('ccCVV')}"
+          th:errors="*{ccCVV}">CC CVV Error</span>
+    <br/>
+
+    <input type="submit" value="Submit order"/>
+</form>
+</body>
+</html>
+```
+
+
+
+效果图:
+
+![Xnip2022-07-14_15-29-41](Spring实战.assets/Xnip2022-07-14_15-29-41.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4. 视图控制器
+
+- 我们现在为项目编写了三个控制器，它们都遵循相同的模式:
+    - 都使用了`@Controller`注解
+    - 除了`HomeController`之外，都使用了`@RequestMapping`注解定义控制器处理的路径
+    - 都有至少一个方法，大多数方法都使用了`@GetMapping`或者`@PostMapping`注解
+
+
+
+> 如果一个控制器很简单: 不填充任何属性到模型中或者流程输入(HomeController)，那么可以只用视图控制器来代替，其只用于将请求转发给视图
+
+
+
+Eg:
+
+```java
+package tacos.web;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/") .setViewName("home");
+    }
+}
+```
+
+- 我们通过实现`WebMvcConfigurer`接口，重写了其`addViewControllers`方法
+- 其中我们使用一个`ViewControllerRegistry`实例对象调用`addViewController`方法设置视图控制器处理GET请求的路径，调用`setViewName`方法指定了转发请求所用的视图逻辑名
+
+
+
+- 通过这个类就可以替换掉HomeController了，不过还需要将之前测试类中`@WebMvcTest`注解内对HomeController的引用
+
+Eg:
+
+![Xnip2022-07-14_15-49-45](Spring实战.assets/Xnip2022-07-14_15-49-45.jpg)
+
+
+
+- 该配置甚至还可以直接写在引导类中，同样只需要实现对应的`WebMvcConfigurer`接口即可:
+
+![Xnip2022-07-14_15-51-25](Spring实战.assets/Xnip2022-07-14_15-51-25.jpg)
+
+
+
+注意:
+
+最好为每种配置都创建一个新的配置类，保持引导配置的简洁
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5. 视图模版
+
+
+
+各种视图模版的支持情况:
+
+**表 2.2 支持的模板选项**
+
+| 模板                    | Spring Boot starter 依赖             |
+| :---------------------- | :----------------------------------- |
+| FreeMarker              | spring-boot-starter-freemarker       |
+| Groovy Templates        | spring-boot-starter-groovy-templates |
+| JavaServer Page （JSP） | None （provided by Tomcat or Jetty） |
+| Mustache                | spring-boot-starter-mustache         |
+| Thymeleaf               | spring-boot-starter-thymeleaf        |
+
+
+
+注意:如果需要打包为可执行的jar文件，则无法通过JSP来实现
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 1) 缓存模版
+
+- 默认情况下，模版只在第一次使用的时候被解析一次，解析的结果会被缓存，这样在生产环节中可以提高性能
+- 但开发中则无法看到实时的修改，只能重启，因此我们可以在配置中手动禁用模版的缓存
+
+**表 2.3 启用/禁用模板缓存的属性**
+
+| 模板             | 缓存使能属性                 |
+| :--------------- | :--------------------------- |
+| Freemarker       | spring.freemarker.cache      |
+| Groovy Templates | spring.groovy.template.cache |
+| Mustache         | spring.mustache.cache        |
+| Thymeleaf        | spring.thymeleaf.cache       |
+
+
+
+禁用Thymeleaf模版缓存对应的配置项:
+
+![Xnip2022-07-14_16-01-32](Spring实战.assets/Xnip2022-07-14_16-01-32.jpg)
+
+- 最简单的方法还是使用Spring Boot的DevTools依赖(其能够根据环境自动禁用/启用模版缓存)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 三、处理数据
+
+
+
+## 1. 使用JDBC读写数据
 
 
 
