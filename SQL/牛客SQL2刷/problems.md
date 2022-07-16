@@ -2796,9 +2796,51 @@ WHERE t1.rn <= 2
 ORDER BY t2.name, t1.score DESC, t1.id
 ```
 
+----
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 五十九、考试分数4
+
+![Xnip2022-07-16_11-48-34](problems.assets/Xnip2022-07-16_11-48-34.jpg)
+
+题意:
+
+给你一张成绩表，请你查询出其中每个岗位对应的中位数范围内的起止排名
+
+
+
+
+
+思路:
+
+- 中位数有两种情况: 要么只有一个，要么有两个，要是在常规的Code里，我们自然可以通过判断奇偶等方式进行分支处理，但SQL并不擅长数据的运算处理，所以我们需要偷一下懒
+- 这里我们只需要利用整数相除后截断小数部分的做法即可，SQL如下
+
+```mysql
+SELECT
+    job,
+    FLOOR((COUNT(*) + 1) / 2) AS 'start',
+    FLOOR((COUNT(*) + 2) / 2) AS 'end'
+FROM
+    grade
+GROUP BY job
+ORDER BY job
+```
 
 
 

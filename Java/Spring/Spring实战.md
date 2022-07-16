@@ -1916,11 +1916,583 @@ Eg:
 
 
 
+传统情况下使用JDBC执行查询操作:
+
+```java
+public Optional<Ingredient> findById(String id) {
+  Connection connection = null;
+  PreparedStatement statement = null;
+  ResultSet resultSet = null;
+  try {
+    connection = dataSource.getConnection();
+    statement = connection.prepareStatement(
+        "select id, name, type from Ingredient");
+    statement.setString(1, id);
+    resultSet = statement.executeQuery();
+    Ingredient ingredient = null;
+    if(resultSet.next()) {
+      ingredient = new Ingredient(
+        resultSet.getString("id"),
+        resultSet.getString("name"),
+        Ingredient.Type.valueOf(resultSet.getString("type")));
+    }
+    return Optional.of(ingredient);
+  } catch (SQLException e) {
+    // ??? What should be done here ???
+  } finally {
+    if (resultSet != null) {
+      try {
+        resultSet.close();
+      } catch (SQLException e) {}
+    }
+    if (statement != null) {
+      try {
+        statement.close();
+      } catch (SQLException e) {}
+    }
+    if (connection != null) {
+      try {
+        connection.close();
+      } catch (SQLException e) {}
+    }
+  }
+  return null;
+}
+```
+
+- 该方法中只有几行用于查询，其余都是用于创建连接、创建语句(statement)和关闭结果集、语句和连接的语句
+- 在处理过程中还需要处理SQLException，其对排除问题并无较大帮助
+
+
+
+使用JdbcTemplate:
+
+```java
+private JdbcTemplate jdbcTemplate;
+
+public Optional<Ingredient> findById(String id) {
+  List<Ingredient> results = jdbcTemplate.query(
+    "select id, name, type from Ingredient where id=?",
+    this::mapRowToIngredient,
+    id);
+  return results.size() == 0 ?
+      Optional.empty() :
+      Optional.of(results.get(0));
+}
+private Ingredient mapRowToIngredient(ResultSet row, int rowNum)
+    throws SQLException {
+  return new Ingredient(
+    row.getString("id"),
+    row.getString("name"),
+    Ingredient.Type.valueOf(row.getString("type")));
+}
+```
+
+- 使用JdbcTemplate明显要简单得多，没有创建语句和清除/关闭语句
+
+---
 
 
 
 
 
+
+
+
+
+
+
+### 1) 改造实体类适应持久化
+
+- 将对象放入数据库时，最好有一个唯一标识对象的字段，这里我们可以选择使用一个`Long`类型的`id`对象属性
+- 该对象实例何时被创建也很有用，所以需要一个字段表示其对应的创建日期和时间
+
+Eg:
+
+
+
+Taco类
+
+```java
+public class Taco {
+    
+    private Long id;
+
+    private Date createdAt;
+   	...
+}
+```
+
+
+
+TacoOrder类
+
+```java
+@Data
+public class TacoOrder {
+    private static final long serialVersionUID = 1L;
+    
+    private Long id;
+
+    private Date createdAt;
+		...
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 2) 使用JdbcTemplate
+
+- 使用之前，我们需要导入对应的依赖:
+
+```xml
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+```
+
+
+
+- 我们还需要一个关系型数据库实现持久化存储，这里我们选择H2嵌入式数据库
+- 因为我们使用了Spring Boot Dev-tools，所以我们可以访问H2控制台(默认在http://localhost:8080/h2-console)
+
+```xml
+<dependency>
+  <groupId>com.h2database</groupId>
+  <artifactId>h2</artifactId>
+  <scope>runtime</scope>
+</dependency>
+```
+
+
+
+
+
+- 默认情况下，数据库名称是随机的，所以很难确定数据库的连接URL，我们可以在`application.properties`中指定对应的属性来表示数据库的名称:
+
+```properties
+spring.datasource.generate-unique-name=false
+spring.datasource.name=tacocloud
+```
+
+
+
+- 但yaml格式的配置文件具有更好的可读性，所以最好使用yaml格式:
+
+```yaml
+spring:
+  datasource:
+    generate-unique-name: false
+    name: tacocloud
+```
+
+
+
+- `spring.datasource.generate-unique-name`配置项用来指定是否为数据库指定随机值
+- `spring.datasource.name=tacocloud`则直接指明了数据库的名称
+- 此时我们的H2数据库连接URL为: `jdbc:h2:mem:tacocloud`
+- 我们可以通过jdbc-url配置项指定对应的控制台URL
+
+---
+
+
+
+
+
+
+
+
+
+#### 定义JDBC存储库(repository)
+
+- 我们需要对一个Ingredient对象进行CRUD，对应的操作如下:
+    - 查询所有的Ingredient记录，将所有记录存放在对应的集合实例中
+    - 实现通过id查询单个Ingredient对象
+    - 保存一个Ingredient实例对象
+
+
+
+通过接口定义上述的三种功能:
+
+```java
+package tacos.data;
+
+import tacos.Ingredient;
+
+import java.util.Optional;
+
+public interface IngredientRepository {
+    Iterable<Ingredient> findAll();
+    
+    Optional<Ingredient> findById(String id);
+    
+    Ingredient save(Ingredient ingredient);
+}
+```
+
+
+
+之后我们需要实现这三个接口描述的功能:
+
+```java
+package tacos.data;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import tacos.Ingredient;
+
+import java.util.Optional;
+
+@Repository
+public class JdbcIngredientRepository implements IngredientRepository{
+    private JdbcTemplate jdbcTemplate;
+
+    public JdbcIngredientRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+  	...
+}
+```
+
+- 这里使用了`@Repository`注解，该注解是Spring中的原型注解之一(包括@Controller和@Component)
+- `@Repository`注解可以让该类被Spring扫描并在上下文/容器中生成对应的bean实例对象
+
+
+
+- 我们这里使用到了`JdbcTemplate`，该实例bean可以从容器中获取，我们只需要使用`@Autowired`注解即可将其注入
+
+Eg:
+
+```java
+@Autowired
+public JdbcIngredientRepository(JdbcTemplate jdbcTemplate) {
+  this.jdbcTemplate = jdbcTemplate;
+}
+```
+
+
+
+`findAll`和`findById`的实现:
+
+```java
+@Override
+public Iterable<Ingredient> findAll() {
+    return jdbcTemplate.query("SELECT id, name, type FROM Ingredient",
+            this::mapRowToIngredient);
+}
+
+@Override
+public Optional<Ingredient> findById(String id) {
+    List<Ingredient> results = jdbcTemplate.query("SELECT id, name, type FROM Ingredient WHERE id = ?",
+            this::mapRowToIngredient,
+            id);
+
+    return results.size() == 0 ? Optional.empty() : Optional.of(results.get(0));
+}
+
+private Ingredient mapRowToIngredient(ResultSet row, int rowNum) throws SQLException {
+    return new Ingredient(
+            row.getString("id"),
+            row.getString("name"),
+            Ingredient.Type.valueOf(row.getString("type"))
+    );
+}
+```
+
+- 上述两个方法都使用了`JdbcTemplate`实例，其中`findAll`使用了JdbcTemplagte的`query`方法
+- `query`方法接收一个查询的SQL以及Spring的RowMapper(一个函数式接口)实现:
+
+> public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException
+
+- 我们的`mapRowToIngredient`方法用于将结果集中的数据映射到具体的实体类对象中
+
+
+
+- `findById`方法需要使用WHERE子句，所以需要通过id列的值获取对应的实体对象，对`query`调用中存在id值，查询执行的时候，"?"会被替换为id值
+
+> public <T> List<T> query(String sql, RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException
+
+- 我们也可以不使用方法引用，而是使用匿名内部类:
+
+```java
+@Override
+public Optional<Ingredient> findById(String id) {
+    List<Ingredient> results = jdbcTemplate.query("SELECT id, name, type FROM Ingredient WHERE id = ?",
+            new RowMapper<Ingredient>() {
+                @Override
+                public Ingredient mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    return new Ingredient(
+                            rs.getString("id"),
+                            rs.getString("name"),
+                            Ingredient.Type.valueOf(rs.getString("type")));
+                };
+            },
+            id);
+
+    return results.size() == 0 ? Optional.empty() : Optional.of(results.get(0));
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+#### 插入一行数据
+
+- 通过JdbcTemplate的`update`方法即可查询数据或进行更新操作
+
+Eg:
+
+```java
+@Override
+public Ingredient save(Ingredient ingredient) {
+  jdbcTemplate.update("INSERT INTO Ingredient (id, name, type) VALUES(?, ?, ?)",
+                      ingredient.getId(),
+                      ingredient.getName(),
+                      ingredient.getType().toString());
+
+  return ingredient;
+}
+```
+
+- 在方法中，我们将Ingredient实例的三个属性值传入了SQL中，该方法不需要将ResultSet对象中的数据与实体对象映射
+
+
+
+
+
+- 最后我们只需要在控制器中注入这个类的实例对象即可使用，之前的`DesignTacoController`则不用再通过硬编码的方式初始化对应的数据了:
+
+Eg:
+
+```java
+@Slf4j
+@Controller
+@RequestMapping("/design")
+@SessionAttributes("tacoOrder")
+public class DesignTacoController {
+
+    private final IngredientRepository ingredientRepo;
+
+    @Autowired
+    public DesignTacoController(IngredientRepository ingredientRepo) {
+        this.ingredientRepo = ingredientRepo;
+    }
+
+    @ModelAttribute
+    public void addIngredientsToModel(Model model) {
+        Iterable<Ingredient> ingredients = ingredientRepo.findAll();
+
+        Type[] types = Ingredient.Type.values();
+        for (Type type : types) {
+            model.addAttribute(type.toString().toLowerCase(),
+                    filterByType((List<Ingredient>) ingredients, type));
+        }
+    }
+    
+    ...
+}
+```
+
+- 我们通过注入的`IngredientRepository`实例的`findAll`方法提取出了所有的Ingredient对象，然后再添加到视图模型中
+
+- 同样的，我们还可以通过其来简化我们的`IngredientByIdConverter`，通过`findById`方法可以替换其中的Map对象:
+
+```java
+@Component
+public class IngredientByIdConverter implements Converter<String, Ingredient> {
+
+    private IngredientRepository ingredientRepo;
+
+    @Autowired
+    public IngredientByIdConverter(IngredientRepository ingredientRepo) {
+        this.ingredientRepo = ingredientRepo;
+    }
+
+    @Override
+    public Ingredient convert(String id) {
+        return ingredientRepo.findById(id).orElse(null);
+    }
+}
+```
+
+
+
+在开始测试前，我们需要创建Ingredient这张表
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 3) 定义schema/预加载数据
+
+- 除了Ingredient表之外，我们还需要保存订单、设计信息的表:
+
+![IMG_200552637E85-1](Spring实战.assets/IMG_200552637E85-1.jpeg)
+
+
+
+各个表的用途:
+
+- Taco_Order: 保存`订单的细节`
+- Taco: 保存Taco的`设计信息`
+- Ingredient_Ref: 保存Taco表中每行的一列或者多列信息，用于`将Taco映射到对应的Ingredient`
+- Ingredient: 保存`原料信息`
+
+> Taco_Order和Taco是聚合关系，Taco_Order聚合根
+>
+> Ingredient是其聚合的唯一成员，Taco通过Ingredient_Ref引用它
+
+- 这里我们用到了DDD的设计理念(领域驱动设计)
+
+
+
+
+
+
+
+- 为了初始化对应的表，我们应该将对应的SQL文件放在`/src/main/resources`下:
+
+schema.sql:
+
+```sql
+create table if not exists Taco_Order
+(
+    id              identity,
+    delivery_Name   varchar(50) not null,
+    delivery_Street varchar(50) not null,
+    delivery_City   varchar(50) not null,
+    delivery_State  varchar(2)  not null,
+    delivery_Zip    varchar(10) not null,
+    cc_number       varchar(16) not null,
+    cc_expiration   varchar(5)  not null,
+    cc_cvv          varchar(3)  not null,
+    placed_at       timestamp   not null
+);
+
+create table if not exists Taco
+(
+    id             identity,
+    name           varchar(50) not null,
+    taco_order     bigint      not null,
+    taco_order_key bigint      not null,
+    created_at     timestamp   not null
+);
+
+create table if not exists Ingredient_Ref
+(
+    ingredient varchar(4) not null,
+    taco       bigint     not null,
+    taco_key   bigint     not null
+);
+
+
+create table if not exists Ingredient
+(
+    id   varchar(4)  not null,
+    name varchar(25) not null,
+    type varchar(10) not null
+);
+
+alter table Taco
+    add foreign key (taco_order) references Taco_Order (id);
+alter table Ingredient_Ref
+    add foreign key (ingredient) references Ingredient (id);
+```
+
+
+
+![Xnip2022-07-15_15-47-11](Spring实战.assets/Xnip2022-07-15_15-47-11.jpg)
+
+
+
+
+
+- 此时表中还没有任何数据，所以我们还需要一个data.sql文件来插入对应的数据:
+
+
+
+data.sql:
+
+```sql
+delete
+from Ingredient_Ref;
+delete
+from Taco;
+delete
+from Taco_Order;
+
+delete
+from Ingredient;
+insert into Ingredient (id, name, type)
+values ('FLTO', 'Flour Tortilla', 'WRAP');
+insert into Ingredient (id, name, type)
+values ('COTO', 'Corn Tortilla', 'WRAP');
+insert into Ingredient (id, name, type)
+values ('GRBF', 'Ground Beef', 'PROTEIN');
+insert into Ingredient (id, name, type)
+values ('CARN', 'Carnitas', 'PROTEIN');
+insert into Ingredient (id, name, type)
+values ('TMTO', 'Diced Tomatoes', 'VEGGIES');
+insert into Ingredient (id, name, type)
+values ('LETC', 'Lettuce', 'VEGGIES');
+insert into Ingredient (id, name, type)
+values ('CHED', 'Cheddar', 'CHEESE');
+insert into Ingredient (id, name, type)
+values ('JACK', 'Monterrey Jack', 'CHEESE');
+insert into Ingredient (id, name, type)
+values ('SLSA', 'Salsa', 'SAUCE');
+insert into Ingredient (id, name, type)
+values ('SRCR', 'Sour Cream', 'SAUCE');
+```
+
+- 我们这里只设置了Ingredient相关的逻辑，并未实现其他实体对象的持久化
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 插入数据
 
 
 
