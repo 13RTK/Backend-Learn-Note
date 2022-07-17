@@ -2494,6 +2494,527 @@ values ('SRCR', 'Sour Cream', 'SAUCE');
 
 ### 4) 插入数据
 
+- 我们接下来需要设计存储TacoOrder的逻辑，同样需要定义一个Repository接口，其中设置一个`save`方法
+
+Eg:
+
+```java
+public interface OrderRepository {
+    TacoOrder save(TacoOrder tacoOrder);
+}
+```
+
+- 注意在保存TacoOrder对象实例的时候，我们还需要保存其中的`Taco`对象
+
+
+
+
+
+- 而保存Taco对象的时候，我们还需要保存Taco对象中对应的每个Ingredient实例
+- 我们设计的`IngredientRef`类表示了Taco对象和Ingredient对象的关系
+
+Eg:
+
+```java
+@Data
+public class IngredientRef {
+    private final String ingredient;
+}
+```
+
+
+
+
+
+
+
+实现我们的订单保存方法:
+
+Eg:
+
+```java
+package tacos.data;
+
+import java.sql.Types;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.asm.Type;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import tacos.IngredientRef;
+import tacos.Taco;
+import tacos.TacoOrder;
+
+@Repository
+public class JdbcOrderRepository implements OrderRepository {
+
+  private JdbcOperations jdbcOperations;
+
+  public JdbcOrderRepository(JdbcOperations jdbcOperations) {
+    this.jdbcOperations = jdbcOperations;
+  }
+
+  @Override
+  @Transactional
+  public TacoOrder save(TacoOrder order) {
+    PreparedStatementCreatorFactory pscf =
+      new PreparedStatementCreatorFactory(
+        "insert into Taco_Order "
+        + "(delivery_name, delivery_street, delivery_city, "
+        + "delivery_state, delivery_zip, cc_number, "
+        + "cc_expiration, cc_cvv, placed_at) "
+        + "values (?,?,?,?,?,?,?,?,?)",
+        Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+        Types.VARCHAR, Types.VARCHAR, Types.VARCHAR,
+        Types.VARCHAR, Types.VARCHAR, Types.TIMESTAMP
+    );
+    pscf.setReturnGeneratedKeys(true);
+
+    order.setPlacedAt(new Date());
+    PreparedStatementCreator psc =
+      pscf.newPreparedStatementCreator(
+        Arrays.asList(
+          order.getDeliveryName(),
+          order.getDeliveryStreet(),
+          order.getDeliveryCity(),
+          order.getDeliveryState(),
+          order.getDeliveryZip(),
+          order.getCcNumber(),
+          order.getCcExpiration(),
+          order.getCcCVV(),
+          order.getPlacedAt()));
+
+    GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
+    jdbcOperations.update(psc, keyHolder);
+    long orderId = keyHolder.getKey().longValue();
+    order.setId(orderId);
+
+    List<Taco> tacos = order.getTacos();
+    int i=0;
+    for (Taco taco : tacos) {
+      saveTaco(orderId, i++, taco);
+    }
+    return order;
+  }
+}
+```
+
+- save方法的几个步骤:
+    1. 创建`PreparedStatementCreatorFactory`实例，其中描述了执行查询的SQL和每个字段对应的类型
+    2. 为了获取插入后生成的订单id，我们还需要调用`setReturnGeneratedKeys(true)`
+    3. 通过Factory实例我们可以创建Creator实例，将当前订单的信息传入该Creator即可
+    4. 调用`JdbcTemplate`上的update方法传入creator和keyHolder即可
+    5. 我们通过keyHolder即可获取自动生成的id，用于之后用在Taco表的数据插入中
+
+
+
+保存Taco:
+
+```java
+private long saveTaco(Long orderId, int orderKey, Taco taco) {
+  taco.setCreatedAt(new Date());
+  PreparedStatementCreatorFactory pscf =
+      new PreparedStatementCreatorFactory(
+    "insert into Taco "
+    + "(name, created_at, taco_order, taco_order_key) "
+    + "values (?, ?, ?, ?)",
+    Types.VARCHAR, Types.TIMESTAMP, Type.LONG, Type.LONG
+  );
+  pscf.setReturnGeneratedKeys(true);
+
+  PreparedStatementCreator psc =
+    pscf.newPreparedStatementCreator(
+      Arrays.asList(
+        taco.getName(),
+        taco.getCreatedAt(),
+        orderId,
+        orderKey));
+
+  GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
+  jdbcOperations.update(psc, keyHolder);
+  long tacoId = keyHolder.getKey().longValue();
+  taco.setId(tacoId);
+
+  saveIngredientRefs(tacoId, taco.getIngredients());
+
+  return tacoId;
+}
+```
+
+
+
+保存IngredientRef:
+
+```java
+private void saveIngredientRefs(
+  long tacoId, List<IngredientRef> ingredientRefs) {
+  int key = 0;
+  for (IngredientRef ingredientRef : ingredientRefs) {
+    jdbcOperations.update(
+      "insert into Ingredient_Ref (ingredient, taco, taco_key) "
+      + "values (?, ?, ?)",
+      ingredientRef.getIngredient(), tacoId, key++);
+  }
+}
+```
+
+
+
+
+
+通过注入只用该OrderRepository中的方法:
+
+```java
+package tacos.web;
+import javax.validation.Valid;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.bind.support.SessionStatus;
+
+import tacos.TacoOrder;
+import tacos.data.OrderRepository;
+
+@Controller
+@RequestMapping("/orders")
+@SessionAttributes("tacoOrder")
+public class OrderController {
+
+  private OrderRepository orderRepo;
+
+  public OrderController(OrderRepository orderRepo) {
+    this.orderRepo = orderRepo;
+  }
+
+  // ...
+  @PostMapping
+  public String processOrder(@Valid TacoOrder order, Errors errors, SessionStatus sessionStatus) {
+    if (errors.hasErrors()) {
+      return "orderForm";
+    }
+
+    orderRepo.save(order);
+    sessionStatus.setComplete();
+
+    return "redirect:/";
+  }
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 使用Spring Data JDBC
+
+- 目前流行的Spring Data项目:
+    - Spring Data JDBC
+    - Spring Data JPA
+    - Spring Data MongoDB
+    - Spring Data Neo4j
+    - Spring Data Redis
+    - Spring Data Cassandra
+
+Spring Data的特性之一:
+
+> 基于Repository规范接口自动创建Repository，整个项目几乎没有持久层逻辑，只需要编写一、两个接口即可
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 1) 添加Spring Data JDBC依赖
+
+Eg:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jdbc</artifactId>
+</dependency>
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 2) 定义Repository接口
+
+- Spring Data在运行时，会自动`为我们设置的接口生成实现类`，但这些接口`必须拓展自Repository`接口(泛型接口)
+
+Eg:
+
+```java
+public interface IngredientRepository extends Repository<Ingredient, String> {
+    Iterable<Ingredient> findAll();
+
+    Optional<Ingredient> findById(String id);
+
+    Ingredient save(Ingredient ingredient);
+}
+```
+
+- 该接口中第一个泛型是指要进行持久化操作的对象，第二个是该对象id字段对应的类型
+
+
+
+
+
+我们还可以直接拓展`CrudRepository`接口，其提供了我们在接口中手动编写的三个方法:
+
+```java
+public interface IngredientRepository extends CrudRepository<Ingredient, String> {
+  
+}
+```
+
+
+
+订单对应的Repository接口也是如此:
+
+```java
+public interface OrderRepository extends CrudRepository<TacoOrder, Long> {
+    
+}
+```
+
+
+
+> 此时我们不再需要任何实现类了，因为**Spring Data会自动创建这些接口的实现类**
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 3) 实体类标注持久化注解
+
+- 我们只需要为实体类添加对应的注解，Spring Data JDBC就能知道该如何进行持久化了
+- 使用`@Id`注解可以标识类中的主键id字段
+- 通过可选的`@Table`注解可以指明该实体类对应的表，如果不使用它，则会按照实体类的类名创建一个表(并不能让我们舍去schema.sql)，`只能用来指定创建的表名`
+
+
+
+Eg:
+
+
+
+TacoOrder:
+
+```java
+@Data
+@Table("Taco_Order")
+public class TacoOrder {
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    private Long id;
+  	...
+}
+```
+
+
+
+- 使用`@Column`注解可以显式地指定类的属性和表中字段的对应关系:
+
+```java
+@Column("delivery_name")
+@NotBlank(message = "Delivery name is required")
+private String deliveryName;
+```
+
+
+
+
+
+Ingredient类:
+
+```java
+package tacos;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Persistable;
+import org.springframework.data.relational.core.mapping.Table;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
+@Table
+public class Ingredient implements Persistable<String> {
+    
+    @Id
+    private final String id;
+    private final String name;
+    private final Type type;
+
+		...
+}
+
+```
+
+
+
+
+
+Taco类:
+
+```java
+@Data
+@Table
+public class Taco {
+    @Id
+    private Long id;
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 4) 使用CommandLineRunner预加载
+
+之前我们填充数据库的方法:
+
+通过data.sql文件`在创建数据源的时候插入数据`，这种方法对Spring Data JDBC也同样适用
+
+
+
+我们还有更为灵活的方法可选:
+
+- `CommandLineRunner`和`ApplicationRunner`两个接口都需要实现`run`方法
+- App启动时，容器/上下文中`所有实现了上述两个接口的任何bean`，都会`在容器中所有的bean生成完成后`调用它们的`run`方法
+
+
+
+预加载的例子:
+
+```java
+@Bean
+public CommandLineRunner dataLoader(IngredientRepository repo) {
+  return args -> {
+    repo.save(new Ingredient("FLTO", "Flour Tortilla", Type.WRAP));
+    repo.save(new Ingredient("COTO", "Corn Tortilla", Type.WRAP));
+    repo.save(new Ingredient("GRBF", "Ground Beef", Type.PROTEIN));
+    repo.save(new Ingredient("CARN", "Carnitas", Type.PROTEIN));
+    repo.save(new Ingredient("TMTO", "Diced Tomatoes", Type.VEGGIES));
+    repo.save(new Ingredient("LETC", "Lettuce", Type.VEGGIES));
+    repo.save(new Ingredient("CHED", "Cheddar", Type.CHEESE));
+    repo.save(new Ingredient("JACK", "Monterrey Jack", Type.CHEESE));
+    repo.save(new Ingredient("SLSA", "Salsa", Type.SAUCE));
+    repo.save(new Ingredient("SRCR", "Sour Cream", Type.SAUCE));
+  };
+
+}
+```
+
+
+
+这里我们通过lambda表达式`创建并插入了若干Ingredient对象实例`
+
+
+
+使用ApplicationRunner也是如此:
+
+```java
+@Bean
+public ApplicationRunner dataLoader(IngredientRepository repo) {
+  return args -> {
+    repo.save(new Ingredient("FLTO", "Flour Tortilla", Type.WRAP));
+    repo.save(new Ingredient("COTO", "Corn Tortilla", Type.WRAP));
+    repo.save(new Ingredient("GRBF", "Ground Beef", Type.PROTEIN));
+    repo.save(new Ingredient("CARN", "Carnitas", Type.PROTEIN));
+    repo.save(new Ingredient("TMTO", "Diced Tomatoes", Type.VEGGIES));
+    repo.save(new Ingredient("LETC", "Lettuce", Type.VEGGIES));
+    repo.save(new Ingredient("CHED", "Cheddar", Type.CHEESE));
+    repo.save(new Ingredient("JACK", "Monterrey Jack", Type.CHEESE));
+    repo.save(new Ingredient("SLSA", "Salsa", Type.SAUCE));
+    repo.save(new Ingredient("SRCR", "Sour Cream", Type.SAUCE));
+  };
+}
+```
+
+
+
+
+
+两个接口的区别(传递给run方法的参数不同):
+
+- CommandLineRunner: 接收字符串变量
+- ApplicationRunner: 接收ApplicationArgument参数
+
+
+
+
+
+使用这两个接口的好处:
+
+>可以直接调用Repository接口中的方法进行数据加载，`而不是使用SQL脚本`
+
+其对关系型和非关系性数据库都同样有效
+
+---
+
+
+
+
+
 
 
 

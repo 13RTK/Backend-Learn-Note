@@ -2842,6 +2842,119 @@ GROUP BY job
 ORDER BY job
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 六十、考试分数5
+
+![Xnip2022-07-17_10-15-23](problems.assets/Xnip2022-07-17_10-15-23.jpg)
+
+
+
+![Xnip2022-07-17_10-15-29](problems.assets/Xnip2022-07-17_10-15-29.jpg)
+
+题意:
+
+给你一张考试记录表，请你查询出其中各个岗位中位数对应的用户信息和排名
+
+
+
+
+
+思路:
+
+- 因为昨天我们已经查询出了每个岗位中位数对应的起止排名，所以我们可以利用昨天的查询结果
+- 基本的思路就是获取每条记录对应的排名后，将其与这张表中的起止位置排名进行对照即可，所以我们需要先查询出每条记录对应的排名，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	id,
+	job,
+	score,
+	ROW_NUMBER() OVER(
+		PARTITION BY job
+		ORDER BY score DESC
+	) AS 't_rank'
+FROM
+	grade
+```
+
+
+
+- 之后我们只需要使用之前的中位数排名进行限制即可，最终SQL如下
+
+```mysql
+WITH mid_rank AS (
+    SELECT
+        job,
+        FLOOR((COUNT(*) + 1) / 2) AS 'start',
+        FLOOR((COUNT(*) + 2) / 2) AS 'end'
+    FROM
+        grade
+    GROUP BY job
+)
+
+SELECT
+    t1.id,
+    t1.job,
+    t1.score,
+    t1.t_rank
+FROM (
+    SQL1
+) AS t1
+WHERE EXISTS (
+    SELECT
+        t2.job
+    FROM
+        mid_rank AS t2
+    WHERE t1.job = t2.job
+    AND t1.t_rank BETWEEN t2.start AND t2.end
+)
+ORDER BY t1.id
+```
+
+
+
+
+
+- 当然，我们其实还有取巧的方法，不过就不太好理解了:
+
+```mysql
+SELECT
+	id,
+	job,
+	score,
+	t_rank
+FROM (
+	SELECT
+		*,
+		DENSE_RANK() OVER( 
+            PARTITION BY job
+            ORDER BY score DESC 
+        ) AS 't_rank',
+		COUNT(score) OVER (
+            PARTITION BY job 
+        ) AS 'num'
+	FROM
+		grade
+	) AS t1
+WHERE ABS(t1.t_rank - (t1.num + 1) / 2) <= 0.5
+ORDER BY id;
+```
+
 
 
 
