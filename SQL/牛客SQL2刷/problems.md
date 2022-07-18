@@ -2955,6 +2955,60 @@ WHERE ABS(t1.t_rank - (t1.num + 1) / 2) <= 0.5
 ORDER BY id;
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 六十一、订单分析1
+
+![Xnip2022-07-18_10-35-05](problems.assets/Xnip2022-07-18_10-35-05.jpg)
+
+题意:
+
+给你一张订单信息表，请你查询出对应时间、状态和产品类型的订单
+
+
+
+
+
+思路:
+
+- 这里可能稍微麻烦一点的就是限制产品类型，常规思路可能是使用多个OR，但这里其实使用IN就好了，最终SQL如下
+
+```mysql
+SELECT
+    id,
+    user_id,
+    product_name,
+    status,
+    client_id,
+    date
+FROM
+    order_info
+WHERE date > '2025-10-15'
+AND status = 'completed'
+AND product_name IN ('C++', 'Java', 'Python')
+ORDER BY id
+```
+
+
+
+
+
+
+
+
+
 
 
 

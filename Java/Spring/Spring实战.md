@@ -3023,6 +3023,82 @@ public ApplicationRunner dataLoader(IngredientRepository repo) {
 
 
 
+## 3. 使用Spring Data JPA
+
+
+
+
+
+
+
+
+
+### 1) 添加对应的依赖
+
+- JPA(Java Persistence API)有多种实现包括`Hibernate`, `Toplink`, `EclipseLink`, `Apache OpenJPA`etc.
+- Hibernate是JPA的默认实现
+
+
+
+导入maven依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+
+- 该依赖中包含了Hibernate
+
+
+
+- 如果想要排除Hibernate依赖，而选择其他实现，则需要将Hibernate的对应依赖排除掉:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+  <exclusions>
+    <exclusion>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 添加实体类注解
+
+
+
+Ingredient类:
+
+```java
+```
+
+
+
+
+
 
 
 
