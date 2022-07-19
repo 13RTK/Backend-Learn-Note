@@ -3001,7 +3001,45 @@ AND product_name IN ('C++', 'Java', 'Python')
 ORDER BY id
 ```
 
+---
 
+
+
+
+
+
+
+
+
+
+
+# 六十二、订单分析2
+
+![Xnip2022-07-19_10-50-30](problems.assets/Xnip2022-07-19_10-50-30.jpg)
+
+题意:
+给你一张订单表，请你查询出其中成功购买过两个及以上指定产品的用户信息
+
+
+
+
+
+思路:
+
+- 因为要按照用户来查询，所以很明显需要按照用户来分组，而我们限制的订单数是分组后的数据，所以我们在限制数量的时候需要使用`HAVING`，其他和昨天差不多，最终SQL如下
+
+```mysql
+SELECT
+    user_id
+FROM
+    order_info
+WHERE date > '2025-10-15'
+AND status = 'completed'
+AND product_name IN ('C++', 'Java', 'Python')
+GROUP BY user_id
+HAVING COUNT(*) >= 2
+ORDER BY user_id
+```
 
 
 

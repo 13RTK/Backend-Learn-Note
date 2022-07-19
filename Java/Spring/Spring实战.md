@@ -3093,7 +3093,378 @@ public ApplicationRunner dataLoader(IngredientRepository repo) {
 Ingredient类:
 
 ```java
+package tacos;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+@Data
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
+public class Ingredient {
+
+    @Id
+    private String id;
+
+    private String name;
+    private Type type;
+
+   
+    public enum Type {
+        WRAP, PROTEIN, VEGGIES, CHEESE, SAUCE
+    }
+}
+
 ```
+
+- 想要声明为JPA实体，则必须使用`@Entity`注解，其id属性必须使用`@Id`注解标注，注意是`javax.persistence`包下的，不是`org.springframework.data.annotation`下的
+- JPA会默认将类名作为表名
+
+
+
+> JPA实体必须要有一个无参构造方法
+
+
+
+
+
+
+
+Taco类:
+
+```java
+package tacos;
+
+import lombok.Data;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+@Data
+@Entity
+public class Taco {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
+    private Date createdAt;
+
+    @NotNull
+    @Size(min = 5, message = "Name must be at least 5 characters long")
+    private String name;
+
+    @Size(min = 1, message = "You must choose at least 1 ingredient")
+    @ManyToMany()
+    private List<Ingredient> ingredients = new ArrayList<>();
+
+    public void addIngredient(Ingredient ingredient) {
+        this.ingredients.add(ingredient);
+    }
+}
+```
+
+- 这里因为要依赖数据库自动生成id值，所以我们需要使用`@GeneratedValue`注解指定生成策略为自动
+- `@ManyToMany`注解用来声明Taco和Ingredients列表间的对应关系: 一个Taco可以有多个Ingredient，而一个Ingredient可以是不同Taco的一部分
+
+
+
+
+
+TacoOrder类:
+
+```java
+package tacos;
+
+import lombok.Data;
+import org.hibernate.validator.constraints.CreditCardNumber;
+
+import javax.persistence.*;
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+@Data
+@Entity
+public class TacoOrder {
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
+    private Date placedAt = new Date();
+
+    ...
+      
+    @OneToMany(cascade = CascadeType.ALL)
+    private List<Taco> tacos = new ArrayList<>();
+
+    public void addTaco(Taco taco) {
+        this.tacos.add(taco);
+    }
+}
+```
+
+- 因为一个订单会对应多个Taco实体对象，所以这里是一对多的关系，因此使用了`@OneToMany`注解
+- 级联参数为`CascadeType.ALL`，即订单删除后，所有对应的Taco都要被删除掉(外键)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 声明JPA Repository
+
+- 使用JPA的时候，我们不用再创建对应的接口后再实现了，`只需要拓展CrudRepository接口即可`
+
+
+
+Eg:
+
+
+
+IngredientRepository接口:
+
+```java
+package tacos.data;
+
+import org.springframework.data.repository.CrudRepository;
+import tacos.Ingredient;
+
+public interface IngredientRepository extends CrudRepository<Ingredient, String> {
+  
+}
+```
+
+- 通过继承CrudRepository接口，我们不用再考虑底层的持久化机制了
+
+
+
+OrderRepository接口:
+
+```java
+package tacos.data;
+
+import org.springframework.data.repository.CrudRepository;
+import tacos.TacoOrder;
+
+public interface OrderRepository extends CrudRepository<TacoOrder, Long> {
+    
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 自定义Repository
+
+场景: 有时，我们需要获取投递给指定邮件编码的所有订单，我们只需要在订单对应的`OrderRepository`接口中声明一个方法即可:
+
+```java
+List<TacoOrder> findByDeliveryZip(String deliveryZip);
+```
+
+- 因为该接口已经指定了对应的泛型实体为`TacoOrder`，所以Spring Data知道该方法是用来针对订单的
+
+
+
+另一个复杂场景: 我们需要查询指定日期范围内投递给指定邮件编码的订单:
+
+```java
+List<TacoOrder> readTacoOrdersByDeliveryZipAndPlacedAtBetween(String deliveryZip, Date startDate, Date endDate);
+```
+
+- 这里的read和find, get在JPA中都表示查询动作
+
+
+
+Spring Data解析的特征:
+
+![Xnip2022-07-18_15-47-14](Spring实战.assets/Xnip2022-07-18_15-47-14.jpg)
+
+- 在指定参数时，参数的`位置顺序必须和方法名中字段的顺序一致`
+
+
+
+其他操作:
+
+![Xnip2022-07-18_15-48-38](Spring实战.assets/Xnip2022-07-18_15-48-38.jpg)
+
+
+
+通过`@Query`注解，我们可以手动指定该方法执行的查询，甚至将`nativeQuery`设置为true后，还可以直接使用原生SQL语句:
+
+```java
+@Query(value = "SELECT * FROM TacoOrder WHERE devliery_Zip = ?1", nativeQuery = true)
+List<TacoOrder> selfQuery(String zip);
+```
+
+- 注意`参数和SQL中的参数要用? + 参数次序对应起来`
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 四、处理非关系型数据
+
+
+
+// TODO
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 五、Spring安全
+
+
+
+
+
+
+
+
+
+## 1. 启用Spring Security
+
+
+
+添加对应的依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+
+
+
+当我们在项目中导入了Spring Security之后，访问任何页面时都会需要我们进行登录验证:
+
+![Xnip2022-07-18_16-45-05](Spring实战.assets/Xnip2022-07-18_16-45-05.jpg)
+
+> 测试安全相关功能时，最好使用无痕模式
+
+
+
+
+
+初始的用户名为user，密码会打印在日志中:
+
+![Xnip2022-07-18_16-47-40](Spring实战.assets/Xnip2022-07-18_16-47-40.jpg)
+
+
+
+Spring Security为我们提供的基础安全特性:
+
+- 所有HTTP请求都需要认证
+- 没有特定的角色和权限
+- 身份验证为HTTP的基本身份认证
+- 只有一个用户名: user
+
+
+
+
+
+我们需要对Spring Security进行的配置:
+
+- 提示使用登录页面进行用户的身份验证
+- 为用户提供注册页面
+- 为不同的请求路径配置不同的安全策略(主页和注册页面不需要进行身份验证)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 配置身份验证
+
+
 
 
 
