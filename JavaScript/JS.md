@@ -780,6 +780,38 @@ DOM的工作模式:
 
 Eg:
 
+![Xnip2022-07-19_20-41-54](JS.assets/Xnip2022-07-19_20-41-54.jpg)
+
+尝试改进:
+
+- 点击链接后，我们能够留在对应的网页而不是跳转到另一个窗口
+- 点击链接时，能够在网页上同时看到图片以及原有的清单列表
+
+
+
+对应的实现:
+
+- 添加占位符图片的方法在主页上为图片预留一个浏览区域
+- 点击图片链接后，拦截网页的默认行为
+- 点击图片链接后，将占位符图片替换为链接对应的图片
+
+
+
+实现占位符:
+
+
+
+将以下code放到图片清单的末尾
+
+```xml
+<img id="placeholder" src="images/placeholder.jpg" alt="my image gallery">
+```
+
+
+
+接下来就需要使用JS了
+
+---
 
 
 
@@ -791,6 +823,57 @@ Eg:
 
 
 
+## 2. JavaScript
+
+- 实现图片修改的方法就是将占位符对应的标签内的`src`属性进行替换，所以使用`setAttribute`函数是最佳选择
+- 我们可以将该函数封装在一个自定义函数中，该函数接收一个图片链接参数，其通过修改src属性得以替换为参数中对应的图片
+
+Eg:
+
+```javascript
+function showPic(whichPic)
+```
+
+- 这里的参数代表一个元素节点，即`<a>`标签元素，所以我们只需要调用`getAttribute`函数获取`href`属性值即可:
+
+```js
+var source = whichPic.getAttribute("href")
+```
+
+
+
+
+
+之后再获取占位符图片对应的`<img>`标签元素:
+
+```js
+var placeholder = document.getElementById("placeholder")
+```
+
+
+
+之后只需要通过`setAttribute`函数对placeholder元素的src属性进行修改即可:
+
+```js
+placeholder.setAttribute("src", source);
+```
+
+
+
+
+
+总:
+
+```js
+function showPic(whichPic) {
+  var source = whichPic.getAttribute("href");
+  var placeholder = document.getElementById("placeholder");
+
+  placeholder.setAttribute("src", source);
+}
+```
+
+---
 
 
 
@@ -802,7 +885,196 @@ Eg:
 
 
 
+### 1). 非DOM解决方案
 
+- setAttribute可以设置任意元素节点的任意元素，所以我们可以通过另一种方法设置元素属性:
+
+```js
+element.value = "the new value";
+```
+
+
+
+其等效于:
+
+```js
+element.setAttribute("value", "the new value");
+```
+
+
+
+同样可以用它来修改src属性:
+
+```js
+placehold.src = source;
+```
+
+
+
+该种方法的`兼容性较好`，但需要记忆哪些元素的哪些属性可以用哪些方法设置
+
+---
+
+
+
+
+
+
+
+
+
+
+
+## 3. 应用js函数
+
+- 如果一个站点应用到了多个js文件，那么为了减少对站点的请求次数以提升性能，我们应该将这些js文件合并在一起
+
+
+
+Eg:
+
+```html
+<script src="scripts/showPic.js"></script>
+```
+
+但我们仅仅创建了一个函数而已，其并未被调用
+
+
+
+
+
+
+
+
+
+
+
+- 事件处理函数
+
+该种函数的作用是:
+
+> 当特定事件发生时才会调用:
+>
+> onmouseover: 鼠标悬停则触发
+>
+> onmouseout: 鼠标离开则触发
+>
+> onclick: 鼠标点击则触发
+
+
+
+- 所以这里我们需要使用`onclick`函数，这里接收的参数是一个带有`href`属性的`<a>`标签结点
+
+
+
+- 我们可以使用`this`关键字代表当前元素节点:
+
+`showPic(this)`
+
+
+
+
+
+添加事件处理函数的语法:
+
+```js
+event = "js statements;"
+```
+
+- 如果需要多条js语句，则通过`;`隔开即可
+
+Eg:
+
+```html
+onclick = "showPic(this);"
+```
+
+
+
+
+
+当事件函数对应的事件发生后，其对应的js代码会执行，执行的js代码会返回一个值，该值回传给事件处理函数
+
+如果为true则认为事件发生了，其会执行默认行为
+
+为false则认为事件没有发生，不会执行默认行为
+
+
+
+Eg:
+
+```html
+<a href="https:www.bing.com" onclick="return false;">Click Me</a>
+```
+
+
+
+
+
+- 所以，我们只需要返回false就可以阻止默认行为了:
+
+```js
+onclick = "showPic(this); return false;"
+```
+
+
+
+最终效果:
+
+
+
+Code:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+</head>
+<body>
+    <h1>Snapshots</h1> 
+    <ul>
+        <li>
+            <a href="./images/Joy 220619.jpg" title="A joy photo" onclick="showPic(this); return false;">Joy</a>
+        </li>
+        <li>
+            <a href="./images/Karina 220628.jpg" title="Karina Photo" onclick="showPic(this); return false;">Karina</a>
+        </li>
+        <li>
+            <a href="./images/Wendy 220622.jpeg" title="wendy photo" onclick="showPic(this); return false;">Wendy</a>
+        </li>
+        <li>
+            <a href="./images/yeji220712.jpg" title="yeji photo" onclick="showPic(this); return false;">Yeji</a>
+        </li>
+    </ul>
+
+    <img id="placeholder" src="images/placeholder.jpg" alt="my image gallery">
+
+    <script src="scripts/showPic.js"></script>
+</body>
+</html>
+```
+
+
+
+![Xnip2022-07-19_21-25-01](JS.assets/Xnip2022-07-19_21-25-01.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+## 4. 拓展
 
 
 

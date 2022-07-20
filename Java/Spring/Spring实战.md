@@ -3466,7 +3466,745 @@ Spring Security为我们提供的基础安全特性:
 
 
 
+简单的配置类实例:
 
+```java
+@Configuration
+public class SecurityConfig {
+    
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+```
+
+- 该类中注册了一个`bean`，其声明了一个密码编码器(PasswordEncoder)，其为我们的密码进行加密，而不是明文显示
+
+
+
+Spring Security提供的密码编码器:
+
+- BCryptPasswordEncoder: 使用bcrypt加强哈希加密
+- NoOpPasswordEncoder: 不进行加密编码
+- Pbkdf2PasswordEncoder: 应用PBKDF2加密
+- SCryptPasswordEncoder: 应用scrypt哈希加密
+- StandradPasswordEncoder: SHA-256哈希加密
+
+
+
+- 加密后，会将用户输入的明文通过加密运算后与数据库中加密的密码进行比较(PasswordEncoder中的`matches`方法)
+
+
+
+
+
+用户存储: 即通过用户名获取用户信息，此时我们需要实现`UserDetailService`接口并重写其中的`loadUserByUsername`方法:
+
+```java
+public interface UserDetailsService {
+
+  UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
+
+}
+```
+
+- 如果找不到对应用户名的用户，则会抛出对应的异常
+
+
+
+Spring Security提供的UserDetailService实现:
+
+- 内存用户存储
+- 基于JDBC的用户存储
+- 由LDAP支持的用户存储
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 1) 内存用户存储
+
+> 该方式适用于之后几个少量的用户，且用户信息不会改变的情况
+
+Eg:
+
+```java
+package tacos.security;
+
+import net.bytebuddy.build.Plugin;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    UserDetailsService userDetailsService(PasswordEncoder encoder) {
+        ArrayList<UserDetails> usersList = new ArrayList<>();
+        usersList.add(new User(
+                "buzz", encoder.encode("password"),
+                Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"))));
+        usersList.add(new User(
+                "woody", encoder.encode("password"),
+                Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"))));
+        
+        return new InMemoryUserDetailsManager(usersList);
+    }
+}
+```
+
+- 这种方式并不能让用户自己注册并管理自己的用户账户
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 2) 自定义用户存储和身份验证
+
+- 因为我们的数据较多，需要用户能够自行注册并管理，所以存储在数据库中是必要的，这里我们可以通过JDBC进行身份验证，即Spring Data存储库
+
+
+
+
+
+
+
+#### 定义用户实体
+
+创建一个用户类以存储用户名、密码、姓名、地址和电话号码等信息
+
+
+
+Eg:
+
+```java
+package tacos;
+
+import java.util.Arrays;
+import java.util.Collection;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+@Entity
+@Data
+@NoArgsConstructor(access = AccessLevel.PROTECTED, force = true)
+@RequiredArgsConstructor
+public class User implements UserDetails {
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
+    private final String username;
+    private final String password;
+    private final String fullname;
+    private final String street;
+    private final String city;
+    private final String state;
+    private final String zip;
+    private final String phoneNumber;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+}
+```
+
+- 我们实现了UserDetail接口，该实现会提供用户的基本信息(权限、用户账户是否启用、过期等等)
+- `getAuthorities`方法为每个用户授予`ROLEUSER`权限，目前所有的is_方法都返回true(暂时不需要禁用用户)
+
+
+
+
+
+定义用户存储库相关的接口:
+
+```java
+package tacos.data;
+
+import org.springframework.data.repository.CrudRepository;
+import tacos.User;
+
+public interface UserRepository extends CrudRepository<User, Long> {
+    User findByUsername(String username);
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+#### 创建UserDetailsService
+
+Eg:
+
+```java
+package tacos.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import tacos.User;
+import tacos.data.UserRepository;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    UserDetailsService userDetailsService(UserRepository userRepo) {
+        return username -> {
+            User user = userRepo.findByUsername(username);
+            if (user != null) {
+                return user;
+            }
+
+            throw new UsernameNotFoundException("User '" + username + "' not found");
+        };
+    }
+}
+```
+
+- 因为`UserDetailsService`接口只有一个方法，所以我们可以通过lambda表达式利用userRepo获取对应的用户对象并返回即可
+- 现在我们有了从数据库查询用户的服务功能，现在还需要为用户提供注册服务
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 用户注册
+
+- Spring Security并不直接涉及到用户的注册，所以我们需要依赖Spring MVC来处理
+
+
+
+Eg:
+
+```java
+package tacos.security;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import tacos.data.UserRepository;
+
+@Controller
+@RequestMapping("/register")
+public class RegistrationController {
+
+    private UserRepository userRepo;
+    private PasswordEncoder passwordEncoder;
+
+    public RegistrationController(UserRepository userRepo, PasswordEncoder passwordEncoder) {
+        this.userRepo = userRepo;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @GetMapping
+    public String registerForm() {
+        return "registration";
+    }
+
+    @PostMapping
+    public String processRegistration(RegistrationForm form) {
+        userRepo.save(form.toUser(passwordEncoder));
+        return "redirect:/login";
+    }
+}
+```
+
+- RegistrationForm对象在后面
+- `registerForm`方法处理`/register`的GET请求，其只返回视图逻辑名
+
+
+
+注册页面:
+
+```html
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Taco Cloud</title>
+</head>
+
+<body>
+<h1>Register</h1>
+
+<img th:src="@{/images/TacoCloud.png}"/>
+
+<form method="post" th:action="@{/register}" id="registerForm">
+    <label for="username">Username: </label>
+    <input type="text" name="username"/>
+    <br/>
+    <label for="password">Password: </label>
+    <input type="password" name="password"/>
+    <br/>
+    <label for="confirm">Confirm password: </label>
+    <input type="password" name="confirm"/>
+    <br/>
+    <label for="fullname">Full name: </label>
+    <input type="text" name="fullname"/>
+    <br/>
+    <label for="street">Street: </label>
+    <input type="text" name="street"/>
+    <br/>
+    <label for="city">City: </label>
+    <input type="text" name="city"/>
+    <br/>
+    <label for="state">State: </label>
+    <input type="text" name="state"/>
+    <br/>
+    <label for="zip">Zip: </label>
+    <input type="text" name="zip"/>
+    <br/>
+    <label for="phone">Phone: </label>
+    <input type="text" name="phone"/>
+    <br/>
+    <input type="submit" value="Register"/>
+</form>
+</body>
+</html>
+```
+
+
+
+- 提交表单时，由`processRegistration`方法处理POST请求，其中的`RegistrationForm`对象会与表单的数据进行绑定
+
+Eg:
+
+RegistrationForm类:
+
+```java
+package tacos.security;
+
+import lombok.Data;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import tacos.User;
+
+@Data
+public class RegistrationForm {
+    private String username;
+    private String password;
+    private String fullname;
+    private String street;
+    private String city;
+    private String state;
+    private String zip;
+    private String phone;
+
+
+    public User toUser(PasswordEncoder passwordEncoder) {
+        return new User(username, passwordEncoder.encode(password),
+                fullname, street, city, state, zip, phone);
+    }
+}
+```
+
+- 该类通过返回一个User对象即可用户信息的保存
+
+- 但现在我们无法进行用户的注册页面，因为`默认情况下，所以请求都需要身份验证`
+
+---
+
+
+
+
+
+
+
+
+
+
+
+## 3. 保护web请求(接口)
+
+- 我们可以简单的声明一个`SecurityFilterChain`组件用于配置(不实用)
+
+Eg:
+
+```java
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http.build();
+}
+```
+
+- 具体的安全操作配置会通过该`HttpSecurity`实例进行设置
+- 完成设置后，会通过`build`方法返回对应的对象
+
+
+
+通过`HttpSecurity`实例可以进行的配置:
+
+- 允许访问服务前需要的安全条件
+- 配置自定义登录页面
+- 让用户退出程序
+- 配置跨站请求伪造保护(CSRF)
+
+
+
+> 拦截请确定权限是最常见的事情之一
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 1) 保护请求接口
+
+- 在我们的应用中，`/design`和`/orders`接口是需要验证过的用户使用的，所以应该进行限制，其他则不管:
+
+配置接口的权限要求:
+
+```java
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  return http
+    .authorizeRequests()
+    .antMatchers("/design", "/orders").hasRole("USER")
+    .antMatchers("/", "/**").permitAll()
+    .and()
+    .build();
+}
+```
+
+- 我们调用了`authorizeRequests`方法，其会返回一个对象，通过该对象，我们可以指定URL路径以及访问这些路径对应的安全需求(角色限制)
+
+
+
+我们设计的两种安全规则:
+
+- 对于`/design`和`/orders`请求，必须要具备`ROLE_USER`权限，注意`hasRole`方法中不要包含`ROLE`前缀
+- 其余所有请求都应该允许所有用户访问
+
+
+
+> 注意这两个规则的顺序很重要，permitAll对应的规则必须放在最后，不然其他规则都会失效
+
+
+
+其他设置URL路径安全需求的方法:
+
+**表 5.1 定义被保护路径的配置方法**
+
+| 方法                       | 作用描述                                         |
+| :------------------------- | :----------------------------------------------- |
+| access(String)             | 如果 SpEL 表达式的值为 true，则允许访问          |
+| anonymous()                | 默认用户允许访问                                 |
+| authenticated()            | 认证用户允许访问                                 |
+| denyAll()                  | 无条件拒绝所有访问                               |
+| fullyAuthenticated()       | 如果用户是完全授权的（不是记住用户），则允许访问 |
+| hasAnyAuthority(String...) | 如果用户有任意给定的权限，则允许访问             |
+| hasAnyRole(String...)      | 如果用户有任意给定的角色，则允许访问             |
+| hasAuthority(String)       | 如果用户有给定的权限，则允许访问                 |
+| hasIpAddress(String)       | 来自给定 IP 地址的请求允许访问                   |
+| hasRole(String)            | 如果用户有给定的角色，则允许访问                 |
+| not()                      | 拒绝任何其他访问方法                             |
+| permitAll()                | 无条件允许访问                                   |
+| rememberMe()               | 允许认证了的同时标记了记住我的用户访问           |
+
+
+
+- 上述方法中大多数只能限制一个方面(角色/IP等)，而`access`方法可以使用SpEL表达式在一个方法中声明多个方面的限制
+- Spring Security拓展了该SpEL表达式:
+
+**表 5.2 Spring Security 对 SpEL 的扩展**
+
+| Security 表达式                                              | 含义                                                        |
+| :----------------------------------------------------------- | :---------------------------------------------------------- |
+| authentication                                               | 用户认证对象                                                |
+| denyAll                                                      | 通常值为 false                                              |
+| hasAnyAuthority(String… authorities)                         | 如果用户有任何一项授权，则为 true                           |
+| hasAnyRole(list of roles)                                    | 如果用户有任何给定的角色，则为 true                         |
+| hasAuthority(String authority)                               | 如果用户有给定的授权，则为 true                             |
+| hasPermission(Object target, Object permission)              | 如果用户有对给定目标的给定的授权，则为 true                 |
+| hasPermission(Object target, String targetType, Object permission) | 如果用户有对给定目标的给定的授权，则为 true                 |
+| hasRole(role)                                                | 如果用户有给定的角色，则为 true                             |
+| hasIpAddress(IP Address)                                     | 如果请求来自给定 IP 地址，则为 true                         |
+| isAnonymous()                                                | 如果用户是默认用户，则为 true                               |
+| isAuthenticated()                                            | 如果用户是认证了的，则为 true                               |
+| isFullyAuthenticated()                                       | 如果用户被完全认证了的（不是使用记住我进行认证），则为 true |
+| isRememberMe()                                               | 如果用户被标记为记住我后认证了，则为 true                   |
+| permitAll()                                                  | 通常值为 true                                               |
+| principal                                                    | 用户 pricipal 对象                                          |
+
+
+
+- 通过access结合SpEL表达式重写安全配置:
+
+```java
+@Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+                .authorizeRequests()
+                .antMatchers("/design", "/orders").access("hasRole('USER')")
+                .antMatchers("/", "/**").access("permitAll()")
+                .and()
+                .build();
+    }
+```
+
+
+
+- 我们还可以组合出更细致的安全需求：
+
+假设我们只允许具有`ROLE_USER`权限的用户在周二访问:
+
+```java
+@Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+                .authorizeRequests()
+                .antMatchers("/design", "/orders")
+                .access("hasRole('USER') && " +
+                        "T(java.util.Calendar).getInstance().get(" +
+                        "T(java.util.Calendar).DAY_OF_WEEK) == " +
+                        "T(java.util.Calendar).TUESDAY")
+//                .antMatchers("/design", "/orders").access("hasRole('USER')")
+                .antMatchers("/", "/**").access("permitAll()")
+                .and()
+                .build();
+    }
+```
+
+- 也就是说，现在我们只需要一个access方法即可完成所有的授权配置需求
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 创建自定义登录页面
+
+- 想要替换掉默认的登录页面，则需要我们通过`HttpSecurity`对象调用`formLogin`方法才行
+
+Eg:
+
+```java
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http
+            .authorizeRequests()
+            .antMatchers("/design", "/orders").access("hasRole('USER')")
+            .antMatchers("/", "/**", "/h2-console", "/h2-console/**").access("permitAll()")
+            .and()
+            .formLogin()
+            .loginPage("/login")
+            .and()
+            .build();
+}
+```
+
+
+
+- 在不同部分的配置之间，只要能够使用`and`方法，就说明我们完成了该上一个部分的配置，可以进行其他的的额外配置
+
+
+
+- `formLogin`方法用来配置自定义登录表单，`loginPage`指定自定义登录的页面对应的路径
+
+
+
+- 然后我们需要一个控制器来处理该登录路径的请求，因为只需要返回一个简单的页面，所以我们直接通过WebConfig的实现类中的`addViewController`方法添加即可:
+
+```java
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/") .setViewName("home");
+        registry.addViewController("/login");
+    }
+}
+```
+
+
+
+- 最后我们需要创建登录页面:
+
+```java
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Taco Cloud</title>
+</head>
+
+<body>
+<h1>Login</h1>
+<img th:src="@{/images/TacoCloud.png}"/>
+
+<div th:if="${error}">
+    Unable to login. Check your username and password.
+</div>
+
+<p>New here? Click
+    <a th:href="@{/register}">here</a> to register.</p>
+
+<form method="POST" th:action="@{/login}" id="loginForm">
+    <label for="username">Username: </label>
+    <input type="text" name="username" id="username" /><br/>
+
+    <label for="password">Password: </label>
+    <input type="password" name="password" id="password" /><br/>
+
+    <input type="submit" value="Login"/>
+</form>
+</body>
+</html>
+```
+
+
+
+- 默认情况下，Spring Securiy会监听`/login`的登录请求，用户名和密码字段会命名为username和password，但这些都是可以配置的:
+
+```java
+.and()
+  .formLogin()
+  	.loginPage("/login")
+  	.loginProcessingUrl("/authenticate")
+  	.usernameParameter("user")
+  	.passwordParameter("pwd")
+```
+
+
+
+- 这里我们指定了Spring Security应该侦听的接口路径为`/authenticate`，用户名和密码的字段名称也会被重新命名
+
+
+
+- 如果用户访问登录页面，已经登录的话则会将用户带到根目录中，我们可以指定默认成功的页面:
+
+```java
+.and()
+                .formLogin()
+                .loginPage("/login")
+                .defaultSuccessUrl("/design")
+```
+
+- 如果想要用户在未成功登录的情况下强制进入登录成功的页面，则可以在方法`defaultSucessUrl`中添加第二个参数为true
+
+Eg:
+
+```java
+.and()
+  .formLogin()
+    .loginPage("/login")
+    .defaultSuccessUrl("/design", true)
+```
 
 
 

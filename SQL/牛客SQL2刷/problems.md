@@ -3041,6 +3041,7 @@ HAVING COUNT(*) >= 2
 ORDER BY user_id
 ```
 
+---
 
 
 
@@ -3050,6 +3051,79 @@ ORDER BY user_id
 
 
 
+
+
+# 六十三、订单分析3
+
+![Xnip2022-07-20_10-22-53](problems.assets/Xnip2022-07-20_10-22-53.jpg)
+
+
+
+![Xnip2022-07-20_10-23-00](problems.assets/Xnip2022-07-20_10-23-00.jpg)
+
+题意:
+
+给你一张订单信息表，请你查询出其中在对应日期中购买对应产品两次及以上用户的订单信息
+
+
+
+
+
+思路:
+
+- 乍一看好像和昨天的题目差不多，但注意这里需要的是整个订单信息，而不只是用户id而已
+- 所以基础的思路就是求出对应的用户id后再去找对应的订单即可
+- 但我们用昨天的写法得出对应的用户id后，我们还需要在原订单的基础上再次限制对应的日期、产品类型和状态，相当于这三个字段重复筛选了三次
+- 为了减少重复的SQL，我们可以先将重复查询的部分放在CTE里作为临时表，SQL如下
+
+SQL1:
+
+```mysql
+WITH correct_info AS (
+    SELECT
+        *
+    FROM
+        order_info
+    WHERE status = 'completed'
+    AND date > '2025-10-15'
+    AND product_name IN ('C++', 'Java', 'Python')
+)
+```
+
+
+
+- 之后我们需要按照思路先查询出对应的用户id，SQL如下
+
+SQL2:
+
+```mysql
+SQL1
+
+
+SELECT
+	user_id
+FROM
+	correct_info
+GROUP BY user_id
+HAVING COUNT(*) >= 2
+```
+
+
+
+- 最后只需要限制用户id即可，最终SQL如下
+
+```mysql
+SQL1
+
+SELECT
+    *
+FROM
+    correct_info
+WHERE user_id IN (
+    SQL2
+)
+ORDER BY id
+```
 
 
 
