@@ -3125,6 +3125,87 @@ WHERE user_id IN (
 ORDER BY id
 ```
 
+----
+
+
+
+
+
+
+
+
+
+
+
+# 六十四、订单分析4
+
+![Xnip2022-07-21_11-15-30](problems.assets/Xnip2022-07-21_11-15-30.jpg)
+
+
+
+![Xnip2022-07-21_11-15-36](problems.assets/Xnip2022-07-21_11-15-36.jpg)
+
+题意:
+
+给你一张订单信息表，请你查询出其中对应日期范围内成功购买对应产品2次及以上的用户、日期、次数信息
+
+
+
+思路:
+
+- 看起来是3种需求，但其实一个SELECT就能解决，反而没有昨天的中等题目麻烦，思路和之前一样，SQL如下
+
+```mysql
+SELECT
+    user_id,
+    MIN(date) AS 'first_buy_date',
+    COUNT(*) AS 'cnt'
+FROM
+    order_info
+WHERE date > '2025-10-15'
+AND product_name IN ('Java', 'Python', 'C++')
+AND status = 'completed'
+GROUP BY user_id
+HAVING cnt >= 2
+ORDER BY user_id
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

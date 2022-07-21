@@ -4212,6 +4212,166 @@ Eg:
 
 
 
+注意:
+
+- Spring Security在新版本中会默认启用CSRF防御，使用表单登录时，必须要手动设置对应的`CSRF token`，如果通过前后端分离，则需要在表单下方再添加一个`<input>`:
+
+```html
+<input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+```
+
+
+
+- 如果使用了Thymeleaf，那么只需要在`form`标签内添加一个`th:action`属性即可
+- Spring Security的CSRF防护还会默认阻止对h2控制台的访问，我们需要通过设置手动忽略h2控制台的路径:
+
+```java
+.csrf()
+
+  // enable h2-console
+  .ignoringAntMatchers("/h2-console/**")
+```
+
+
+
+- 这样设置还不够，h2控制台使用的是iframe，而spring是默认禁止访问这种类型的，所以我们还需要对这种类型的资源放行
+- 对应在设置上就是修改frameOptions:
+
+```java
+.headers().frameOptions().sameOrigin()
+```
+
+
+
+
+
+最终设置:
+
+```java
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http
+            .authorizeRequests()
+            .antMatchers("/design", "/orders").access("hasRole('USER')")
+            .antMatchers("/", "/**").access("permitAll()")
+            .and()
+            .formLogin()
+            .loginPage("/login")
+            .defaultSuccessUrl("/design")
+            .and()
+            .csrf()
+
+            // enable h2-console
+            .ignoringAntMatchers("/h2-console/**")
+            .and()
+
+            // enable X-Frame-Options header on the same origin page
+            .headers().frameOptions().sameOrigin()
+            .and()
+            .build();
+
+}
+```
+
+
+
+相关文档:
+
+CSRF and Thymeleaf:
+
+https://www.baeldung.com/csrf-thymeleaf-with-spring-security
+
+
+
+X-Frame-Options:
+
+https://docs.spring.io/spring-security/site/docs/5.0.x/reference/html/headers.html#headers-frame-options
+
+https://docs.spring.io/spring-security/site/docs/4.0.2.RELEASE/reference/html/appendix-namespace.html#nsa-frame-options
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 启用第三方验证
+
+- 通过另一个网站进行登录的操作基于OAuth2或者OpenID Connect(OIDC)
+
+
+
+导入OAuth2 starter客户端:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-oauth2-client</artifactId>
+</dependency>
+```
+
+
+
+最后我们需要配置一个或者多个OAuth2/OpenID身份验证服务器的信息
+
+
+
+示例配置:
+
+```yaml
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          <oauth2 or openid provider name>:
+            clientId: <client id>
+            clientSecret: <client secret>
+            scope: <comma-separated list of requested scopes>
+```
+
+
+
+如果要使用Facebook，则如下:
+
+```yaml
+spring:
+  security:
+    oauth2:
+      client:
+      registration:
+        facebook:
+          clientId: <facebook client id>
+          clientSecret: <facebook client secret>
+          scope: email, public_profile
+```
+
+
+
+其中的clientId和clientSecret需要从对应的第三方获取
+
+- scope: 用于指定将被授予的权限(向第三方索取的权限)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
