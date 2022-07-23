@@ -4038,14 +4038,14 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 ```java
 @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-                .authorizeRequests()
-                .antMatchers("/design", "/orders").access("hasRole('USER')")
-                .antMatchers("/", "/**").access("permitAll()")
-                .and()
-                .build();
-    }
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  return http
+    .authorizeRequests()
+    .antMatchers("/design", "/orders").access("hasRole('USER')")
+    .antMatchers("/", "/**").access("permitAll()")
+    .and()
+    .build();
+}
 ```
 
 
@@ -4056,19 +4056,19 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 ```java
 @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-                .authorizeRequests()
-                .antMatchers("/design", "/orders")
-                .access("hasRole('USER') && " +
-                        "T(java.util.Calendar).getInstance().get(" +
-                        "T(java.util.Calendar).DAY_OF_WEEK) == " +
-                        "T(java.util.Calendar).TUESDAY")
-//                .antMatchers("/design", "/orders").access("hasRole('USER')")
-                .antMatchers("/", "/**").access("permitAll()")
-                .and()
-                .build();
-    }
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  return http
+    .authorizeRequests()
+    .antMatchers("/design", "/orders")
+    .access("hasRole('USER') && " +
+            "T(java.util.Calendar).getInstance().get(" +
+            "T(java.util.Calendar).DAY_OF_WEEK) == " +
+            "T(java.util.Calendar).TUESDAY")
+    //                .antMatchers("/design", "/orders").access("hasRole('USER')")
+    .antMatchers("/", "/**").access("permitAll()")
+    .and()
+    .build();
+}
 ```
 
 - 也就是说，现在我们只需要一个access方法即可完成所有的授权配置需求
@@ -4363,6 +4363,726 @@ spring:
 
 
 
+
+获取对应的信息后，需要启动OAuth2登录验证功能:
+
+```java
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  return http
+    .authorizeRequests()
+    .mvcMatchers("/design", "/orders").hasRole("USER")
+    .anyRequest().permitAll()
+    .and()
+    .formLogin()
+    .loginPage("/login")
+    .and()
+    .oauth2Login()
+
+    ...
+
+    .and()
+    .build();
+}
+```
+
+
+
+- 同时提供传统的用户名/密码登录和第三方登录:
+
+```java
+.and()
+  .oauth2Login()
+    loginPage("/login")
+```
+
+
+
+- 我们只需要在页面中提供一个连接让用户选择即可:
+
+```java
+<a th:href="/oauth2/authorization/facebook">Sign in with Facebook</a>
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 登出
+
+- 启用登出功能同样需要使用HttpSecurity对象，调用`logout`方法即可:
+
+```java
+.and()
+  .logout();
+```
+
+- 该方法会设置一个安全filter来拦截发送给`/logout`的请求，所以我们还需要在前端视图中添加一个登出表单和对应请求的按钮:
+
+```html
+<form method="post" th:action="@{/logout}">
+  <input type="submit" value="logout"/>
+</form>
+```
+
+
+
+- 点击该按钮后，用户的session会被清空并退出程序，`默认情况会重定向到登录页面中`
+- 通过`logoutSucessUrl`方法可以指定退出后的登录页面:
+
+```java
+.and()
+  .logout()
+  	.logoutSucessUrl();
+```
+
+
+
+
+
+完整设置:
+
+```java
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http
+            .authorizeRequests()
+            .antMatchers("/design", "/orders").access("hasRole('USER')")
+            .antMatchers("/", "/**").access("permitAll()")
+            .and()
+            .formLogin()
+            .loginPage("/login")
+            .defaultSuccessUrl("/design")
+            .and()
+            .logout()
+            .logoutSuccessUrl("/login")
+            .and()
+            .csrf()
+
+            // enable h2-console
+            .ignoringAntMatchers("/h2-console/**")
+            .and()
+
+            // enable X-Frame-Options header on the same origin page
+            .headers().frameOptions().sameOrigin()
+            .and()
+            .build();
+
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5) 阻止CSRF攻击
+
+- 该类攻击可以在用户填写信息的时候利用用户的cookie/session对网站的其他API接口发起请求，进而利用用户的身份进行操作
+
+
+
+- 为了防止此类攻击，服务器应用可以在表单中生成一个CSRF token，将该token放在一个隐藏的字段中，并存放在服务器中
+- 提交表单时，还会对比token是否与服务器发送出去的一致
+
+
+
+> Spring Security默认内置了CSRF防护，其是默认启用的，只需要表单中包含一个名为`_csrf`的字段即可，该字段就是CSRF token
+>
+> 如果不进行设置，`则无法通过表单验证!`
+
+Eg:
+
+```html
+<input type="hidden" name="_csrf" th:value="${_csrf.token}">
+```
+
+
+
+
+
+如果使用了thymeleaf，那么只需要在表单中包含一个被thymeleaf修饰的属性即可:
+
+```html
+<form method="post" th:action="@{/login}" id="loginForm">
+  ...
+</form>
+```
+
+
+
+
+
+禁用csrf:
+
+```java
+.and()
+  .csrf()
+  	.disable();
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+## 4. 启动方法级别防护
+
+假设我们有一个服务类包含一个删除所有订单的方法，其通过注入的OrderRepository实现:
+
+```java
+@Resource
+OrderRepository orderRepository;
+
+public void deleteAllOrders() {
+  orderRepository.deleteAll();
+}
+```
+
+
+
+Eg:
+
+![Xnip2022-07-21_15-34-51](Spring实战.assets/Xnip2022-07-21_15-34-51.jpg)
+
+
+
+而此时有一个POST controller调用了该方法
+
+```java
+package tacos.web;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import tacos.data.service.OrderAdminService;
+
+import javax.annotation.Resource;
+
+@Controller
+@RequestMapping("/admin")
+public class AdminController {
+    @Resource
+    OrderAdminService orderAdminService;
+
+    @PostMapping("/deleteOrders")
+    public String deleteOrders() {
+        orderAdminService.deleteAllOrders();
+
+        return "redirect:/admin";
+    }
+}
+```
+
+
+
+
+
+- 想要保证该方法只能由admin使用，则可以在SecurityConfig调整匹配器:
+
+```java
+.authorizeRequests()
+  ...
+  .antMatchers(HttpMethod.POST, "/admin/**").access("hasRole('ADMIN')")
+	...
+```
+
+
+
+- 但使用配置器进行限制的话，所需的配置器较多，我们可以直接在对应的方法上添加对应的注解:
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+public void deleteAllOrders() {
+  orderRepository.deleteAll();
+}
+```
+
+- `@PreAuthorize`注解采用SpEL表达式，其计算结果为false时不会被调用
+- 在这里`@PreAuthorize`会检查用户是否有对应的权限，如果有则调用方法
+
+
+
+- `@PreAuthorize`阻止了方法调用的话，会抛出`AccessDeniedException`(非检查型异常)
+- 为了使该注解生效，我们还需要在配置类上添加`@EnableGlobalMethodSecurity`:
+
+```java
+package tacos.security;
+
+...
+
+@Configuration
+@EnableGlobalMethodSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    ...
+}
+```
+
+
+
+完整的SecurityConfig类:
+
+```java
+package tacos.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import javax.annotation.Resource;
+
+@Configuration
+@EnableGlobalMethodSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Resource
+    UserRepositoryUserDetailsService userDetailsService;
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth
+                .userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder());
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers("/design", "/orders").access("hasRole('USER')")
+                .antMatchers("/", "/**").access("permitAll()")
+                .and()
+                .formLogin()
+                .loginPage("/login")
+                .defaultSuccessUrl("/design")
+                .and()
+                .logout()
+                .logoutSuccessUrl("/login")
+                .and()
+                .csrf()
+
+                // enable h2-console
+                .ignoringAntMatchers("/h2-console/**")
+                .and()
+
+                // enable X-Frame-Options header on the same origin page
+                .headers().frameOptions().sameOrigin();
+    }
+}
+```
+
+
+
+
+
+- `@PostAuthorize`注解: 可以根据方法的返回值考虑是否允许方法被调用:
+
+
+
+场景: 一个方法允许通过id获取对应的订单，我们可以通过返回订单中的用户信息判断是否执行该方法
+
+> 但该方法还是被执行了
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5. Problems(customer on 220721)
+
+Tag: Spring Security Configuration Version and IDEA bug
+
+
+
+- 在SpringBoot 2.7版本之前，我们在自定义Spring Security配置的时候，通过**让配置类继承`WebSecurityConfigurerAdapter`类**来配置我们的API匹配器和安全需求(via: antMatchers(..).acess(SpEL))
+- 然而在SpringBoot 2.7及之后的版本中(不绝对)，Spring Security升级到了 5.7.0，官方弃用了这个类
+
+Eg:
+
+![Xnip2022-07-21_17-07-25](Spring实战.assets/Xnip2022-07-21_17-07-25.jpg)
+
+
+
+![Xnip2022-07-21_17-09-32](Spring实战.assets/Xnip2022-07-21_17-09-32.jpg)
+
+
+
+![Xnip2022-07-21_17-10-49](Spring实战.assets/Xnip2022-07-21_17-10-49.jpg)
+
+
+
+
+
+- 在今年(2022)2月的一篇官方blog中，官方详细讲解了弃用的原因和弃用后的替代方法:
+
+![Xnip2022-07-21_17-08-14](Spring实战.assets/Xnip2022-07-21_17-08-14.jpg)
+
+
+
+方法:
+
+- 要么注册一个`SecurityFilterChain`Bean
+- 要么注册在`Spring Security 5.4`中引入的`WebSecurityCustomizer`Bean
+
+Eg:
+
+![Xnip2022-07-21_17-14-33](Spring实战.assets/Xnip2022-07-21_17-14-33.jpg)
+
+
+
+![Xnip2022-07-21_17-14-48](Spring实战.assets/Xnip2022-07-21_17-14-48.jpg)
+
+
+
+
+
+- 这里我们用不到这么高的版本，所以我选择了SecurityFilterChain
+- 至此，关于新老版本的问题就暂告一段落了，但接下来还有新的问题...
+
+
+
+
+
+Eg:
+
+![Xnip2022-07-21_17-16-55](Spring实战.assets/Xnip2022-07-21_17-16-55.jpg)
+
+但问题如图，IDEA提示我们找不到`HttpSecurity`对应的Bean，提示我们有多个Bean重复注册了
+
+
+
+
+
+
+
+- 这里着实让我找了很久，最终还是在StackOverflow上找到了对应的Question
+- 这个Question不仅很新，而且这老哥也是从老版本升级到2.7.X之后出现的问题
+
+![Xnip2022-07-21_17-21-28](Spring实战.assets/Xnip2022-07-21_17-21-28.jpg)
+
+
+
+
+
+- 而下面的解答就让我豁然开朗了:
+
+![Xnip2022-07-21_17-23-06](Spring实战.assets/Xnip2022-07-21_17-23-06.jpg)
+
+- 所以这其实是IDEA的问题，它没能探测到Spring Boot中的相关的自动配置(2.7.X版本新增的)，从而导致了这个问题:
+
+![Xnip2022-07-21_17-25-37](Spring实战.assets/Xnip2022-07-21_17-25-37.jpg)
+
+
+
+
+
+- IDEA的官方issue也是比较新的
+
+![Xnip2022-07-21_17-28-54](Spring实战.assets/Xnip2022-07-21_17-28-54.jpg)
+
+
+
+- 然而解决方法就很简单了，只需要在配置类上添加一个`@EnableWebSecurity`注解即可
+
+
+
+
+
+总结:
+
+- 如果需要从之前的版本换为Spring Boot2.7.X及以上，那么配置Spring Security的方式则需要从之前的继承`WebConfigurerAdapter`类变为手动注册`SecurityFilterChain`或者`WebSecurityCustomizer`
+- 为了避免IDEA的bug，最好在该配置上添加`EnableWebSecurity`注解
+
+End: 220721
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6. 了解用户
+
+- 在用户设计完他们的Taco后，填写对应的订单信息时，应该预先填充用户名和地址(来自用户信息，这样就能避免重复输入
+- 也就是说，我们应该将订单和对应的用户关联起来
+
+Eg:
+
+```java
+package tacos;
+
+import lombok.Data;
+import org.hibernate.validator.constraints.CreditCardNumber;
+
+import javax.persistence.*;
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+@Data
+@Entity
+public class TacoOrder implements Serializable {
+  	...  
+  
+  	@ManyToOne
+    private User user;
+  
+  	...
+}
+```
+
+- `@ManyToOne`表明一个订单属于一个用户，但一个用户可能有多个订单
+
+
+
+- 在处理订单时，我们可以通过修改`processOrder`方法将用户添加到对应的订单中去
+
+确定订单对应用户的方法:
+
+1. 将`java.security.Principal`注入到Controller中
+2. 将`org.springframework.security.core.Authentication`对象注入到Controller的方法中
+3. 通过`org.springframework.security.core.context.SecurityContextHolder`获取`SecurityContext`
+4. 使用`@AuthenticaionPrincipal`注解的方法参数
+
+
+
+
+
+- 通过`Principal`获取用户名，再通过`UserRepository`获取对应的用户:
+
+```java
+@PostMapping
+public String processOrder(@Valid TacoOrder tacoOrder, Errors errors, SessionStatus sessionStatus, Principal principal) {
+
+  ...
+  User user = userRepository.findByUsername(principal.getName());
+  tacoOrder.setUser(user);
+  ...
+}
+```
+
+
+
+
+
+- 通过`Authentication`直接获取对应的`Principal`后进行强制类型转换:
+
+```java
+@PostMapping
+public String processOrder(@Valid TacoOrder tacoOrder, Errors errors, SessionStatus sessionStatus, Authentication authentication) {
+  ...
+
+  User user = (User) authentication.getPrincipal();
+  tacoOrder.setUser(user);
+  ...
+}
+```
+
+- 通过`getPrincipal`获取主体对象后，将其转换为User
+
+
+
+
+
+- 最简洁的方法: 通过`@AuthenticaionPrincipal`注解直接获取对应的用户:
+
+```java
+@PostMapping
+public String processOrder(@Valid TacoOrder tacoOrder, Errors errors, SessionStatus sessionStatus, @AuthenticationPrincipal User user) {
+
+	...
+  tacoOrder.setUser(user);
+  ...
+}
+```
+
+- 该种方法不需要进行强制类型转换，且`安全相关的代码仅限于注释`
+
+
+
+
+
+- 通过安全上下文:
+
+```java
+Authentication authentication =
+  SecurityContextHolder.getContext().getAuthentication();
+User user = (User) authentication.getPrincipal();
+```
+
+- 该种方法可以在整个应用程序的任何地方使用，其适合在较低级别的代码中使用
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 六、使用配置属性
+
+- 在自动配置之前，无法通过显示的配置在bean上设置对应的属性
+- Spring Boot中可以通过Spring容器/上下文中`@ConfigurationProperties`bean上的属性
+- 配置时可以从对应的属性源中进行(JVM系统属性、命令行参数和环境变量)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+## 1. 微调自动配置
+
+- Spring中有两种不同的配置:
+    - Bean wiring: 声明程序`组件(component)`将在Spring容器/上下文中`作为bean创建`，以及`相互间的注入`
+    - Property injection: 在Spring容器/上下文中`设置bean的值`
+
+
+
+- Java配置: @Bean注解会实例化对应的bean，然后设置它的值
+
+
+
+- 下列code中，我们为H2嵌入式数据库设置了数据源，并设置了对应的SQL脚本
+
+Eg:
+
+```java
+package tacos.data;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+
+import javax.sql.DataSource;
+
+import static org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2;
+
+@Configuration
+public class DataSourceConfig {
+    @Bean
+    public DataSource dataSource() {
+        return new EmbeddedDatabaseBuilder()
+                .setType(H2)
+                .addScript("")
+                .addScripts("")
+                .build();
+    }
+}
+```
+
+
+
+- Spring Boot会在`Spring容器中创建对应的数据源bean`，并`将其应用于sql脚本的读取中`
+- 如果我们要指定多个sql脚本或者将SQL脚本进行重命名的话，`就需要configuration properties了`
+
+---
+
+
+
+
+
+
+
+
+
+
+
+## 2. 理解Spring环境抽象(environment abstraction)
+
+> Spring环境抽象是任何`可配置属性`的"一站式商店"，它抽象了属性的起源，需要这些属性的bean就能从Spring中使用它(consume)
+
+Spring环境包含的属性源:
+
+- `JVM`系统属性
+- 系统`环境变量`
+- `命令行`参数
+- app属性`配置文件`
+
+
+
+这些属性源会聚集到单一的Spring环境抽象流中，再通过环境抽象给应用程序的上下文/容器中的bean使用:
+
+![IMG_EE74400D40E7-1](Spring实战.assets/IMG_EE74400D40E7-1.jpeg)
 
 
 

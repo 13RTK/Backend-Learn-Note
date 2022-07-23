@@ -3182,6 +3182,126 @@ ORDER BY user_id
 
 
 
+# 六十五、订单分析5
+
+![Xnip2022-07-22_10-49-48](problems.assets/Xnip2022-07-22_10-49-48.jpg)
+
+
+
+![Xnip2022-07-22_10-49-26](problems.assets/Xnip2022-07-22_10-49-26.jpg)
+
+
+
+![Xnip2022-07-22_11-03-15](problems.assets/Xnip2022-07-22_11-03-15.jpg)
+
+题意:
+
+给你一张订单信息表，请你查询出其中对应条件的用户订单信息，且需要包含第一次购买和第二次购买的日期
+
+
+
+
+
+
+
+思路:
+
+- 除开第二次购买的日期，剩余三个字段其实复用昨天的SQL就行了，所以可以先解决三个字段，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+    user_id,
+    MIN(date) AS 'first_buy_date',
+    COUNT(*) AS 'cnt'
+FROM
+    order_info AS t1
+WHERE date > '2025-10-15'
+AND status = 'completed'
+AND product_name IN ('C++', 'Java', 'Python')
+GROUP BY user_id
+HAVING cnt >= 2
+ORDER BY user_id
+```
+
+
+
+- 而剩余的"第二次购买日期"这个字段就比较麻烦了，思路有多种: 在排除掉第一次购买日期之后，分组获取最小日期，这种思路需要复用第一次购买的日期，需要SQL1多次执行，比较麻烦
+- 这里我们可以取巧: 通过user_id连接两表，之后获取对应的date值并排序后通过分页跳过第一条记录(即第一次购买的日期)，然后取第一条即为第二次购买的日期了
+- 看起来很简单，但别忘了，我们在获取信息的这张表是原始表，其并未限制日期、状态、产品，所以同样的限制条件还需要再写一次，所以SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	t2.date
+FROM
+	order_info AS t2
+WHERE t2.date > '2025-10-15'
+AND t2.status = 'completed'
+AND t2.product_name IN ('C++', 'Java', 'Python')
+AND t1.user_id = t2.user_id
+ORDER BY t2.date
+LIMIT 1 OFFSET 1
+```
+
+- 将该段SQL放在之前的SELECT列表里即可，最终SQL如下:
+
+```mysql
+SELECT
+    user_id,
+    MIN(date) AS 'first_buy_date',
+    SQL2 AS 'second_buy_date',
+    COUNT(*) AS 'cnt'
+FROM
+    order_info AS t1
+WHERE date > '2025-10-15'
+AND status = 'completed'
+AND product_name IN ('C++', 'Java', 'Python')
+GROUP BY user_id
+HAVING cnt >= 2
+ORDER BY user_id
+```
+
+
+
+
+
+- 此时再看我们的SQL，其实两次SELECT中有重复的地方，解决这种问题的方法其实在订单分析3中就讲到过，即使用CTE即可，最终可改写为:
+
+```mysql
+WITH temp AS (
+    SELECT
+        *
+    FROM
+        order_info
+    WHERE date >= '2025-10-15'
+    AND status = 'completed'
+    AND product_name IN ('Java', 'Python', 'C++')
+)
+
+SELECT
+	user_id,
+	MIN(date) AS 'first_buy_date',
+	(
+        SELECT
+            date
+        FROM 
+            temp
+        WHERE t1.user_id = user_id
+        ORDER BY date
+        LIMIT 1 OFFSET 1
+    ) AS 'second_buy_date',
+	COUNT(*) AS 'cnt'
+FROM
+	temp AS t1
+GROUP BY user_id
+HAVING cnt >= 2
+ORDER BY user_id;
+```
+
+---
 
 
 
@@ -3199,6 +3319,61 @@ ORDER BY user_id
 
 
 
+# 六十六、订单分析6
+
+![Xnip2022-07-23_11-22-15](problems.assets/Xnip2022-07-23_11-22-15.jpg)
+
+
+
+![Xnip2022-07-23_11-22-20](problems.assets/Xnip2022-07-23_11-22-20.jpg)
+
+题意:
+
+给你一张订单信息表，一张客户端信息表，请你查询出其中对于条件的订单信息，并根据是否拼团输出对于的客户端信息
+
+
+
+
+
+思路:
+
+- 首先要解决就是条件中的同一个用户下单2次及以上，所以我们首先需要根据用户分组，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	user_id
+FROM
+	order_info
+WHERE date > '2025-10-15'
+AND product_name IN ('C++', 'Python', 'Java')
+AND status = 'completed'
+GROUP BY user_id
+HAVING COUNT(*) >= 2
+```
+
+
+
+- 之后我们需要将限制条件再走一遍，且用上述SQL限制用户的id，而客户端则使用简单的CASE WHEN分支即可，最终SQL如下:
+
+```mysql
+SELECT
+    t1.id,
+    t1.is_group_buy,
+    CASE WHEN t1.is_group_buy = 'Yes' THEN NULL
+    ELSE t2.name END AS 'client_name'
+FROM
+    order_info AS t1
+LEFT JOIN client AS t2 ON t1.client_id = t2.id
+WHERE t1.date > '2025-10-15'
+AND status = 'completed'
+AND product_name IN ('C++', 'Python', 'Java')
+AND t1.user_id IN (
+    SQL1
+)
+ORDER BY t1.id
+```
 
 
 
