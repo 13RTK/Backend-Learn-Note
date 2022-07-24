@@ -3375,6 +3375,7 @@ AND t1.user_id IN (
 ORDER BY t1.id
 ```
 
+---
 
 
 
@@ -3384,6 +3385,81 @@ ORDER BY t1.id
 
 
 
+
+
+
+
+
+
+# 六十七、订单分析7
+
+![Xnip2022-07-24_10-44-13](problems.assets/Xnip2022-07-24_10-44-13.jpg)
+
+
+
+![Xnip2022-07-24_10-44-18](problems.assets/Xnip2022-07-24_10-44-18.jpg)
+
+题意:
+
+给你一张订单信息表，一张客户端信息表，请你查询出其中满足指定条件的订单来源和不同来源的订单数
+
+
+
+
+
+思路:
+
+- 和昨天差不多，我们依然需要先查询出对应的用户ID，不过因为需要重复查询同样条件下的一些记录，所以我们可以将对应条件的记录先查询出来作为临时表，SQL如下
+
+SQL1:
+
+```mysql
+WITH specified_info AS (
+    SELECT
+        *
+    FROM
+        order_info
+    WHERE status = 'completed'
+    AND date > '2025-10-15'
+    AND product_name IN ('C++', 'Python', 'Java')
+)
+```
+
+
+
+- 然后再查询对应用户ID，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	user_id
+FROM
+	specified_info
+GROUP BY user_id
+HAVING COUNT(*) >= 2
+```
+
+
+
+- 最后只需要简单做一下分支判断并分组即可，最终SQL如下
+
+```mysql
+SQL1
+
+SELECT
+    CASE WHEN t1.client_id = 0 THEN 'GroupBuy'
+    ELSE t2.name END AS 'source',
+    COUNT(*) AS 'cnt'
+FROM
+    specified_info AS t1
+LEFT JOIN client AS t2 ON t1.client_id = t2.id
+WHERE t1.user_id IN (
+    SQL2
+)
+GROUP BY source
+ORDER BY source
+```
 
 
 

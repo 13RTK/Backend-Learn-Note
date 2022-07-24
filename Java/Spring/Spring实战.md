@@ -5067,7 +5067,7 @@ public class DataSourceConfig {
 
 
 
-## 2. 理解Spring环境抽象(environment abstraction)
+### 1) 理解Spring环境抽象(environment abstraction)
 
 > Spring环境抽象是任何`可配置属性`的"一站式商店"，它抽象了属性的起源，需要这些属性的bean就能从Spring中使用它(consume)
 
@@ -5083,6 +5083,312 @@ Spring环境包含的属性源:
 这些属性源会聚集到单一的Spring环境抽象流中，再通过环境抽象给应用程序的上下文/容器中的bean使用:
 
 ![IMG_EE74400D40E7-1](Spring实战.assets/IMG_EE74400D40E7-1.jpeg)
+
+
+
+- Spring环境中提取的属性可以对Spring Boot自动配置的bean进行配置
+
+Eg: 修改servlet侦听的端口号可以通过修改`application.properties`文件中的`server.port`属性来实现
+
+```properties
+server.port=9090
+```
+
+
+
+使用yaml格式可以更简便:
+
+```yaml
+server:
+	port: 9090
+```
+
+
+
+通过启动应用时使用对应的命令行参数同样可以指定端口:
+
+```shell
+java -jar tacocloud-1.0.0-SNAPSHOT.jar --server.port=9090
+```
+
+
+
+通过设置系统环境变量设置特定的端口:
+
+```shell
+export SERVER_PORT=9090
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 配置数据源
+
+- 我们可以显示的通过Java配置一个DataSource的Bean，但这是不必要的，我们只需要在配置文件中填写对应的配置即可
+
+
+
+使用MySQL数据库
+
+Eg:
+
+```yaml
+spring:
+	datasource:
+		url: jdbc:mysql://localhost:3306/tacocloud
+		username: ...
+		password: 
+		driver-class-name: com.mysql.cj.jdbc.Driver
+```
+
+
+
+Spring Boot使用该配置后，会自动使用HikariCP数据库连接池，没有的话，则会查找并使用其他的连接池实现:
+
+- Tomcat JDBC Connection Pool
+- Apache Commons DBCP2
+
+
+
+
+
+指定数据库初始化脚本的配置项:
+
+```yaml
+spring:
+  datasource:
+    schema:
+      - schema.sql
+    data:
+      - data.sql
+```
+
+
+
+注意：上述两个配置项在Spring Boot2.7.0中已经被废弃，需要替换为新的配置项:
+
+```yaml
+spring:
+  sql:
+    init:
+      schema-locations: schema.sql
+      data-locations: data.sql
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 3) 配置嵌入式服务器
+
+- 配置底层服务器使其处理HTTPS请求:
+
+    - 首先通过JDK的keytool命令创建一个密钥存储:
+
+    ```shell
+    keytool -keystore mykeys.jks -genkey -alias tomcat -keyalg RSA
+    ```
+
+    记住密码即可，最后会生成一个对应的.jks文件
+
+    - 在配置文件中填写对应的项目:
+
+    ```yaml
+    server:
+    	port: 8843
+    	ssl:
+    		key-store: file:///Users/user/mykeys.jks
+    		key-store-password: password
+    		key-password: password
+    ```
+
+    
+
+- 8843是开发HTTPS服务器常用的选择，key-store用来指定密钥文件的存储路径
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) 配置日志
+
+- 默认情况，Spring Boot会通过`Logback`配置日志，其`默认为INFO级别`，并写入控制台中
+
+
+
+想要修改默认的日期配置，需要在`src/main/resources`中创建一个logback.xml文件:
+
+```xml
+<configuration>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- encoders are assigned the type
+         ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="root" level="INFO"/>
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
+```
+
+
+
+
+
+在Spring Boot配置中设置日志的记录级别:
+
+```yaml
+logging:
+  level:
+    root: WARN
+    org.springframework.security: DEBUG
+```
+
+
+
+将日志写入到对应路径下的文件:
+
+```yaml
+logging:
+  file:
+    path: /User/alex/Desktop/
+    name: tacocloud.log
+  level: warn
+```
+
+- 默认情况下，日志文件达到10MB后，就会进行循环写入
+
+
+
+logback日志配置:
+
+[Chapter 3: Configuration (qos.ch)](https://logback.qos.ch/manual/configuration.html)
+
+[A Guide To Logback | Baeldung](https://www.baeldung.com/logback#example)
+
+
+
+---
+
+
+
+
+
+
+
+
+
+### 5) 使用特殊的属性值
+
+- 我们可以自定义创建对应的属性，并给予对应的值:
+
+```yaml
+greeting:
+  welcome: ${spring.application.name}
+```
+
+- ${}中的值可以是任何其他的值
+- 所以Configuratoin Properities可以是Spring对应的Bean，也可以是自定义的配置属性
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 创建自己的配置属性
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
