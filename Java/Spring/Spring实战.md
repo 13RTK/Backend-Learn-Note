@@ -4990,6 +4990,72 @@ User user = (User) authentication.getPrincipal();
 
 
 
+## 7. Problems(customer on 220724)
+
+Tag: JPA, H2, Auto SQL
+
+
+
+最近跟着《Spring实战》完善了应用的注册、登录和登出功能，然而当通过javax.persistence中的注解添加完实体之间的的对应关系后，启动项目时发现了问题:
+
+![Xnip2022-07-24_17-40-33](Spring实战.assets/Xnip2022-07-24_17-40-33.jpg)
+
+
+
+
+
+- 刚开始发现注册的表单填写完成并注册时系统内部说**SQL语法错误**，因为项目使用了JPA，所有的SQL都是自动创建的，所以第一时间并没有怀疑SQL语法。而是检查了一下实体类的字段，发现一切正常
+- 于是我又将数据库从H2切换到了MySQL，发现一切正常，之前的问题没有再出现了
+
+Eg:
+
+![Xnip2022-07-24_17-42-51](Spring实战.assets/Xnip2022-07-24_17-42-51.jpg)
+
+
+
+
+
+- 到这里，可以初步确定是H2数据库的问题，于是我切换回H2后，仔细检查日志后发现在创建user表的时候出了问题:
+
+![Xnip2022-07-24_17-47-21](Spring实战.assets/Xnip2022-07-24_17-47-21.jpg)
+
+
+
+- 于是我又复制日志中的这条出问题的SQL到H2控制台中执行，尝试手动创建user表，结果发现该条SQL执行出错了，提示为语法出错:
+
+![Xnip2022-07-24_17-50-17](Spring实战.assets/Xnip2022-07-24_17-50-17.jpg)
+
+- 但我用的是JPA呀，这条SQL是ORM自动生成的呀，自动生成的SQL竟然有语法错误？
+- 之后我在StackOverflow找到了解答:
+
+![Xnip2022-07-24_17-52-07](Spring实战.assets/Xnip2022-07-24_17-52-07.jpg)
+
+
+
+![Xnip2022-07-24_17-52-12](Spring实战.assets/Xnip2022-07-24_17-52-12.jpg)
+
+- 原来user是关键字！找到原因后，我尝试在user上添加双引号，果不其然成功了！:
+
+![Xnip2022-07-24_17-53-53](Spring实战.assets/Xnip2022-07-24_17-53-53.jpg)
+
+
+
+总结:
+
+- 在使用JPA这种全自动ORM框架时，为了避免H2数据库的关键字，最好避免创建对应关键字的实体类，如果无法避免，则使用`@Table`注解为表起别名即可:
+
+![Xnip2022-07-24_17-56-15](Spring实战.assets/Xnip2022-07-24_17-56-15.jpg)
+
+
+
+
+
+
+
+
+
+
+
 
 
 # 六、使用配置属性
@@ -5342,17 +5408,85 @@ greeting:
 
 ## 2. 创建自己的配置属性
 
+​	
+
+示例方法:
+
+```java
+@GetMapping
+public String ordersForUser(@AuthenticationPrincipal User user, Model model) {
+    
+    model.addAttribute("orders", orderRepo.findByUserOrderByPlacedAtDesc(user, pageable));
+
+    return "orderList";
+}
+```
+
+
+
+对应的Repository接口:
+
+```java
+...
+
+public interface OrderRepository extends CrudRepository<TacoOrder, Long> {
+    ...
+
+    List<TacoOrder> findByUserOrderByPlacedAtDesc(User user, Pageable pageable);
+}
+```
 
 
 
 
 
+在对应的类上使用`@ConfigurationProperties`注解即可获取对应的配置:
+
+```java
+package tacos.web;
+
+...
+
+@Controller
+@Slf4j
+@RequestMapping("/orders")
+@SessionAttributes("tacoOrder")
+@ConfigurationProperties(prefix = "taco.orders")
+public class OrderController {
+    @Resource
+    OrderRepository orderRepo;
+
+    @GetMapping("/current")
+    public String orderForm(Model model) {
+        model.addAttribute("tacoOrder", new TacoOrder());
+        return "orderForm";
+    }
+
+    private int pageSize = 20;
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
+    }
+
+    @GetMapping
+    public String ordersForUser(@AuthenticationPrincipal User user, Model model) {
+        Pageable pageable = PageRequest.of(0, pageSize);
+        model.addAttribute("orders", orderRepo.findByUserOrderByPlacedAtDesc(user, pageable));
+
+        return "orderList";
+    }
+		...
+}
+```
 
 
 
+对应的配置文件:
 
-
-
+```yaml
+taco:
+  orders:
+    pageSize: 10
+```
 
 
 

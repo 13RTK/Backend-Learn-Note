@@ -3461,5 +3461,54 @@ GROUP BY source
 ORDER BY source
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 七十、简历分析1
+
+![Xnip2022-07-25_10-02-36](problems.assets/Xnip2022-07-25_10-02-36.jpg)
+
+
+
+![Xnip2022-07-25_10-02-45](problems.assets/Xnip2022-07-25_10-02-45.jpg)
+
+题意:
+
+给你一张简历信息表，请你查询出2025内各个岗位的投递数量
+
+
+
+
+
+思路:
+
+- 因为要按照岗位划分，所以字段需要分组，限制日期值的年份最简单的方法就是使用`YEAR`函数，所以最终SQL如下
+
+```mysql
+SELECT
+    job,
+    SUM(num) AS 'cnt'
+FROM
+    resume_info
+WHERE YEAR(date) = 2025
+GROUP BY job
+ORDER BY cnt DESC
+```
+
+
+
+
+
 
 
