@@ -5488,6 +5488,144 @@ taco:
     pageSize: 10
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 1) 定义Configuraion Properties的持有者
+
+- `@ConfigurationProperties`注解通常用于特定类型的bean上，该bean作为配置数据的持有者，`为所有使用该配置的其他bean进行统一管理`
+
+Eg:
+
+```java
+package tacos.web;
+
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+
+@Component
+@Data
+@ConfigurationProperties(prefix = "taco.orders")
+public class OrderProps {
+    
+    @Min(value = 5, message = "")
+    @Max(value = 25, message = "")
+    private int pageSize = 20;
+}
+```
+
+
+
+- 在OrderController中使用该bean:
+
+```java
+@Resource
+OrderProps orderProps;
+
+@GetMapping
+public String ordersForUser(@AuthenticationPrincipal User user, Model model) {
+  Pageable pageable = PageRequest.of(0, orderProps.getPageSize());
+
+  model.addAttribute("orders",
+                     orderRepo.findByUserOrderByPlacedAtDesc(user, pageable));
+
+  return "orderList";
+}
+```
+
+
+
+
+
+- 这样一来，对应的属性就集中到了`OrderProps`类中管理，我们只需要在一个类中进行就该即可，而不是在每个需要对应属性的类上都添加`@ConfigurationProperties`属性
+- 对应属性的验证也是需要在一个类上进行即可，`需要这些属性的类就相对干净`
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 声明ConfigurationProperties Metadata
+
+-- 声明配置属性元数据
+
+
+
+我们在配置文件中自定义的配置项会出现警告: 缺少配置属性的元数据项:
+
+![Xnip2022-07-25_14-44-22](Spring实战.assets/Xnip2022-07-25_14-44-22.jpg)
+
+- 是否配置对应的元数据`并不影响配置属性的工作`，但对于提供配置属性的最小文档非常有用(悬停后会显示该配置属性的用途)
+
+
+
+Eg:
+
+![Xnip2022-07-25_14-46-14](Spring实战.assets/Xnip2022-07-25_14-46-14.jpg)
+
+
+
+- 想要为自定义配置属性创建元数据，我们需要在`/src/main/resources/META-INF`中创建一个名为`addition-spring-configuration-metadata.json`的文件
+
+
+
+#### 快速修复自定义配置属性对应的元数据
+
+
+
+1. 在配置文件中，通过IDEA提示快速创建对应的文件
+
+![Xnip2022-07-25_14-55-42](Spring实战.assets/Xnip2022-07-25_14-55-42.jpg)
+
+
+
+
+
+2. 导入对应的配置处理器依赖
+
+![Xnip2022-07-25_14-56-16](Spring实战.assets/Xnip2022-07-25_14-56-16.jpg)
+
+
+
+
+
+
+
+3. 重新构建项目以使得元数据生效
+
+![Xnip2022-07-25_14-57-31](Spring实战.assets/Xnip2022-07-25_14-57-31.jpg)
+
+
+
+![Xnip2022-07-25_14-58-21](Spring实战.assets/Xnip2022-07-25_14-58-21.jpg)
+
+---
 
 
 
@@ -5505,6 +5643,36 @@ taco:
 
 
 
+## 3. 使用profile进行配置
+
+- 通常在开发环境下和生产环境中，我们会使用不同的配置，通常会使用不同的配置文件
+
+- 最好的方式是使用Spring profile文件
+
+---
+
+
+
+
+
+
+
+
+
+### 1) 定义特定的配置属性
+
+定义配置文件的文件名格式:
+
+- applicaion-{配置名}.yaml
+- applicaion-{配置名}.properties
+
+
+
+生产环境配置文件(applicaion-prod.yaml):
+
+![Xnip2022-07-25_15-16-28](Spring实战.assets/Xnip2022-07-25_15-16-28.jpg)
+
+---
 
 
 
@@ -5515,6 +5683,293 @@ taco:
 
 
 
+
+
+
+### 2) 激活profile
+
+- 我们只需要在原本的配置文件中通过设置`spring.profiles.active`对应的值即可激活对应的配置
+
+Eg:
+
+![Xnip2022-07-25_15-19-08](Spring实战.assets/Xnip2022-07-25_15-19-08.jpg)
+
+
+
+我们同样可以通过命令行进行设置:
+
+```shell
+java -jar taco-cloud.jar --spring.profiles.active=prod
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 声明bean对应的配置文件
+
+- 有时候，某些bean只会在对应的profile被激活时中活动
+- 通过`@Profile`注解即可指定该bean适用的profile文件:
+
+```java
+@Profile("dev")
+@Bean
+public CommandLineRunner dataLoader(@Autowired IngredientRepository repo) {
+  return args -> {
+    repo.save(new Ingredient("FLTO", "Flour Tortilla", Type.WRAP));
+    repo.save(new Ingredient("COTO", "Corn Tortilla", Type.WRAP));
+    repo.save(new Ingredient("GRBF", "Ground Beef", Type.PROTEIN));
+    repo.save(new Ingredient("CARN", "Carnitas", Type.PROTEIN));
+    repo.save(new Ingredient("TMTO", "Diced Tomatoes", Type.VEGGIES));
+    repo.save(new Ingredient("LETC", "Lettuce", Type.VEGGIES));
+    repo.save(new Ingredient("CHED", "Cheddar", Type.CHEESE));
+    repo.save(new Ingredient("JACK", "Monterrey Jack", Type.CHEESE));
+    repo.save(new Ingredient("SLSA", "Salsa", Type.SAUCE));
+    repo.save(new Ingredient("SRCR", "Sour Cream", Type.SAUCE));
+	};
+}
+```
+
+
+
+- 如果只需要指定该bean不能执行时对应的profile，使用!即可
+
+Eg:
+
+```java
+@Profile("!prod")
+@Bean
+public CommandLineRunner dataLoader(@Autowired IngredientRepository repo) {
+   return args -> {
+      repo.save(new Ingredient("FLTO", "Flour Tortilla", Type.WRAP));
+      repo.save(new Ingredient("COTO", "Corn Tortilla", Type.WRAP));
+      repo.save(new Ingredient("GRBF", "Ground Beef", Type.PROTEIN));
+      repo.save(new Ingredient("CARN", "Carnitas", Type.PROTEIN));
+      repo.save(new Ingredient("TMTO", "Diced Tomatoes", Type.VEGGIES));
+      repo.save(new Ingredient("LETC", "Lettuce", Type.VEGGIES));
+      repo.save(new Ingredient("CHED", "Cheddar", Type.CHEESE));
+      repo.save(new Ingredient("JACK", "Monterrey Jack", Type.CHEESE));
+      repo.save(new Ingredient("SLSA", "Salsa", Type.SAUCE));
+      repo.save(new Ingredient("SRCR", "Sour Cream", Type.SAUCE));
+   };
+
+}
+```
+
+
+
+- 结合maven:
+
+配置不同的打包配置:
+
+- 在maven的pom.xml中添加`profiles`标签
+
+![](/Users/alex/Projects/Project/Java/SpringBoot/SpringBoot.assets/Xnip2022-06-12_18-12-10.jpg)
+
+
+
+Eg:
+
+```xml
+<!--分别设置开发，生产环境-->
+<profiles>
+    <!-- 开发环境 -->
+    <profile>
+        <id>dev</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <properties>
+            <environment>dev</environment>
+        </properties>
+    </profile>
+    <!-- 生产环境 -->
+    <profile>
+        <id>prod</id>
+        <activation>
+            <activeByDefault>false</activeByDefault>
+        </activation>
+        <properties>
+            <environment>prod</environment>
+        </properties>
+    </profile>
+</profiles>
+```
+
+
+
+
+
+
+
+
+
+
+
+但具体的配置还需要在`build`标签中添加`resources`，并且在`application`主配置文件中修改active为`'@environment@'`才能生效:
+
+![](/Users/alex/Projects/Project/Java/SpringBoot/SpringBoot.assets/Xnip2022-06-12_18-18-20.jpg)
+
+
+
+Eg:
+
+```xml
+<resources>
+<!--排除配置文件-->
+    <resource>
+        <directory>src/main/resources</directory>
+        <!--先排除所有的配置文件-->
+        <excludes>
+            <!--使用通配符，当然可以定义多个exclude标签进行排除-->
+            <exclude>application*.yml</exclude>
+        </excludes>
+    </resource>
+
+    <!--根据激活条件引入打包所需的配置和文件-->
+    <resource>
+        <directory>src/main/resources</directory>
+        <!--引入所需环境的配置文件-->
+        <filtering>true</filtering>
+        <includes>
+            <include>application.yml</include>
+            <!--根据maven选择环境导入配置文件-->
+            <include>application-${environment}.yml</include>
+        </includes>
+    </resource>
+</resources>
+```
+
+
+
+
+
+![](/Users/alex/Projects/Project/Java/SpringBoot/SpringBoot.assets/Xnip2022-06-12_18-18-25.jpg)
+
+
+
+
+
+> 记得每次更换配置后，需要通过maven将原来的打包项目文件清理掉
+>
+> 注意maven配置的文件后缀名要与实际项目中的文件后缀相同: .properties, .yaml, /yml
+
+---
+
+
+
+
+
+
+
+
+
+
+
+# 七、创建REST服务
+
+
+
+
+
+
+
+## 1. 编写RESTful控制器
+
+- REST API和网站的区别:
+    - REST API以面向数据的格式(JSON，XML)进行响应
+    - 而网站则通过HTML响应
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 1) 从服务器获取数据
+
+功能说明:
+
+- 我们的Taco Cloud允许用户与其他人分享他们的Taco，所以需要用户可以查看最近创建的Taco列表
+
+
+
+具体功能设计:
+
+- 增加一个`/design/recent`接口，其处理GET请求，参数中包含recent，用来返回最近设计的taco列表
+
+
+
+Eg:
+
+```java
+package tacos.web.api;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import tacos.Taco;
+import tacos.data.TacoRepository;
+
+import javax.annotation.Resource;
+
+@RestController
+@RequestMapping(path = "/api/tacos", produces = "application/json")
+@CrossOrigin(origins = "*")
+public class TacoController {
+    @Resource
+    TacoRepository tacoRepo;
+
+    @GetMapping(params = "recent")
+    public Iterable<Taco> recentTacos() {
+        PageRequest page = PageRequest.of(0, 12, Sort.by("createAt").descending());
+
+        return tacoRepo.findAll(page).getContent();
+    }
+}
+```
+
+- `@RestController`注解首先会告知Spring容器将该类注册为一个bean，该控制器中所有的返回值都会直接作为JSON对象进行返回，而不是在模型中带到视图进行呈现
+- 我们也可以使用`@Controller`和`@ResponseBody`注解达到同样的效果，或者返回一个`ResponseEntity`对象示例
+
+
+
+
+
+
+
+- 注意: TacoRepository要修改为:
+
+```java
+package tacos.data;
+
+import org.springframework.data.repository.PagingAndSortingRepository;
+import tacos.Taco;
+
+public interface TacoRepository extends PagingAndSortingRepository<Taco, Long> {
+}
+```
 
 
 

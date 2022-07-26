@@ -3506,6 +3506,56 @@ GROUP BY job
 ORDER BY cnt DESC
 ```
 
+---
+
+
+
+
+
+
+
+
+
+# 七十一、简历分析2
+
+![Xnip2022-07-26_10-25-03](problems.assets/Xnip2022-07-26_10-25-03.jpg)
+
+
+
+![Xnip2022-07-26_10-25-15](problems.assets/Xnip2022-07-26_10-25-15.jpg)
+
+题意:
+
+给你一张简历投递信息表，请你查询出其中对应年份中每个月中不同岗位对应的投递数量
+
+
+
+
+
+思路:
+
+- 同样的，我们可以使用YEAR函数来限制年份，而将日期值转换为年份 + 月份可以使用DATE_FORMAT，也可以使用LEFT函数来截断，为了偷懒，这里我使用了后者，SQL如下
+
+```mysql
+SELECT
+    job,
+    LEFT(date, 7) AS 'mon',
+    SUM(num) AS 'cnt'
+FROM
+    resume_info
+WHERE YEAR(date) = 2025
+GROUP BY job, mon
+ORDER BY mon DESC, cnt DESC
+```
+
+
+
+
+
+
+
+
+
 
 
 
