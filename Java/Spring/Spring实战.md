@@ -5952,6 +5952,18 @@ public class TacoController {
 
 - `@RestController`注解首先会告知Spring容器将该类注册为一个bean，该控制器中所有的返回值都会直接作为JSON对象进行返回，而不是在模型中带到视图进行呈现
 - 我们也可以使用`@Controller`和`@ResponseBody`注解达到同样的效果，或者返回一个`ResponseEntity`对象示例
+- 其中`@RequestMapping`注解中的`produces`属性用来指定`该类中`，只有**请求中包含application/json时**才能处理该请求，这样就限制了API只能返回对应的JSON结果
+- 也可以将produces指定其他的类型，使得API可以输出其他类型的数据:
+
+```java
+@RequestMapping(path="/api/tacos", produces={"application/json", "text/html"})
+```
+
+
+
+
+
+- `@CorssOrigin`注解限制了可跨资源访问该API对应的域，这里设置为了任意域
 
 
 
@@ -5970,6 +5982,316 @@ import tacos.Taco;
 public interface TacoRepository extends PagingAndSortingRepository<Taco, Long> {
 }
 ```
+
+
+
+
+
+
+
+使用curl命令行程序调用该API:
+
+![Xnip2022-07-26_14-21-27](Spring实战.assets/Xnip2022-07-26_14-21-27.jpg)
+
+
+
+
+
+预加载对应的测试数据:
+
+```java
+@Profile("!prod")
+@Bean
+public CommandLineRunner dataLoader(
+  IngredientRepository repo,
+  UserRepository userRepo,
+  PasswordEncoder encoder,
+  TacoRepository tacoRepo) {
+  return args -> {
+    Ingredient flourTortilla = new Ingredient(
+      "FLTO", "Flour Tortilla", Type.WRAP);
+    Ingredient cornTortilla = new Ingredient(
+      "COTO", "Corn Tortilla", Type.WRAP);
+    Ingredient groundBeef = new Ingredient(
+      "GRBF", "Ground Beef", Type.PROTEIN);
+    Ingredient carnitas = new Ingredient(
+      "CARN", "Carnitas", Type.PROTEIN);
+    Ingredient tomatoes = new Ingredient(
+      "TMTO", "Diced Tomatoes", Type.VEGGIES);
+    Ingredient lettuce = new Ingredient(
+      "LETC", "Lettuce", Type.VEGGIES);
+    Ingredient cheddar = new Ingredient(
+      "CHED", "Cheddar", Type.CHEESE);
+    Ingredient jack = new Ingredient(
+      "JACK", "Monterrey Jack", Type.CHEESE);
+    Ingredient salsa = new Ingredient(
+      "SLSA", "Salsa", Type.SAUCE);
+    Ingredient sourCream = new Ingredient(
+      "SRCR", "Sour Cream", Type.SAUCE);
+
+    repo.save(flourTortilla);
+    repo.save(cornTortilla);
+    repo.save(groundBeef);
+    repo.save(carnitas);
+    repo.save(tomatoes);
+    repo.save(lettuce);
+    repo.save(cheddar);
+    repo.save(jack);
+    repo.save(salsa);
+    repo.save(sourCream);
+
+    Taco taco1 = new Taco();
+    taco1.setName("Carnivore");
+    taco1.setIngredients(Arrays.asList(
+      flourTortilla,
+      groundBeef, carnitas,
+      sourCream,
+      salsa,
+      cheddar));
+    tacoRepo.save(taco1);
+
+    Taco taco2 = new Taco();
+    taco2.setName("Bovine Bounty");
+    taco2.setIngredients(Arrays.asList(
+      cornTortilla, groundBeef, cheddar,
+      jack, sourCream));
+    tacoRepo.save(taco2);
+
+    Taco taco3 = new Taco();
+    taco3.setName("Veg-Out");
+    taco3.setIngredients(Arrays.asList(
+      flourTortilla, cornTortilla, tomatoes,
+      lettuce, salsa));
+    tacoRepo.save(taco3);
+  };
+}
+```
+
+
+
+
+
+请求结果:
+
+![Xnip2022-07-26_14-36-59](Spring实战.assets/Xnip2022-07-26_14-36-59.jpg)
+
+
+
+
+
+
+
+再添加一个方法使得通过该API可以获取对应id的对应Taco配方:
+
+```java
+@GetMapping("/{id}")
+public Optional<Taco> tacoById(@PathVariable("id") Long id) {
+  return tacoRepo.findById(id);
+}
+```
+
+
+
+- `{id}`表示占位符，需要在请求时给定实际的数，该参数由`@PathVariable`注解映射给占位符
+- 但该方法中如果没有查询到对应的Taco实例，则依然会返回200状态码，更好的方法应该是返回带有404状态码的响应
+
+Eg:
+
+```java
+@GetMapping("/{id}")
+public ResponseEntity<Taco> tacoById(@PathVariable("id") Long id) {
+  Optional<Taco> optTaco = tacoRepo.findById(id);
+  if (optTaco.isPresent()) {
+    return new ResponseEntity<>(optTaco.get(), HttpStatus.OK);
+  }
+
+  return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+}
+```
+
+
+
+
+
+改进后，在方法会返回一个`ResponseEntity<Taco>`，如果有对应的Taco实例，则将其包装在状态码为OK的`ResponseEntity`中
+
+没有则包装在状态为NOT FOUND的ResponseEntity中
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) 向服务发送数据
+
+- 我们之前可以通过API返回对应的Taco实例，但我们还需要通过API创建对应的Taco实例
+
+
+
+在TacoController中添加对应的方法以达到目的
+
+Eg:
+
+```java
+@PostMapping(consumes = "application/json")
+@ResponseStatus(HttpStatus.CREATED)
+public Taco postTaco(@RequestBody Taco taco) {
+  return tacoRepo.save(taco);
+}
+```
+
+- `consumes`是请求输入，表示输入为JSON类型
+- `products`是请求输出
+- `@RequestBody`会将请求中的JSON格式数据和Taco对象实例绑定在一起
+
+
+
+- `@ResponseStatus`注解会将相应的HTTP状态设置为201(CREATED)，这样更具有描述性(告知客户段成功且创建了一个资源)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) 更新服务器的数据
+
+
+
+// TODO
+
+---
+
+
+
+
+
+
+
+### 4) 删除服务器的数据
+
+
+
+// TODO
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 启用后端数据服务
+
+- Spring Data REST会为存储库自动创建对应的REST API，其中包含了每个定义的存储库接口的操作
+
+
+
+导入依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-rest</artifactId>
+</dependency>
+```
+
+
+
+- 导入后，其会为所有的存储库自动创建对应的REST API，我们可以删除所有`@RestController`注解的类
+
+
+
+注意:
+
+> 生成的API名字都是实体类的复数形式
+
+Eg:
+
+![Xnip2022-07-26_15-40-14](Spring实战.assets/Xnip2022-07-26_15-40-14.jpg)
+
+- 这些返回的资源中还包含了超链接
+
+
+
+
+
+我们可以直接向这些API发送POST、PUT、DELETE请求
+
+- 为了不和我们的其他API产生冲突，我们可以调整这些自动生成的API的基本路径:
+
+```yaml
+spring:
+  data:
+    rest:
+      base-path: /api
+```
+
+
+
+请求对应的接口(注意复数形式的拼写):
+
+Eg:
+
+![Xnip2022-07-26_15-55-58](Spring实战.assets/Xnip2022-07-26_15-55-58.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 1) 调整资源路径和关系名称
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

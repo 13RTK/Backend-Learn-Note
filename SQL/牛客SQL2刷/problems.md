@@ -3548,6 +3548,94 @@ GROUP BY job, mon
 ORDER BY mon DESC, cnt DESC
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+# 七十二、简历分析3
+
+![Xnip2022-07-27_10-18-58](problems.assets/Xnip2022-07-27_10-18-58.jpg)
+
+
+
+![Xnip2022-07-27_10-19-08](problems.assets/Xnip2022-07-27_10-19-08.jpg)
+
+题意:
+
+给你一张简历投递记录表，请你查询出其中2025年和2026年不同岗位每月对应的简历投递数量
+
+
+
+
+
+思路:
+
+- 很明显，我们需要分组，但我们计算出的简历数是根据每一年来分组的，不可能同时根据两个年份来分组
+- 因此，我们需要分别查询出两年的数据，最后再连接起来，首先是2025年，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	job,
+	LEFT(date, 7) AS 'first_year_mon',
+	SUM(num) AS 'first_year_cnt'
+FROM
+	resume_info
+WHERE YEAR(date) = 2025
+GROUP BY job, first_year_mon
+```
+
+
+
+
+
+- 然后是2026年，SQL如下
+
+SQL2:
+
+```mysql
+SELECT
+	job,
+	LEFT(date, 7) AS 'second_year_mon',
+	SUM(num) AS 'second_year_cnt'
+FROM
+	resume_info
+WHERE YEAR(date) = 2026
+GROUP BY job, second_year_mon
+) AS t2 ON t1.job = t2.job AND RIGHT(t1.first_year_mon, 2
+```
+
+
+
+- 最后连接起来即可，SQL如下
+
+```mysql
+SELECT
+    t1.job,
+    t1.first_year_mon,
+    t1.first_year_cnt,
+    t2.second_year_mon,
+    t2.second_year_cnt
+FROM (
+    SQL1
+    ) AS t1
+INNER JOIN (
+    SQL2
+) AS t2 ON t1.job = t2.job AND RIGHT(t1.first_year_mon, 2) = RIGHT(t2.second_year_mon, 2)
+ORDER BY t1.first_year_mon DESC, t1.job DESC
+```
+
+
+
 
 
 
