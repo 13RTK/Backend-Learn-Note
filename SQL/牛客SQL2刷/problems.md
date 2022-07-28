@@ -3634,6 +3634,72 @@ INNER JOIN (
 ORDER BY t1.first_year_mon DESC, t1.job DESC
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+# 七十三、最差名次
+
+![Xnip2022-07-28_12-00-33](problems.assets/Xnip2022-07-28_12-00-33.jpg)
+
+
+
+![Xnip2022-07-28_12-00-41](problems.assets/Xnip2022-07-28_12-00-41.jpg)
+
+
+
+![Xnip2022-07-28_12-02-44](problems.assets/Xnip2022-07-28_12-02-44.jpg)
+
+题意:
+
+给你一张班级成绩表，请你查询出其中每个等级的学生中最差的名次
+
+
+
+思路:
+
+- 看起来是计算排名，但其实就是根据grade来累加number字段的值而已，累积的首选自然是窗口函数之一的SUM() OVER()，所以SQL如下
+
+```mysql
+SELECT
+    grade,
+    SUM(number) OVER (
+        ORDER BY grade
+    ) AS 't_rank'
+FROM
+    class_grade
+ORDER BY grade
+```
+
+
+
+- 有窗口函数自然也就有标准SQL的写法，最终SQL如下
+
+```mysql
+SELECT
+    t1.grade,
+    (
+        SELECT
+            SUM(t2.number)
+        FROM
+            class_grade AS t2
+        WHERE t2.grade <= t1.grade
+    ) AS 't_rank'
+FROM
+    class_grade AS t1
+ORDER BY t1.grade
+```
+
+
+
 
 
 

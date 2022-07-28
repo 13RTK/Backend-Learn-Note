@@ -6275,6 +6275,34 @@ Eg:
 
 ### 1) 调整资源路径和关系名称
 
+- 通过访问`/api`可以获取所有API对应信息
+
+Eg:
+
+![Xnip2022-07-27_14-21-52](Spring实战.assets/Xnip2022-07-27_14-21-52.jpg)
+
+
+
+- 所有生成的API都会`默认使用实体类的复数形式`
+- 想要修改生成的API对应的名称可以通过`@RestResource`注解来对应
+
+
+
+将tacoes改为tacos:
+
+```java
+package tacos;
+...
+
+@Data
+@Entity
+@RestResource(rel = "tacos", path = "tacos")
+public class Taco {
+	...
+}
+```
+
+---
 
 
 
@@ -6282,6 +6310,317 @@ Eg:
 
 
 
+
+
+
+
+
+
+### 2) 分页和排序
+
+- 在tacos接口中存在三个参数: page, size, sort
+
+
+
+获取第一页的5条数据:
+
+Eg:
+
+![Xnip2022-07-27_14-31-36](Spring实战.assets/Xnip2022-07-27_14-31-36.jpg)
+
+
+
+
+
+
+
+获取第二页的数据
+
+Eg:
+
+![Xnip2022-07-27_14-32-57](Spring实战.assets/Xnip2022-07-27_14-32-57.jpg)
+
+
+
+使用sort参数可以对结果列表进行排序
+
+
+
+Eg:
+
+![Xnip2022-07-27_14-35-49](Spring实战.assets/Xnip2022-07-27_14-35-49.jpg)
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3. 使用REST服务
+
+- Spring使用REST API的方法:
+    - RestTemplate: Spring框架提供的简单/同步的REST客户端
+    - Traverson: 可感知超链接的REST客户端
+    - WebClient: 响应式、异步REST客户端
+
+
+
+- 与REST API交互时，会发送HTTP请求，每次请求都会产生大量重复的样板代码
+- RestTemplate就`避免了这些重复的工作`
+
+
+
+RestTemplate提供的与REST资源交互的方法:
+
+- delete(): 对指定URL执行DELETE
+- exchange(): 返回一个ResponseEntity，其中包含从响应体映射的对象
+
+...
+
+![IMG_160597925779-1](Spring实战.assets/IMG_160597925779-1.jpeg)
+
+- RestTemplate为除了TRACE外的每种Http方式都提供了至少一种方法
+- execute和exchange为所有的HTTP方式都提供了底层的通用方法
+
+
+
+大多数都被重载为三种方式:
+
+- 接收一个String作为URL规范，其余可变参数作为URL的参数
+- ...，其余参数在Map<String, String>中指定
+- ..., 不支持参数
+
+
+
+
+
+使用RestTemplate时，需要首先将其注册为一个BEAN:
+
+```java
+package tacos.web.api;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+@Component
+public class RestTemplateRepo {
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+}
+
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+### 1) GET资源
+
+- 想要通过REST API获取一个Ingredient数据，则需要使用RestTemplate的`getForObject`方法获取
+
+Eg:
+
+```java
+package tacos.restclient;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import tacos.Ingredient;
+
+@Service
+@Slf4j
+public class TacoCloudClient {
+    private RestTemplate restTemplate;
+
+    public TacoCloudClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+    
+    public Ingredient getIngredientById(String ingredientId) {
+        return restTemplate.getForObject("http://localhost:8080/ingredients/{id}", Ingredient.class, ingredientId);
+    }
+}
+```
+
+- 其中`getForObject`的第一个参数为URL，第二个参数该方法响应的数据对应的实体类
+- 第三个参数为URL对应占位符的参数
+
+
+
+我们也可以通过映射来指定URL占位符与参数的对应关系:
+
+```java
+public Ingredient getIngredient(String ingredientId) {
+  Map<String, String> urlVariable = new HashMap<>();
+  urlVariable.put("id", ingredientId);
+
+  return restTemplate.getForObject("http://localhost:8080/ingredients/{id}", Ingredient.class, urlVariable);
+}
+```
+
+
+
+使用URI对象实例:
+
+![IMG_4D3F83361DA9-1](Spring实战.assets/IMG_4D3F83361DA9-1.jpeg)
+
+
+
+
+
+- `getForEntity`方法和`getForObject`类似，但其不会返回对象，而是会返回包装该对象的响应实体对象:
+
+```java
+public Ingredient getIngredient(String ingredientId) {
+  ResponseEntity<Ingredient> responseEntity = restTemplate.getForEntity("http://localhost:8080/ingredients/{id}", Ingredient.class, ingredientId);
+
+  log.info("Fetched time: " + responseEntity.getHeaders().getDate());
+
+  return responseEntity.getBody();
+} 
+```
+
+- 两个方法的重载形式一致
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 2) PUT资源
+
+Eg:
+
+```java
+public void updateIngredient(Ingredient ingredient) {
+  restTemplate.put("http://localhost:8080/ingredients/{id}", ingredient, ingredient.getId());
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 3) DELETE资源
+
+Eg:
+
+```java
+public void deleteIngredient(Ingredient ingredient) {
+  restTemplate.delete("http://localhost:8080/ingredients/{id}", ingredient, ingredient.getId());
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 4) POST资源
+
+```java
+public Ingredient createIngredient(Ingredient ingredient) {
+    return restTemplate.postForObject("http://localhost:8080/ingredients", ingredient, Ingredient.class)
+}
+```
+
+
+
+该方法只会返回对应的实体对象，如果需要获取新创建的资源位置，则可以可以使用`postForLocation`方法
+
+Eg:
+
+```java
+public URI createIngredient(Ingredient ingredient) {
+  return restTemplate.postForLocation("http://localhost:8080/ingredients", ingredient);
+}
+```
+
+
+
+如果同时需要新创建的实体和创建资源的URI，则可以使用`postForEntity`方法
+
+Eg:
+
+```java
+public Ingredient createIngredient(Ingredient ingredient) {
+  ResponseEntity<Ingredient> responseEntity = restTemplate.postForEntity("http://localhost:8080/ingredients", ingredient, Ingredient.class);
+
+  log.info("New resource created at " + responseEntity.getHeaders().getLocation());
+
+  return responseEntity.getBody();
+}
+```
+
+---
+
+
+
+
+
+
+
+
+
+
+
+# 八、保护REST服务
+
+
+
+
+
+## 1. OAuth介绍
 
 
 
