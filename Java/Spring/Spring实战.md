@@ -6624,6 +6624,155 @@ public Ingredient createIngredient(Ingredient ingredient) {
 
 
 
+示例控制器:
+
+```java
+package tacos.web.api;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import tacos.Ingredient;
+import tacos.data.IngredientRepository;
+
+import javax.annotation.Resource;
+import javax.persistence.criteria.CriteriaBuilder;
+
+@RestController
+@RequestMapping(value = "/api/ingredients", produces = "application/json")
+@CrossOrigin("*")
+public class IngredientController {
+    @Resource
+    IngredientRepository ingredientRepo;
+
+    @GetMapping
+    public Iterable<Ingredient> allIngredient() {
+        return ingredientRepo.findAll();
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Ingredient saveIngredient(@RequestBody Ingredient ingredient) {
+        return ingredientRepo.save(ingredient);
+    }
+    
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteIngredient(@PathVariable("id") String ingredientId) {
+        ingredientRepo.deleteById(ingredientId);
+    }
+}
+```
+
+
+
+- 该API**没有做任何安全限制**
+- 我们可以选择使用**HTTP基本的身份验证**:
+
+```java
+@PostMapping
+@ResponseStatus(HttpStatus.CREATED)
+@PreAuthorize("#{hasRole('ADMIN')}")
+public Ingredient saveIngredient(@RequestBody Ingredient ingredient) {
+  return ingredientRepo.save(ingredient);
+}
+```
+
+
+
+- 或者在Spring Security中**进行对应的安全需求配置**
+
+
+
+注意: 是否需要在配置中为角色添加`ROLE_`前缀？
+
+- 使用具体的方法或者SpEL表达式时，不需要使用`ROLE`前缀
+- 使用其他方法如`hasAuthority`时，则需要使用前缀
+
+
+
+
+
+- 使用HTTP基本身份验证的话，攻击者可以很简单地获取其中的身份信息，从而进行伪造
+
+
+
+
+
+OAuth2可以通过令牌的方式解决这个问题:
+
+![IMG_0D6BF67AFB97-1](Spring实战.assets/IMG_0D6BF67AFB97-1.jpeg)
+
+
+
+官方支持的OAuth2安全规范:
+
+1. 隐式授权
+2. 用户凭证授权
+3. 客户端凭据授权
+
+
+
+为了实现这种授权方式，我们需要使用JWT(JSON Web Token)访问令牌，实现过程需要一些应用:
+
+1. 授权服务器: 为客户端应用程序提供一个访问令牌
+2. 资源服务器: 即API
+3. 客户端应用程序: 需要权限使用API的程序
+4. 用户
+
+
+
+OAuth2规范:
+
+https://oauth.net/2/
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2. 创建验证服务器
+
+
+
+我们将使用的授权服务器实现为`Spring Authorization Server`:
+
+- 其并未实现所有的OAuth2授权类型，只提供了授权码授权和客户端凭证授权
+
+
+
+> 授权服务器是一个单独的应用程序，不同于API服务器和客户端
+
+
+
+Spring Authorization Server依赖:
+
+```xml
+<dependency>
+  <groupId>org.springframework.security.experimental</groupId>
+  <artifactId>spring-security-oauth2-authorization-server</artifactId>
+  <version>0.1.2</version>
+</dependency>
+```
+
+
+
+
+
+
+
+
+
 
 
 

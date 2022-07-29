@@ -3646,7 +3646,7 @@ ORDER BY t1.first_year_mon DESC, t1.job DESC
 
 
 
-# 七十三、最差名次
+# 七十三、最差名次1
 
 ![Xnip2022-07-28_12-00-33](problems.assets/Xnip2022-07-28_12-00-33.jpg)
 
@@ -3698,7 +3698,69 @@ FROM
 ORDER BY t1.grade
 ```
 
+---
 
+
+
+
+
+
+
+
+
+# 七十四、最差名次2
+
+![Xnip2022-07-29_11-13-14](problems.assets/Xnip2022-07-29_11-13-14.jpg)
+
+
+
+![Xnip2022-07-29_11-13-21](problems.assets/Xnip2022-07-29_11-13-21.jpg)
+
+题意:
+
+给你一张成绩表，请你查询出排名为中位数的人对应的成绩等级
+
+
+
+
+
+
+
+思路:
+
+- 最简单的方式就是按顺序和逆序累加得到对应的排名累加值，并获取最终的人数
+- 人数 / 2就是中位数的排名，而正反序求得的累加值均 ≥ 最终人数 / 2对应的数据自然就是中位数对应的等级了，所以我们需要先求出对应的正反序累加值和最终人数，SQL如下
+
+SQL1:
+
+```mysql
+SELECT
+	grade,
+	SUM(number) OVER(
+		ORDER BY grade
+	) AS 'first_part',
+	SUM(number) OVER(
+		ORDER BY grade DESC
+	) AS 'second_part',
+	(SELECT SUM(number) FROM class_grade) AS 'number_sum'
+FROM
+	class_grade
+```
+
+
+
+- 最终再限制对应的关系即可，最终SQL如下
+
+```mysql
+SELECT
+    grade
+FROM (
+    SQL1
+    ) AS temp
+WHERE first_part >= number_sum / 2
+AND second_part >= number_sum / 2
+ORDER BY grade
+```
 
 
 
