@@ -3762,11 +3762,46 @@ AND second_part >= number_sum / 2
 ORDER BY grade
 ```
 
+---
 
 
 
 
 
+
+
+
+
+# 七十五、最多积分1
+
+![Xnip2022-07-30_09-57-04](problems.assets/Xnip2022-07-30_09-57-04.jpg)
+
+
+
+![Xnip2022-07-30_09-57-12](problems.assets/Xnip2022-07-30_09-57-12.jpg)
+
+题意:
+
+给你一张积分记录表，一张用户信息表，请你查询出其中积分最高的用户信息
+
+
+
+思路:
+
+- 因为我们要限制的是总分，其是分组后的数据，所以想要用MAX聚合函数的话则需要先求总分才行
+- 但求最值并不是只能用MAX，我们通过ORDER BY结合LIMIT分页也是可以的，最终SQL如下
+
+```mysql
+SELECT
+    t2.name,
+    SUM(CASE WHEN type = 'add' THEN grade_num ELSE 0 END) AS 'grade_num'
+FROM
+    grade_info AS t1
+INNER JOIN user AS t2 ON t1.user_id = t2.id
+GROUP BY t2.name
+ORDER BY grade_num DESC
+LIMIT 1
+```
 
 
 

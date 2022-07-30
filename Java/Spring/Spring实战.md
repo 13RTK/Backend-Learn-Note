@@ -6767,33 +6767,192 @@ Spring Authorization Server依赖:
 
 
 
+创建一个基于表单验证的安全配置类:
+
+```java
+package com.tacos.authserver;
+
+import com.tacos.authserver.users.UserRepository;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@EnableWebSecurity
+public class SecurityConfig {
+
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    return http
+      .authorizeRequests()
+      .anyRequest().authenticated()
+      .and()
+      .formLogin()
+      .and().build();
+  }
+
+  @Bean
+  public UserDetailsService userDetailsService(UserRepository userRepo) {
+    return userRepo::findUserByUsername;
+  }
+
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
+}
+```
 
 
 
 
 
+- 使用ApplicationRunner/CommandLineRunner加载测试数据:
+
+```java
+@Bean
+public ApplicationRunner dataLoader(UserRepository userRepo, PasswordEncoder encoder) {
+  return args -> 	{
+    userRepo.save(new User("habuma", encoder.encode("abcdef"), "ROLE_ADMIN"));
+    userRepo.save(new User("tacochef", encoder.encode("abcdef"), "ROLE_ADMIN"));
+  };
+}
+```
 
 
 
 
 
+配置授权服务器:
+
+1. 创建新的配置类导入对应的服务器配置:
+
+```java
+package com.tacos.authorization;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration(proxyBeanMethods = false)
+public class AuthorizationServerConfig {
+
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE) 
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        
+        return http
+                .formLogin(Customizer.withDefaults())
+                .build();
+    }
+}
+```
+
+- 该方法定义了SecurityFilterChain，其设置了OAuth2授权服务器的一些默认行为和一个默认的登录表单页面
+- `@Order`注解的优先级为最高，即相比其他声明了同类型的其他bean，该bean会更为优先
 
 
 
 
 
+- 编写`RegisteredClientRepository`接口的实现类，可以实现从数据库中获取对应的用户信息
+
+
+
+2. 向授权服务器注册一个客户端
+
+```java
+@Bean
+public RegisteredClientRepository registeredClientRepository(PasswordEncoder encoder) {
+  RegisteredClient registeredClient = RegisteredClient
+    .withId(UUID.randomUUID().toString())
+    .clientId("taco-admin-client")
+    .clientSecret(encoder.encode("secret"))
+    .clientAuthenticationMethod(
+    ClientAuthenticationMethod.BASIC)
+    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+    .redirectUri("http//localhost:9090/login/oauth2/code/taco-admin-client")
+    .scope("WriteIngredients")
+    .scope("DeleteIngredients")
+    .scope(OidcScopes.OPENID)
+    .clientSettings(clientSettings -> clientSettings.requireUserConsent(true))
+    .build();
+
+  return new InMemoryRegisteredClientRepository(registeredClient);
+}
+```
+
+> 注意，从Spring Security5.5开始，ClientAuthenticationMethod.BASIC便被弃用了，而是使用ClientAuthenticationMethod.BASIC.CLIENT_SECRET_BASIC
 
 
 
 
 
+RegisteredClient中的信息:
+
+- ID: 随机且唯一的标识符
+- 客户端ID: 客户端的名称
+- 客户端的密码
+- 权限授予类型(authorizationGrantType): 这里用到了授权码和刷新令牌授权
+- 重定向URL(redirectUri): 获取授权后，授权服务器可以重定向到已注册的URL，增加了安全级别
+- 作用域(scope): 允许客户端请求的作用域，这里会被解析为OpenID，Openid范围是使用授权服务器作为单点登录解决方案的必要设置
+- 客户端设置: 这里我们向用户发起了同意的请求
 
 
 
 
 
+3. 通过一些bean来生成对应的JWK，需要用其在生成JWT令牌时作为签名的密钥
 
+Eg:
 
+```java
+@Bean
+public JWKSource<SecurityContext> jWkSource() {
+    RSAKey rsaKey = generateRsa();
+    JWKSet jwkSet = new JWKSet(rsaKey);
+    
+    return ((jwkSelector, securityContext) -> jwkSelector.select(jwkSet));
+}
+
+private static RSAKey generateRsa() {
+    KeyPair keyPair = generateRsaKey();
+    assert keyPair != null : "key pair is null";
+    
+    RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+    RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+    
+    return new RSAKey.Builder(publicKey)
+            .privateKey(privateKey)
+            .keyID(UUID.randomUUID().toString())
+            .build();
+}
+
+private static KeyPair generateRsaKey() {
+    try {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048);
+        return keyPairGenerator.generateKeyPair();
+    } catch (Exception e) {
+        return null;
+    }
+}
+
+@Bean
+public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {    
+    return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+}
+```
 
 
 
