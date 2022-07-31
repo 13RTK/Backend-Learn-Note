@@ -3803,6 +3803,71 @@ ORDER BY grade_num DESC
 LIMIT 1
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+# 七十六、最多积分2
+
+![Xnip2022-07-31_10-08-54](problems.assets/Xnip2022-07-31_10-08-54.jpg)
+
+
+
+![Xnip2022-07-31_10-09-04](problems.assets/Xnip2022-07-31_10-09-04.jpg)
+
+题意:
+
+给你一张用户信息表，一张积分表，请你查询出其中积分最高的用户信息(含并列)
+
+
+
+
+
+思路:
+
+- 因为结果可能存在并列，所以应该根据最高分来限制用户，而不是直接获取排第一位的用户，求最高分SQL如下
+
+SQL1:
+
+```mysql
+SELECT 
+	SUM(CASE WHEN type = 'add' THEN grade_num ELSE 0 END) AS 'grade_num'
+FROM
+	grade_info
+GROUP BY user_id 
+ORDER BY grade_num DESC 
+LIMIT 1
+```
+
+
+
+- 又因为这里的分数是累加的分数，属于分组后的数据，所以要用HAVING子句来限制，最终SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t1.name,
+    SUM(CASE WHEN type = 'add' THEN grade_num ELSE 0 END) AS 'grade_num'
+FROM
+    user AS t1
+INNER JOIN grade_info AS t2 ON t1.id = t2.user_id
+GROUP BY t1.id, t1.name
+HAVING grade_num = (
+    SQL1
+)
+ORDER BY t1.id
+```
+
+
+
 
 
 
