@@ -3866,6 +3866,67 @@ HAVING grade_num = (
 ORDER BY t1.id
 ```
 
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 七十七、最多积分3
+
+![Xnip2022-08-01_10-27-47](problems.assets/Xnip2022-08-01_10-27-47.jpg)
+
+
+
+![Xnip2022-08-01_10-27-55](problems.assets/Xnip2022-08-01_10-27-55.jpg)
+
+题意:
+
+给你一张用户信息表，一张积分表，请你查询出其中积分最高的用户信息(含并列)
+
+
+
+
+
+思路:
+
+- 乍一看，和昨天一样，都是求最高积分，只不过这里引入了减分的计算而已，所以我们只需要在昨天SQL的基础上，修改一下SUM里的CASE WHEN表达式即可，最终SQL如下
+
+```mysql
+SELECT
+    t1.id,
+    t1.name,
+    SUM(CASE WHEN type = 'add' THEN grade_num 
+        WHEN type = 'reduce' THEN -grade_num
+        ELSE 0 END) AS 'grade_num'
+FROM
+    user AS t1
+INNER JOIN grade_info AS t2 ON t1.id = t2.user_id
+GROUP BY t1.id, t1.name
+HAVING grade_num = (
+    SELECT
+        SUM(CASE WHEN type = 'add' THEN grade_num
+           WHEN type = 'reduce' THEN -grade_num
+           ELSE 0 END) AS 'grade_sum'
+    FROM
+        grade_info
+    GROUP BY user_id
+    ORDER BY grade_sum DESC
+    LIMIT 1
+)
+ORDER BY t1.id
+```
+
+
+
 
 
 
